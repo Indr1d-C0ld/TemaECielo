@@ -1,4 +1,4 @@
-# Configurazione reale: sta in /data/temaecielo-config/, qui non entra mai.
+# Configurazione reale: sta fuori dal webroot, qui non entra mai.
 /config/config.php
 
 # Materiale di terzi: gazetteer, catalogo stellare, poligoni dei fusi, GeoIP.
