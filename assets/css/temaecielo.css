@@ -1,0 +1,852 @@
+/* ===========================================================================
+   Tema e Cielo — foglio di stile unico.
+
+   Riferimento estetico: l'atlante celeste a incisione del Seicento. Fondo
+   notte, linee d'oro, tipografia con le grazie. Due vesti: «notte» (predefinita)
+   e «pergamena». Si scambiano con l'attributo data-veste sull'elemento <html>,
+   cosi' il cambio e' istantaneo e non ha bisogno di ricaricare.
+
+   NB: nessuno stile inline da nessuna parte. La CSP di questo vhost lo vieta.
+   =========================================================================== */
+
+:root,
+[data-veste="notte"] {
+  --notte:      #0b1026;
+  --pannello:   #121a3a;
+  --pannello-2: #0e1530;
+  --oro:        #c9a227;
+  --oro-chiaro: #e8d18a;
+  --testo:      #e6e9f5;
+  --attenuato:  #9aa3c4;
+  --filo:       rgba(201, 162, 39, .32);
+  --filo-tenue: rgba(201, 162, 39, .14);
+  --velo:       rgba(255, 255, 255, .05);
+
+  --el-fuoco: #c05a2e;
+  --el-terra: #6b7f4a;
+  --el-aria:  #c9a227;
+  --el-acqua: #41739c;
+
+  --armonico: #3f8f7a;
+  --tensione: #b4432f;
+
+  --ombra: 0 18px 40px -24px #000;
+}
+
+[data-veste="pergamena"] {
+  --notte:      #efe6d2;
+  --pannello:   #f6efe0;
+  --pannello-2: #ece1c9;
+  --oro:        #9c7c26;
+  --oro-chiaro: #6f5518;
+  --testo:      #2b2418;
+  --attenuato:  #7a6340;
+  --filo:       rgba(124, 98, 30, .38);
+  --filo-tenue: rgba(124, 98, 30, .16);
+  --velo:       rgba(43, 36, 24, .04);
+
+  --el-fuoco: #a8471f;
+  --el-terra: #566b38;
+  --el-acqua: #2f5a7d;
+  --el-aria:  #8a6d18;
+
+  --armonico: #2f6f5c;
+  --tensione: #97321f;
+
+  --ombra: 0 12px 28px -22px rgba(43, 36, 24, .6);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--notte);
+  color: var(--testo);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Il fondo: due aloni, uno in alto come luce zodiacale, uno in basso come
+   vignettatura. Fisso, cosi' non scorre col contenuto. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .5;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(60, 80, 160, .20), transparent 60%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, .55), transparent 62%);
+}
+[data-veste="pergamena"] body::before { opacity: .35;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(255, 246, 220, .7), transparent 60%),
+    radial-gradient(ellipse at 50% 120%, rgba(124, 98, 30, .16), transparent 62%);
+}
+
+/* --- elementi di base ---------------------------------------------------- */
+
+a { color: var(--oro-chiaro); text-decoration-color: var(--filo); text-underline-offset: .18em; }
+a:hover { color: var(--oro); }
+
+h1, h2, h3 { font-weight: 400; letter-spacing: .02em; margin: 0 0 .5em; }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); color: var(--oro-chiaro); font-variant: small-caps; }
+h2 { font-size: 1.3rem; color: var(--oro); margin-top: 2rem; }
+h3 { font-size: 1.05rem; color: var(--oro); }
+
+p { margin: 0 0 1rem; }
+code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: .88em;
+       background: var(--velo); padding: .12em .4em; border-radius: 2px; }
+hr { border: 0; border-top: 1px solid var(--filo-tenue); margin: 2rem 0; }
+blockquote { margin: 1.4rem 0; padding-left: 1.2rem; border-left: 2px solid var(--filo);
+             color: var(--attenuato); font-style: italic; }
+
+.salta { position: absolute; left: -9999px; }
+.salta:focus { left: 1rem; top: 1rem; z-index: 99; background: var(--pannello);
+               color: var(--oro-chiaro); padding: .6rem 1rem; border: 1px solid var(--filo); }
+
+:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+
+/* --- testata -------------------------------------------------------------- */
+
+.testata { position: relative; z-index: 2; border-bottom: 1px solid var(--filo-tenue);
+           background: linear-gradient(180deg, var(--pannello-2), transparent); }
+.testata .dentro { max-width: 1180px; margin: 0 auto; padding: 14px 24px;
+                   display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+
+.marchio { text-decoration: none; display: flex; flex-direction: column; line-height: 1.15; }
+.marchio-nome { font-size: 1.32rem; color: var(--oro-chiaro); font-variant: small-caps;
+                letter-spacing: .06em; }
+.marchio-motto { font-size: .68rem; color: var(--attenuato); letter-spacing: .24em;
+                 text-transform: uppercase; }
+
+.navigazione { margin-left: auto; }
+.navigazione ul { list-style: none; display: flex; gap: 4px; margin: 0; padding: 0; flex-wrap: wrap; }
+.navigazione a {
+  display: block; padding: 7px 13px; text-decoration: none; color: var(--attenuato);
+  font-size: .76rem; letter-spacing: .16em; text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+}
+.navigazione a:hover { color: var(--oro-chiaro); }
+.navigazione a[aria-current="page"] { color: var(--oro); border-bottom-color: var(--oro); }
+
+.veste { background: none; border: 1px solid var(--filo); color: var(--oro);
+         width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+         display: grid; place-items: center; padding: 0; }
+.veste:hover { background: var(--velo); }
+.veste .glifo { width: 17px; height: 17px; }
+
+/* I simboli dello sprite portano i propri fill/stroke: qui si decide solo la
+   misura. Il colore arriva da currentColor e quindi dal contesto. */
+.glifo { width: 1em; height: 1em; vertical-align: -.12em; }
+
+/* --- impaginato ----------------------------------------------------------- */
+
+.foglio { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 38px 24px 72px; }
+
+.filetto { display: flex; align-items: center; gap: 14px; margin: 18px 0 22px; }
+.filetto i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--oro), transparent); }
+.filetto span { color: var(--oro); font-size: 1rem; }
+
+.occhiello { font-size: .68rem; letter-spacing: .34em; text-transform: uppercase;
+             color: var(--attenuato); margin-bottom: .8rem; }
+.condotto { color: var(--attenuato); max-width: 62ch; }
+.nota-piccola { font-size: .82rem; color: var(--attenuato); font-style: italic; margin-top: 1.6rem; }
+.tenue { color: var(--attenuato); }
+.num { font-variant-numeric: tabular-nums; }
+.destra { text-align: right; }
+.troncato { max-width: 18ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- il cartiglio: il pannello incorniciato che tiene ogni contenuto ------ */
+
+.cartiglio {
+  position: relative;
+  background: linear-gradient(180deg, var(--pannello), var(--pannello-2));
+  border: 1px solid var(--filo);
+  border-radius: 3px;
+  padding: 30px 34px 34px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), var(--ombra);
+}
+.cartiglio::after {
+  content: ""; position: absolute; inset: 5px; border: 1px solid var(--filo-tenue);
+  border-radius: 2px; pointer-events: none;
+}
+.cartiglio-stretto { max-width: 34rem; margin: 0 auto; }
+.cartiglio-solo { max-width: 46rem; margin: 0 auto; text-align: center; }
+.cartiglio-solo .filetto { max-width: 22rem; margin-inline: auto; }
+.cartiglio-solo .condotto { margin-inline: auto; }
+
+/* --- la soglia (home) ----------------------------------------------------- */
+
+.soglia { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; }
+.soglia h1 { line-height: 1.08; }
+.soglia-figura { display: grid; place-items: center; }
+.astrolabio { width: 100%; max-width: 420px; height: auto;
+              filter: drop-shadow(0 20px 40px rgba(0, 0, 0, .45)); }
+
+.azioni { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.6rem; }
+
+.bottone {
+  display: inline-block; text-decoration: none; cursor: pointer;
+  padding: 11px 24px; border: 1px solid var(--filo); border-radius: 2px;
+  color: var(--oro-chiaro); background: transparent; font-family: inherit; font-size: .86rem;
+  letter-spacing: .16em; text-transform: uppercase;
+}
+.bottone:hover { background: var(--velo); border-color: var(--oro); color: var(--oro); }
+.bottone-primo { border-color: var(--oro); color: var(--notte); background: var(--oro); }
+.bottone-primo:hover { background: var(--oro-chiaro); color: var(--notte); }
+
+/* --- i tre riquadri ------------------------------------------------------- */
+
+.tre { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 52px; }
+.riquadro { background: var(--pannello); border: 1px solid var(--filo-tenue); padding: 22px 24px; border-radius: 3px; }
+.riquadro h2 { margin-top: 0; font-size: 1.02rem; letter-spacing: .2em; text-transform: uppercase; }
+.riquadro p { color: var(--attenuato); font-size: .93rem; margin: 0; }
+
+/* --- il cantiere ---------------------------------------------------------- */
+
+.cantiere { margin-top: 56px; }
+.fasi { list-style: none; margin: 1.5rem 0 0; padding: 0; border-top: 1px solid var(--filo-tenue); }
+.fasi li {
+  display: grid; grid-template-columns: 3rem 10rem 1fr 6rem; gap: 16px; align-items: baseline;
+  padding: 11px 4px; border-bottom: 1px solid var(--filo-tenue); font-size: .9rem;
+}
+.sigla { font-variant-numeric: tabular-nums; color: var(--oro); letter-spacing: .1em; }
+.fase-nome { color: var(--testo); }
+.fase-cosa { color: var(--attenuato); font-size: .86rem; }
+.fase-stato { font-size: .68rem; letter-spacing: .18em; text-transform: uppercase;
+              text-align: right; color: var(--attenuato); }
+.fasi .fase-fatta .fase-stato { color: var(--armonico); }
+.fasi .fase-corso .fase-stato { color: var(--oro); }
+.fasi .fase-fatta .sigla { color: var(--armonico); }
+
+/* --- moduli --------------------------------------------------------------- */
+
+.modulo { display: flex; flex-direction: column; gap: .35rem; margin-top: 1.4rem; }
+.modulo label { font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+                color: var(--attenuato); margin-top: .8rem; }
+.modulo input[type="text"], .modulo input[type="password"], .modulo input[type="number"],
+.modulo input[type="date"], .modulo input[type="time"], .modulo select, .modulo textarea {
+  font-family: inherit; font-size: 1rem; color: var(--testo);
+  background: var(--notte); border: 1px solid var(--filo);
+  border-radius: 2px; padding: 10px 12px; width: 100%;
+}
+.modulo input:focus, .modulo select:focus, .modulo textarea:focus {
+  border-color: var(--oro); outline: none;
+}
+.modulo .bottone { margin-top: 1.6rem; align-self: flex-start; }
+
+.in-riga { display: inline; }
+.collegamento { background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+                color: var(--oro-chiaro); text-decoration: underline;
+                text-decoration-color: var(--filo); text-underline-offset: .18em; }
+
+/* --- messaggi ------------------------------------------------------------- */
+
+.lampi { position: relative; z-index: 2; max-width: 1180px; margin: 16px auto -6px; padding: 0 24px; }
+.lampo { border: 1px solid var(--filo); border-left-width: 3px; padding: 10px 16px;
+         border-radius: 2px; background: var(--pannello); font-size: .92rem; margin: 0 0 8px; }
+.lampo-bene { border-left-color: var(--armonico); }
+.lampo-male { border-left-color: var(--tensione); color: var(--testo); }
+
+/* --- tabelle -------------------------------------------------------------- */
+
+.tabella-scorre { overflow-x: auto; margin: 1rem 0; }
+.griglia { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.griglia th { text-align: left; font-weight: 400; font-size: .64rem; letter-spacing: .18em;
+              text-transform: uppercase; color: var(--attenuato);
+              padding: 0 10px 9px; border-bottom: 1px solid var(--filo); white-space: nowrap; }
+.griglia td { padding: 7px 10px; border-bottom: 1px solid var(--filo-tenue); }
+.griglia tbody tr:hover td { background: var(--velo); }
+.griglia.fitta { font-size: .8rem; }
+.griglia.fitta td { padding: 5px 8px; }
+.griglia .robot td { color: var(--attenuato); opacity: .72; }
+.griglia.definizioni th { text-transform: none; letter-spacing: 0; font-size: .88rem;
+                          color: var(--testo); padding: 7px 10px; border-bottom: 1px solid var(--filo-tenue); }
+.stato-4, .stato-5 { color: var(--tensione); }
+
+/* --- regia ---------------------------------------------------------------- */
+
+.regia-nav { display: flex; gap: 2px; flex-wrap: wrap; margin: 0 0 1.8rem;
+             border-bottom: 1px solid var(--filo); }
+.regia-nav a { padding: 9px 16px; text-decoration: none; color: var(--attenuato);
+               font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+               border-bottom: 2px solid transparent; }
+.regia-nav a:hover { color: var(--oro-chiaro); border-bottom-color: var(--filo); }
+
+.numeri { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 1px; background: var(--filo-tenue); border: 1px solid var(--filo); margin: 1.4rem 0 2rem; }
+.numero { background: var(--pannello); padding: 16px 18px; }
+.numero-val { display: block; font-size: 1.7rem; color: var(--oro-chiaro); font-variant-numeric: tabular-nums; }
+.numero-eti { display: block; font-size: .64rem; letter-spacing: .18em; text-transform: uppercase;
+              color: var(--attenuato); margin-top: 4px; }
+
+.paginazione { display: flex; gap: 18px; align-items: center; justify-content: center;
+               margin-top: 1.4rem; font-size: .85rem; color: var(--attenuato); }
+
+/* --- prosa delle pagine redazionali -------------------------------------- */
+
+.prosa { max-width: 68ch; }
+.prosa h2 { margin-top: 2.2rem; }
+.prosa ul, .prosa ol { padding-left: 1.4rem; }
+.prosa li { margin-bottom: .4rem; }
+
+/* --- piede ---------------------------------------------------------------- */
+
+.piede { position: relative; z-index: 1; border-top: 1px solid var(--filo-tenue);
+         background: linear-gradient(0deg, var(--pannello-2), transparent); }
+.piede .dentro { max-width: 1180px; margin: 0 auto; padding: 28px 24px 40px;
+                 font-size: .82rem; color: var(--attenuato); }
+.avvertenza { font-style: italic; max-width: 64ch; }
+.crediti { max-width: 64ch; }
+.riga-fondo { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0; }
+.sep { opacity: .5; }
+
+/* --- adattamento ---------------------------------------------------------- */
+
+@media (max-width: 960px) {
+  .soglia { grid-template-columns: 1fr; }
+  .soglia-figura { order: -1; max-width: 320px; margin: 0 auto; }
+  .tre { grid-template-columns: 1fr; }
+  .fasi li { grid-template-columns: 2.6rem 1fr; row-gap: 2px; }
+  .fase-cosa, .fase-stato { grid-column: 2; text-align: left; }
+}
+
+@media (max-width: 620px) {
+  body { font-size: 16px; }
+  .cartiglio { padding: 22px 18px 26px; }
+  .testata .dentro { padding: 12px 16px; }
+  .navigazione { margin-left: 0; width: 100%; }
+  .foglio { padding: 26px 16px 56px; }
+}
+
+@media print {
+  body::before, .testata, .piede, .veste, .regia-nav { display: none !important; }
+  body { background: #fff; color: #000; }
+  .cartiglio { border: 1px solid #999; box-shadow: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ===========================================================================
+   F2 — modulo di nascita, mappa, risultato
+   =========================================================================== */
+
+/* --- moduli lunghi ------------------------------------------------------- */
+
+.modulo-nascita fieldset { border: 1px solid var(--filo-tenue); border-radius: 3px;
+                           padding: 18px 22px 22px; margin: 0 0 24px; }
+.modulo-nascita legend { padding: 0 10px; font-size: .68rem; letter-spacing: .26em;
+                         text-transform: uppercase; color: var(--oro); }
+
+.campo { margin-bottom: 18px; }
+.campo:last-child { margin-bottom: 0; }
+.campo > label { display: block; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+                 color: var(--attenuato); margin-bottom: .45rem; }
+.campo input[type="text"], .campo input[type="date"], .campo input[type="time"],
+.campo input[type="number"], .campo input[type="password"], .campo select {
+  font-family: inherit; font-size: 1rem; color: var(--testo);
+  background: var(--notte); border: 1px solid var(--filo);
+  border-radius: 2px; padding: 10px 12px; width: 100%;
+}
+.campo input:focus, .campo select:focus { border-color: var(--oro); outline: none; }
+.campo input[readonly] { color: var(--attenuato); background: var(--pannello-2); }
+.facoltativo { text-transform: none; letter-spacing: 0; opacity: .7; font-size: .95em; }
+.aiuto { font-size: .82rem; color: var(--attenuato); margin: .45rem 0 0; max-width: 62ch; }
+.errore-campo { font-size: .84rem; color: var(--tensione); margin: .45rem 0 0; }
+
+/* --- scelte a pulsante --------------------------------------------------- */
+
+.scelte { display: flex; flex-direction: column; gap: 8px; }
+.scelta { display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+          border: 1px solid var(--filo-tenue); border-radius: 2px; padding: 12px 14px; }
+.scelta:hover { border-color: var(--filo); background: var(--velo); }
+.scelta input { margin-top: .3rem; accent-color: var(--oro); flex: none; }
+.scelta:has(input:checked) { border-color: var(--oro); background: var(--velo); }
+.scelta-corpo { display: flex; flex-direction: column; gap: 3px; }
+.scelta-titolo { color: var(--testo); font-size: .96rem; }
+.scelta-spiega { color: var(--attenuato); font-size: .83rem; }
+
+/* --- completamento automatico -------------------------------------------- */
+
+.cerca { position: relative; }
+.risultati { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 2px);
+             margin: 0; padding: 4px; list-style: none; max-height: 19rem; overflow-y: auto;
+             background: var(--pannello); border: 1px solid var(--oro); border-radius: 2px;
+             box-shadow: 0 18px 40px -18px #000; }
+.risultato { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px;
+             padding: 9px 11px; cursor: pointer; border-radius: 2px; }
+.risultato:hover, .risultato.attivo { background: var(--velo); }
+.risultato-nome { color: var(--oro-chiaro); font-size: .98rem; }
+.risultato-alias { color: var(--attenuato); font-size: .8rem; font-style: italic; }
+.risultato-contesto { grid-column: 1 / -1; color: var(--attenuato); font-size: .8rem; }
+.risultato-vuoto { padding: 12px; color: var(--attenuato); font-size: .88rem; }
+
+/* --- mappa --------------------------------------------------------------- */
+
+.mappa-riquadro { border: 1px solid var(--filo); border-radius: 3px; overflow: hidden;
+                  margin: 0 0 18px; background: var(--pannello-2); }
+.mappa-barra { display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+               padding: 10px 14px; border-bottom: 1px solid var(--filo-tenue); }
+.mappa-vesti { display: flex; gap: 0; border: 1px solid var(--filo); border-radius: 2px; overflow: hidden; }
+.mappa-vest { background: none; border: 0; color: var(--attenuato); font-family: inherit;
+              font-size: .7rem; letter-spacing: .16em; text-transform: uppercase;
+              padding: 7px 15px; cursor: pointer; }
+.mappa-vest:hover { color: var(--oro-chiaro); }
+.mappa-vest.attiva { background: var(--oro); color: var(--notte); }
+.mappa-istruzione { margin: 0; font-size: .8rem; color: var(--attenuato); }
+.mappa { height: 22rem; background: var(--notte); }
+.mappa-crediti { margin: 0; padding: 7px 14px; font-size: .7rem; color: var(--attenuato);
+                 border-top: 1px solid var(--filo-tenue); }
+
+/* Leaflet nasce chiaro: qui si smorza per non accecare dentro una pagina notturna. */
+.leaflet-container { background: var(--pannello-2); font-family: inherit; }
+.leaflet-control-zoom a { background: var(--pannello); color: var(--oro-chiaro);
+                          border-color: var(--filo); }
+.leaflet-control-zoom a:hover { background: var(--pannello-2); color: var(--oro); }
+
+.coordinate { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 620px) { .coordinate { grid-template-columns: 1fr; } }
+
+.esito-fuso { margin: .6rem 0 0; padding: 9px 13px; font-size: .86rem;
+              border-left: 3px solid var(--armonico); background: var(--velo);
+              color: var(--attenuato); border-radius: 2px; }
+.esito-fuso.esito-attento { border-left-color: var(--oro); }
+.esito-fuso.esito-male    { border-left-color: var(--tensione); color: var(--testo); }
+
+.avanzate { border: 1px solid var(--filo-tenue); border-radius: 3px; padding: 0 22px;
+            margin: 0 0 24px; }
+.avanzate summary { padding: 14px 0; cursor: pointer; font-size: .7rem; letter-spacing: .2em;
+                    text-transform: uppercase; color: var(--attenuato); }
+.avanzate summary:hover { color: var(--oro-chiaro); }
+.avanzate[open] summary { border-bottom: 1px solid var(--filo-tenue); margin-bottom: 18px; }
+.avanzate > .campo { padding-bottom: 20px; }
+
+/* --- risultato ----------------------------------------------------------- */
+
+.lampo-attento { border-left-color: var(--oro); }
+
+.segnaposto-ruota { border: 1px dashed var(--filo); border-radius: 3px; padding: 26px;
+                    text-align: center; color: var(--attenuato); margin: 1.6rem 0 2rem; }
+.segnaposto-titolo { display: block; color: var(--oro-chiaro); font-size: 1.02rem;
+                     margin-bottom: .35rem; }
+
+.g { width: 30px; text-align: center; }
+.g .glifo { width: 1.25rem; height: 1.25rem; }
+.retro .glifo { width: .85rem; height: .85rem; color: var(--tensione); }
+.piccolo { font-size: .8rem; }
+.punteggio { color: var(--oro); font-variant-numeric: tabular-nums; }
+.conteggio { color: var(--attenuato); font-size: .8rem; font-variant-numeric: tabular-nums; }
+
+/* Cio' che dipende dall'ora ignota si vede che e' incerto, non si nasconde. */
+.incerto, .incerto td { color: var(--attenuato); opacity: .62; font-style: italic; }
+.bollino { display: inline-block; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase;
+           border: 1px solid var(--filo); border-radius: 2px; padding: 2px 7px;
+           color: var(--attenuato); font-style: normal; vertical-align: .05em; }
+.bollino-bene    { border-color: var(--armonico); color: var(--armonico); }
+.bollino-attento { border-color: var(--oro); color: var(--oro); }
+
+.aspetto-armonico { color: var(--armonico); }
+.aspetto-tensione { color: var(--tensione); }
+.aspetto-neutro   { color: var(--oro); }
+.aspetto-armonico .glifo, .aspetto-tensione .glifo, .aspetto-neutro .glifo {
+  width: 1rem; height: 1rem; margin-right: .2rem; }
+
+.el-fuoco { color: var(--el-fuoco); } .el-terra { color: var(--el-terra); }
+.el-aria  { color: var(--el-aria); }  .el-acqua { color: var(--el-acqua); }
+.fuoco { color: var(--el-fuoco); } .terra { color: var(--el-terra); }
+.aria  { color: var(--el-aria); }  .acqua { color: var(--el-acqua); }
+
+.barra { display: grid; grid-template-columns: 5.5rem 1fr 2.4rem; align-items: center;
+         gap: 12px; margin: 8px 0; font-size: .85rem; }
+.barra-eti { font-size: .8rem; }
+.barra .traccia { height: 7px; background: var(--velo); border-radius: 1px; overflow: hidden; }
+.barra .riemp { display: block; height: 100%; background: var(--oro); width: 0; }
+.barra-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--attenuato); }
+.riemp-fuoco { background: var(--el-fuoco); } .riemp-terra { background: var(--el-terra); }
+.riemp-aria  { background: var(--el-aria); }  .riemp-acqua { background: var(--el-acqua); }
+
+.figura-nome { font-size: 1.4rem; color: var(--oro-chiaro); font-variant: small-caps;
+               letter-spacing: .04em; margin-bottom: .3rem; }
+.configurazioni { list-style: none; padding: 0; margin: .6rem 0 0; }
+.configurazioni li { padding: 8px 0; border-bottom: 1px solid var(--filo-tenue); font-size: .92rem; }
+
+.anagrafe { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1px; background: var(--filo-tenue); border: 1px solid var(--filo);
+            margin: 0 0 1.8rem; }
+.anagrafe > div { background: var(--pannello); padding: 13px 16px; }
+.anagrafe dt { font-size: .64rem; letter-spacing: .2em; text-transform: uppercase;
+               color: var(--attenuato); margin: 0 0 5px; }
+.anagrafe dd { margin: 0; font-size: 1rem; color: var(--oro-chiaro); }
+
+.permalink { margin-top: 2.6rem; padding-top: 1.6rem; border-top: 1px solid var(--filo); }
+.permalink-url code { display: block; padding: 12px 14px; background: var(--notte);
+                      border: 1px solid var(--filo); border-radius: 2px; font-size: .84rem;
+                      overflow-wrap: anywhere; }
+
+/* Quote delle barre: statiche, perche' la CSP vieta lo stile inline e un
+   blocco <style> con nonce andrebbe riscritto a ogni pagina. */
+.barra[data-quota="0"] .riemp { width: 0%; }
+.barra[data-quota="1"] .riemp { width: 1%; }
+.barra[data-quota="2"] .riemp { width: 2%; }
+.barra[data-quota="3"] .riemp { width: 3%; }
+.barra[data-quota="4"] .riemp { width: 4%; }
+.barra[data-quota="5"] .riemp { width: 5%; }
+.barra[data-quota="6"] .riemp { width: 6%; }
+.barra[data-quota="7"] .riemp { width: 7%; }
+.barra[data-quota="8"] .riemp { width: 8%; }
+.barra[data-quota="9"] .riemp { width: 9%; }
+.barra[data-quota="10"] .riemp { width: 10%; }
+.barra[data-quota="11"] .riemp { width: 11%; }
+.barra[data-quota="12"] .riemp { width: 12%; }
+.barra[data-quota="13"] .riemp { width: 13%; }
+.barra[data-quota="14"] .riemp { width: 14%; }
+.barra[data-quota="15"] .riemp { width: 15%; }
+.barra[data-quota="16"] .riemp { width: 16%; }
+.barra[data-quota="17"] .riemp { width: 17%; }
+.barra[data-quota="18"] .riemp { width: 18%; }
+.barra[data-quota="19"] .riemp { width: 19%; }
+.barra[data-quota="20"] .riemp { width: 20%; }
+.barra[data-quota="21"] .riemp { width: 21%; }
+.barra[data-quota="22"] .riemp { width: 22%; }
+.barra[data-quota="23"] .riemp { width: 23%; }
+.barra[data-quota="24"] .riemp { width: 24%; }
+.barra[data-quota="25"] .riemp { width: 25%; }
+.barra[data-quota="26"] .riemp { width: 26%; }
+.barra[data-quota="27"] .riemp { width: 27%; }
+.barra[data-quota="28"] .riemp { width: 28%; }
+.barra[data-quota="29"] .riemp { width: 29%; }
+.barra[data-quota="30"] .riemp { width: 30%; }
+.barra[data-quota="31"] .riemp { width: 31%; }
+.barra[data-quota="32"] .riemp { width: 32%; }
+.barra[data-quota="33"] .riemp { width: 33%; }
+.barra[data-quota="34"] .riemp { width: 34%; }
+.barra[data-quota="35"] .riemp { width: 35%; }
+.barra[data-quota="36"] .riemp { width: 36%; }
+.barra[data-quota="37"] .riemp { width: 37%; }
+.barra[data-quota="38"] .riemp { width: 38%; }
+.barra[data-quota="39"] .riemp { width: 39%; }
+.barra[data-quota="40"] .riemp { width: 40%; }
+.barra[data-quota="41"] .riemp { width: 41%; }
+.barra[data-quota="42"] .riemp { width: 42%; }
+.barra[data-quota="43"] .riemp { width: 43%; }
+.barra[data-quota="44"] .riemp { width: 44%; }
+.barra[data-quota="45"] .riemp { width: 45%; }
+.barra[data-quota="46"] .riemp { width: 46%; }
+.barra[data-quota="47"] .riemp { width: 47%; }
+.barra[data-quota="48"] .riemp { width: 48%; }
+.barra[data-quota="49"] .riemp { width: 49%; }
+.barra[data-quota="50"] .riemp { width: 50%; }
+.barra[data-quota="51"] .riemp { width: 51%; }
+.barra[data-quota="52"] .riemp { width: 52%; }
+.barra[data-quota="53"] .riemp { width: 53%; }
+.barra[data-quota="54"] .riemp { width: 54%; }
+.barra[data-quota="55"] .riemp { width: 55%; }
+.barra[data-quota="56"] .riemp { width: 56%; }
+.barra[data-quota="57"] .riemp { width: 57%; }
+.barra[data-quota="58"] .riemp { width: 58%; }
+.barra[data-quota="59"] .riemp { width: 59%; }
+.barra[data-quota="60"] .riemp { width: 60%; }
+.barra[data-quota="61"] .riemp { width: 61%; }
+.barra[data-quota="62"] .riemp { width: 62%; }
+.barra[data-quota="63"] .riemp { width: 63%; }
+.barra[data-quota="64"] .riemp { width: 64%; }
+.barra[data-quota="65"] .riemp { width: 65%; }
+.barra[data-quota="66"] .riemp { width: 66%; }
+.barra[data-quota="67"] .riemp { width: 67%; }
+.barra[data-quota="68"] .riemp { width: 68%; }
+.barra[data-quota="69"] .riemp { width: 69%; }
+.barra[data-quota="70"] .riemp { width: 70%; }
+.barra[data-quota="71"] .riemp { width: 71%; }
+.barra[data-quota="72"] .riemp { width: 72%; }
+.barra[data-quota="73"] .riemp { width: 73%; }
+.barra[data-quota="74"] .riemp { width: 74%; }
+.barra[data-quota="75"] .riemp { width: 75%; }
+.barra[data-quota="76"] .riemp { width: 76%; }
+.barra[data-quota="77"] .riemp { width: 77%; }
+.barra[data-quota="78"] .riemp { width: 78%; }
+.barra[data-quota="79"] .riemp { width: 79%; }
+.barra[data-quota="80"] .riemp { width: 80%; }
+.barra[data-quota="81"] .riemp { width: 81%; }
+.barra[data-quota="82"] .riemp { width: 82%; }
+.barra[data-quota="83"] .riemp { width: 83%; }
+.barra[data-quota="84"] .riemp { width: 84%; }
+.barra[data-quota="85"] .riemp { width: 85%; }
+.barra[data-quota="86"] .riemp { width: 86%; }
+.barra[data-quota="87"] .riemp { width: 87%; }
+.barra[data-quota="88"] .riemp { width: 88%; }
+.barra[data-quota="89"] .riemp { width: 89%; }
+.barra[data-quota="90"] .riemp { width: 90%; }
+.barra[data-quota="91"] .riemp { width: 91%; }
+.barra[data-quota="92"] .riemp { width: 92%; }
+.barra[data-quota="93"] .riemp { width: 93%; }
+.barra[data-quota="94"] .riemp { width: 94%; }
+.barra[data-quota="95"] .riemp { width: 95%; }
+.barra[data-quota="96"] .riemp { width: 96%; }
+.barra[data-quota="97"] .riemp { width: 97%; }
+.barra[data-quota="98"] .riemp { width: 98%; }
+.barra[data-quota="99"] .riemp { width: 99%; }
+.barra[data-quota="100"] .riemp { width: 100%; }
+
+/* ===========================================================================
+   F3 — la ruota e la griglia degli aspetti
+   =========================================================================== */
+
+.ruota-riquadro { margin: 1.8rem 0 2.4rem; text-align: center; }
+.ruota { display: block; width: 100%; max-width: 44rem; height: auto; margin: 0 auto;
+         filter: drop-shadow(0 22px 46px rgba(0, 0, 0, .42)); }
+.ruota text { font-family: inherit; }
+.ruota-riquadro figcaption { margin-top: 1rem; font-size: .84rem; color: var(--attenuato);
+                             max-width: 52rem; margin-inline: auto; }
+
+/* Passando su un pianeta si accendono i suoi aspetti e si evidenzia la riga in
+   tabella; passando sulla riga accade l'inverso. E' l'unica animazione
+   prevista, e serve a leggere. */
+.pianeta { cursor: default; }
+.pianeta use { transition: color .12s ease; }
+.aspetto { transition: opacity .12s ease, stroke-width .12s ease; }
+.ruota.evidenziando .aspetto { opacity: .07 !important; }
+.ruota.evidenziando .aspetto.acceso { opacity: .95 !important; stroke-width: 3 !important; }
+.ruota.evidenziando .pianeta { opacity: .35; }
+.ruota.evidenziando .pianeta.acceso { opacity: 1; }
+tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
+
+/* --- la scaletta --------------------------------------------------------- */
+
+.scaletta { border-collapse: collapse; margin: 1rem auto; }
+.scaletta td, .scaletta th { border: 1px solid var(--filo-tenue); padding: 0;
+                             width: 2.9rem; height: 2.9rem; text-align: center; vertical-align: middle; }
+.scaletta-vuota { background: transparent; }
+.scaletta-cella { position: relative; cursor: help; }
+.scaletta-cella .glifo { width: 1.05rem; height: 1.05rem; display: block; margin: .3rem auto 0; }
+.scaletta-orbe { display: block; font-size: .58rem; color: var(--attenuato);
+                 font-variant-numeric: tabular-nums; line-height: 1; margin-top: .1rem; }
+.scaletta-cella.asp-armonico { color: var(--armonico); background: rgba(63, 143, 122, .1); }
+.scaletta-cella.asp-tensione { color: var(--tensione); background: rgba(180, 67, 47, .1); }
+.scaletta-cella.asp-neutro   { color: var(--oro);      background: rgba(201, 162, 39, .1); }
+.scaletta-cella:hover { outline: 1px solid var(--oro); outline-offset: -1px; }
+
+.scaletta-corpo { background: var(--pannello-2); font-weight: 400; white-space: nowrap;
+                  padding: 0 .55rem !important; width: auto !important; text-align: left; }
+.scaletta-corpo .glifo { width: 1.1rem; height: 1.1rem; vertical-align: -.16em; }
+.scaletta-nome { font-size: .74rem; color: var(--attenuato); margin-left: .35rem; }
+
+@media (max-width: 720px) {
+  .scaletta td, .scaletta th { width: 2.2rem; height: 2.2rem; }
+  .scaletta-cella .glifo { width: .85rem; height: .85rem; }
+  .scaletta-orbe { font-size: .5rem; }
+  .scaletta-nome { display: none; }
+}
+
+/* --- stampa -------------------------------------------------------------- */
+
+@media print {
+  /* La carta si stampa su carta bianca con inchiostro nero: il fondo notte
+     divorerebbe una cartuccia e renderebbe i glifi d'oro illeggibili. */
+  :root {
+    --notte: #fff; --pannello: #fff; --pannello-2: #fafafa;
+    --oro: #7a6118; --oro-chiaro: #4a3a0e; --testo: #111; --attenuato: #555;
+    --filo: rgba(0, 0, 0, .35); --filo-tenue: rgba(0, 0, 0, .15); --velo: rgba(0, 0, 0, .04);
+    --el-fuoco: #a8471f; --el-terra: #4d6130; --el-aria: #8a6d18; --el-acqua: #24506f;
+    --armonico: #1f5c4a; --tensione: #8c2d1a;
+  }
+  body { background: #fff; color: #000; }
+  .ruota { max-width: 17cm; filter: none; page-break-inside: avoid; }
+  .ruota-riquadro figcaption a { display: none; }
+  .scaletta { page-break-inside: avoid; }
+  .cartiglio { border: 1px solid #999; box-shadow: none; padding: 0; }
+  .cartiglio::after { display: none; }
+  .permalink-url code { border: 1px solid #999; }
+  h2 { page-break-after: avoid; }
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+}
+
+/* ===========================================================================
+   F4 — la volta celeste
+   =========================================================================== */
+
+.volta-riquadro { margin: 1.8rem 0 2.4rem; text-align: center; }
+.volta { display: block; width: 100%; max-width: 44rem; height: auto; margin: 0 auto;
+         filter: drop-shadow(0 22px 46px rgba(0, 0, 0, .5)); }
+.volta text { font-family: inherit; }
+.volta-riquadro figcaption { margin-top: 1rem; font-size: .84rem; color: var(--attenuato);
+                             max-width: 52rem; margin-inline: auto; }
+
+/* Il cielo e' nero anche sulla pergamena: un cielo beige non e' un cielo.
+   Solo la cornice e le etichette si adattano alla veste. */
+[data-veste="pergamena"] .volta { filter: drop-shadow(0 18px 36px rgba(43, 36, 24, .35)); }
+
+.pianeta-cielo use { pointer-events: none; }
+
+@media print {
+  /* La volta si stampa com'e': il fondo scuro qui e' il soggetto, non la
+     decorazione, e schiarirlo cancellerebbe le stelle. */
+  .volta { max-width: 15cm; filter: none; page-break-inside: avoid; }
+  .volta-riquadro figcaption a { display: none; }
+}
+
+/* ===========================================================================
+   F5 — la lettura a doppio registro
+   =========================================================================== */
+
+.lettura { margin: 2rem 0 2.6rem; }
+.lettura .linguette { display: flex; gap: 0; border-bottom: 1px solid var(--filo); margin: 1rem 0 1.2rem; }
+.linguetta { padding: 10px 22px; text-decoration: none; color: var(--attenuato);
+             font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+             border-bottom: 2px solid transparent; }
+.linguetta:hover { color: var(--oro-chiaro); }
+.linguetta[aria-selected="true"] { color: var(--oro); border-bottom-color: var(--oro); }
+
+.registro-spiega { font-size: .88rem; margin-bottom: 1.8rem; }
+
+.lettura-sezione { font-size: .72rem; letter-spacing: .24em; text-transform: uppercase;
+                   color: var(--oro); margin: 2.2rem 0 1rem;
+                   padding-bottom: .5rem; border-bottom: 1px solid var(--filo-tenue); }
+
+.voce { border-left: 2px solid var(--oro); padding: 0 0 0 1.2rem; margin: 0 0 1.5rem;
+        max-width: 68ch; }
+/* Un passaggio composto dai frammenti non vale uno scritto a mano, e il filetto
+   piu' tenue lo dice senza bisogno di un'etichetta. */
+.voce-composto { border-left-color: var(--filo-tenue); }
+.voce h4 { margin: 0 0 .4rem; font-size: 1rem; font-weight: 400; color: var(--oro-chiaro); }
+.voce p { margin: 0; color: var(--testo); }
+.voce-perche { display: inline-block; margin-left: .6rem; font-size: .66rem;
+               letter-spacing: .14em; text-transform: uppercase; color: var(--attenuato);
+               border: 1px solid var(--filo-tenue); border-radius: 2px; padding: 1px 7px;
+               vertical-align: .12em; }
+.voce.acceso { background: rgba(201, 162, 39, .07); }
+
+@media print {
+  .lettura .linguette { display: none; }
+  .voce { page-break-inside: avoid; border-left-color: #999; }
+}
+
+.filtri { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 1.2rem 0; }
+.filtri input[type="search"], .filtri select {
+  font-family: inherit; font-size: .92rem; color: var(--testo); background: var(--notte);
+  border: 1px solid var(--filo); border-radius: 2px; padding: 8px 11px;
+}
+.filtri input[type="search"] { min-width: 16rem; flex: 1; }
+.filtri .bottone { padding: 8px 18px; }
+.modulo textarea { font-family: inherit; font-size: .96rem; line-height: 1.6; color: var(--testo);
+  background: var(--notte); border: 1px solid var(--filo); border-radius: 2px;
+  padding: 11px 13px; width: 100%; resize: vertical; }
+.modulo textarea:focus { border-color: var(--oro); outline: none; }
+
+/* ===========================================================================
+   F6 — sinastria e transiti
+   =========================================================================== */
+
+.coppia-segni { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; margin: 1.6rem 0; }
+.coppia-segni .campo { margin: 0; min-width: 11rem; }
+.coppia-piu { color: var(--oro); font-size: 1.4rem; padding-bottom: .55rem; }
+
+.esito-coppia { margin-top: 2.4rem; padding-top: 1.6rem; border-top: 1px solid var(--filo); }
+.coppia-titolo { display: flex; align-items: center; gap: 16px; justify-content: center; }
+.coppia-titolo h2 { margin: 0; font-size: 1.6rem; }
+.coppia-titolo .glifo { width: 2.2rem; height: 2.2rem; }
+.coppia-sottotitolo { text-align: center; color: var(--attenuato); font-size: .82rem;
+                      letter-spacing: .12em; text-transform: uppercase; margin: .5rem 0 1.8rem; }
+
+/* La corona esterna e' il cielo sovrapposto: piu' leggera della carta, o le
+   due si confondono e la doppia ruota diventa illeggibile. */
+.pianeta-esterno use { opacity: .9; }
+.ruota.evidenziando .aspetto-incrociato { opacity: .06 !important; }
+.ruota.evidenziando .aspetto-incrociato.acceso { opacity: 1 !important; stroke-width: 3.2 !important; }
+
+.area-punteggio { margin-bottom: 1.8rem; }
+.area-punteggio h3 { margin-bottom: .3rem; }
+.contributi { list-style: none; padding: 0; margin: .6rem 0 0; }
+.contributi li { padding: 5px 0 5px 1rem; border-left: 2px solid var(--filo-tenue);
+                 font-size: .88rem; margin-bottom: 3px; }
+.contributi li.aspetto-armonico { border-left-color: var(--armonico); }
+.contributi li.aspetto-tensione { border-left-color: var(--tensione); }
+.contributi li.aspetto-neutro   { border-left-color: var(--oro); }
+
+/* ===========================================================================
+   F7 — guestbook
+   =========================================================================== */
+
+.messaggi { margin: 1.8rem 0; }
+.messaggio { border-left: 2px solid var(--filo); padding: 0 0 0 1.2rem; margin: 0 0 1.8rem; }
+.messaggio header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: .4rem; }
+.messaggio-nome { color: var(--oro-chiaro); font-size: 1.02rem; }
+.messaggio p { margin: 0 0 .6rem; max-width: 66ch; }
+.messaggio-voti { display: flex; gap: 22px; flex-wrap: wrap; font-size: .76rem;
+                  letter-spacing: .1em; text-transform: uppercase; color: var(--attenuato); }
+.stelle { color: var(--oro); letter-spacing: .1em; }
+.stelle-vuote { color: var(--filo-tenue); }
+
+.risposta { margin: .8rem 0 0 1rem; padding: .7rem 1rem; background: var(--velo);
+            border-left: 2px solid var(--oro); border-radius: 2px; }
+.risposta-chi { display: block; font-size: .66rem; letter-spacing: .16em; text-transform: uppercase;
+                color: var(--oro); margin-bottom: .3rem; }
+.risposta p { margin: 0; font-size: .92rem; }
+
+.firma { margin-top: 2.6rem; padding-top: 1.8rem; border-top: 1px solid var(--filo); }
+
+/* Il campo esca deve essere invisibile a chi legge e presente nel documento
+   per chi lo compila in automatico. Niente display:none: i programmi meglio
+   fatti lo riconoscono e lo saltano. */
+.esca { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.voti { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 1.4rem 0; }
+@media (max-width: 680px) { .voti { grid-template-columns: 1fr; } }
+.voto { border: 1px solid var(--filo-tenue); border-radius: 3px; padding: 12px 16px 14px; margin: 0; }
+.voto legend { padding: 0 8px; font-size: .78rem; color: var(--attenuato); }
+.voto-scala { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.voto-stella { cursor: pointer; }
+.voto-stella input { position: absolute; opacity: 0; width: 0; height: 0; }
+.voto-stella span { display: grid; place-items: center; width: 2.1rem; height: 2.1rem;
+                    border: 1px solid var(--filo); border-radius: 2px; color: var(--attenuato);
+                    font-variant-numeric: tabular-nums; }
+.voto-stella:hover span { border-color: var(--oro); color: var(--oro-chiaro); }
+.voto-stella:has(input:checked) span { background: var(--oro); border-color: var(--oro); color: var(--notte); }
+.voto-stella:has(input:focus-visible) span { outline: 2px solid var(--oro); outline-offset: 2px; }
+
+/* ===========================================================================
+   F7 — statistiche
+   =========================================================================== */
+
+.tre-grafici { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 1.4rem 0 2rem; }
+@media (max-width: 900px) { .tre-grafici { grid-template-columns: 1fr; } }
+.tre-grafici h3 { margin-top: 0; }
+.tre-grafici .barra { grid-template-columns: 7.5rem 1fr 2.6rem; }
+.tre-grafici .barra-eti .glifo { width: .95rem; height: .95rem; vertical-align: -.1em; margin-right: .2rem; }
+
+.moderazione { border: 1px solid var(--filo-tenue); border-radius: 3px; padding: 14px 18px;
+               margin: 0 0 1.2rem; }
+.moderazione header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
+                      margin-bottom: .6rem; }
+.modulo-moderazione textarea, .modulo-moderazione input[type="text"] {
+  font-family: inherit; font-size: .92rem; color: var(--testo); background: var(--notte);
+  border: 1px solid var(--filo); border-radius: 2px; padding: 8px 11px; width: 100%;
+  margin-bottom: .5rem; resize: vertical;
+}
+.azioni-moderazione { display: flex; gap: 8px; flex-wrap: wrap; margin: .4rem 0; }
+.azioni-moderazione .bottone { padding: 7px 14px; font-size: .72rem; }
+.bottone-male { border-color: var(--tensione); color: var(--tensione); }
+.bottone-male:hover { background: var(--tensione); color: var(--notte); border-color: var(--tensione); }
+.linguette .linguetta .conteggio { margin-left: .3rem; }
+
+.anteprima { border: 1px solid var(--filo-tenue); border-radius: 3px; padding: 18px 22px;
+             background: var(--pannello-2); }
+
+.profezione { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center;
+              border: 1px solid var(--filo); border-radius: 3px; padding: 18px 22px; margin: 1.2rem 0 2rem; }
+@media (max-width: 620px) { .profezione { grid-template-columns: 1fr; } }
+.profezione-segno { text-align: center; }
+.profezione-segno .glifo { width: 3rem; height: 3rem; display: block; margin: 0 auto .4rem; }
+.profezione-nome { display: block; font-size: 1.15rem; color: var(--oro-chiaro); font-variant: small-caps;
+                   letter-spacing: .06em; }
+.profezione p { margin: 0 0 .5rem; }

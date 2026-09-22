@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Core\Config;
+use App\Core\Csp;
+use App\Core\Csrf;
+use App\Core\Vista;
+
+/** Scappa per HTML. Il nome e' corto perche' si usa in ogni riga delle viste. */
+function e(mixed $v): string
+{
+    return htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/** Indirizzo assoluto dentro il portale: url('/carta/abc') -> /temaecielo/carta/abc */
+function url(string $percorso = '/'): string
+{
+    $base = rtrim((string) ($GLOBALS['__base_path'] ?? ''), '/');
+
+    return $base . '/' . ltrim($percorso, '/');
+}
+
+/** Indirizzo di una risorsa statica, con marca di versione per la cache. */
+function risorsa(string $percorso): string
+{
+    $rel  = '/assets/' . ltrim($percorso, '/');
+    $file = (string) ($GLOBALS['__project_root'] ?? '') . $rel;
+    $v    = is_file($file) ? substr((string) filemtime($file), -6) : '0';
+
+    return url($rel) . '?v=' . $v;
+}
+
+function nonce(): string
+{
+    return Csp::nonce();
+}
+
+function csrf(): string
+{
+    return Csrf::campo();
+}
+
+/** @param array<string,mixed> $dati */
+function vista(string $nome, array $dati = []): string
+{
+    return Vista::rendi($nome, $dati);
+}
+
+/** @param array<string,mixed> $dati */
+function pagina(string $nome, array $dati = []): string
+{
+    return Vista::pagina($nome, $dati);
+}
+
+/**
+ * Riga di registro su storage/log/YYYY-MM.log.
+ * Volutamente elementare: i log applicativi qui servono alla diagnosi, non
+ * all'analisi — quella passa dalle tabelle di telemetria.
+ */
+function registro(string $messaggio, string $livello = 'info'): void
+{
+    $dir = (string) ($GLOBALS['__project_root'] ?? sys_get_temp_dir()) . '/storage/log';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+    $riga = sprintf("[%s] %-5s %s\n", date('Y-m-d H:i:s'), strtoupper($livello), $messaggio);
+    @file_put_contents($dir . '/' . date('Y-m') . '.log', $riga, FILE_APPEND | LOCK_EX);
+}
+
+/**
+ * Glifo dallo sprite incorporato in pagina: glifo('sole'), glifo('bilancia').
+ * Il riferimento e' locale al documento, non a un file esterno.
+ */
+function glifo(string $nome, string $classe = ''): string
+{
+    $id = 'gl-' . preg_replace('/[^a-z0-9_-]/', '', strtolower($nome));
+
+    return '<svg class="glifo' . ($classe !== '' ? ' ' . e($classe) : '') . '" aria-hidden="true">'
+        . '<use href="#' . e((string) $id) . '"></use></svg>';
+}
+
+function debug(): bool
+{
+    return Config::caricata() && (bool) Config::get('app.debug', false);
+}

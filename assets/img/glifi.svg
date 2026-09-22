@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tema e Cielo — sprite dei glifi.
+
+  Disegnati, non presi da Unicode: i caratteri ☉☽☿ vengono resi in modo
+  incoerente da sistema a sistema — su qualche dispositivo diventano emoji
+  colorate, su altri mancano — e per gli asteroidi spesso non esistono affatto.
+  Qui il tratto, il peso e il colore li decidiamo noi.
+
+  Uso:  <svg class="glifo"><use href="glifi.svg#gl-sole"></use></svg>
+  Il colore segue currentColor. Ogni simbolo vive in una gabbia 24x24.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+
+<!-- ─────────────  pianeti  ───────────── -->
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-sole" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="8"/>
+  <circle cx="12" cy="12" r="1.9" fill="currentColor" stroke="none"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-luna" viewBox="0 0 24 24">
+  <path d="M 13 3 A 9 9 0 1 0 13 21 A 7 9 0 1 1 13 3 Z"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-mercurio" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="4"/>
+  <path d="M 8.5 7 A 3.6 3.6 0 0 1 15.5 7"/>
+  <path d="M 12 16 L 12 21 M 9 18.7 L 15 18.7"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-venere" viewBox="0 0 24 24">
+  <circle cx="12" cy="9" r="4.6"/>
+  <path d="M 12 13.6 L 12 21 M 8.6 18 L 15.4 18"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-marte" viewBox="0 0 24 24">
+  <circle cx="10" cy="14.5" r="5"/>
+  <path d="M 13.7 11 L 20 4.7"/>
+  <path d="M 20 4.7 L 14.6 4.7 M 20 4.7 L 20 10.1"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-giove" viewBox="0 0 24 24">
+  <path d="M 5.5 8.5 C 5.5 3.8 12 3.8 12 8.5 C 12 12.4 9 14 9 20.5"/>
+  <path d="M 4.5 17.5 L 17.5 17.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-saturno" viewBox="0 0 24 24">
+  <path d="M 7.5 3.5 L 7.5 11.5 M 4 7 L 11.5 7"/>
+  <path d="M 7.5 11.5 C 7.5 15.5 12.5 13.2 14 16.2 C 15.5 19.4 12.6 21.2 10.6 19.8"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-urano" viewBox="0 0 24 24">
+  <circle cx="12" cy="18.2" r="3"/>
+  <path d="M 12 15.2 L 12 5"/>
+  <path d="M 6 9.6 L 18 9.6 M 6 9.6 L 6 4.4 M 18 9.6 L 18 4.4"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-nettuno" viewBox="0 0 24 24">
+  <path d="M 12 3 L 12 21 M 8.2 18 L 15.8 18"/>
+  <path d="M 4.5 5 L 4.5 10.5 A 7.5 7.5 0 0 0 19.5 10.5 L 19.5 5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-plutone" viewBox="0 0 24 24">
+  <path d="M 7 20.5 L 7 4 L 11 4 A 4 4 0 0 1 11 12 L 7 12"/>
+  <path d="M 12.5 11.5 L 12.5 20.5 L 18.5 20.5"/>
+</symbol>
+
+<!-- ─────────────  punti  ───────────── -->
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-nodo-nord" viewBox="0 0 24 24">
+  <path d="M 7.5 20.5 L 7.5 14 A 5 5 0 1 1 16.5 14 L 16.5 20.5"/>
+  <path d="M 5 20.5 L 10 20.5 M 14 20.5 L 19 20.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-nodo-sud" viewBox="0 0 24 24">
+  <path d="M 7.5 3.5 L 7.5 10 A 5 5 0 1 0 16.5 10 L 16.5 3.5"/>
+  <path d="M 5 3.5 L 10 3.5 M 14 3.5 L 19 3.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-lilith" viewBox="0 0 24 24">
+  <path d="M 12.5 3 A 5.2 5.2 0 1 0 12.5 13.4 A 4 5.2 0 1 1 12.5 3 Z"/>
+  <path d="M 12 13.4 L 12 21 M 8.6 18 L 15.4 18"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-chirone" viewBox="0 0 24 24">
+  <circle cx="12" cy="18" r="3.2"/>
+  <path d="M 12 14.8 L 12 3.5"/>
+  <path d="M 12 9.5 L 17.5 4 M 12 9.5 L 17.5 15"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-fortuna" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="8"/>
+  <path d="M 6.3 6.3 L 17.7 17.7 M 17.7 6.3 L 6.3 17.7"/>
+</symbol>
+
+<!-- ─────────────  segni  ───────────── -->
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-ariete" viewBox="0 0 24 24">
+  <path d="M 12 20.5 L 12 10"/>
+  <path d="M 12 10 C 12 4 7 2.8 5.4 5.8 C 4.1 8.4 6 11 8 11"/>
+  <path d="M 12 10 C 12 4 17 2.8 18.6 5.8 C 19.9 8.4 18 11 16 11"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-toro" viewBox="0 0 24 24">
+  <circle cx="12" cy="17" r="4.7"/>
+  <path d="M 5 5.5 A 7 7 0 0 0 19 5.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-gemelli" viewBox="0 0 24 24">
+  <path d="M 8 5 L 8 19 M 16 5 L 16 19"/>
+  <path d="M 5 4.6 Q 12 2 19 4.6 M 5 19.4 Q 12 22 19 19.4"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-cancro" viewBox="0 0 24 24">
+  <path d="M 4 11 C 4 6 10.5 4 15.2 6.4"/>
+  <circle cx="17.4" cy="8.2" r="2.5"/>
+  <path d="M 20 13 C 20 18 13.5 20 8.8 17.6"/>
+  <circle cx="6.6" cy="15.8" r="2.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-leone" viewBox="0 0 24 24">
+  <circle cx="8" cy="16.5" r="4.2"/>
+  <path d="M 11.6 14.2 C 13 10 9.8 5.5 13 4 C 16.2 2.5 18.6 6 17.4 9 C 16.2 12 17 15.5 20.5 16.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-vergine" viewBox="0 0 24 24">
+  <path d="M 3.5 6 L 3.5 17"/>
+  <path d="M 3.5 8 C 3.5 5.4 7.5 5.4 7.5 8 L 7.5 17"/>
+  <path d="M 7.5 8 C 7.5 5.4 11.5 5.4 11.5 8 L 11.5 17"/>
+  <path d="M 11.5 9.6 C 11.5 6 16.5 6 16.5 10.6 C 16.5 14.6 12.6 15 12.2 18 C 14.4 21 18.6 19.4 20 16.2"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-bilancia" viewBox="0 0 24 24">
+  <path d="M 3 14.6 L 7.7 14.6 A 4.4 4.4 0 0 1 16.3 14.6 L 21 14.6"/>
+  <path d="M 3 19.4 L 21 19.4"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-scorpione" viewBox="0 0 24 24">
+  <path d="M 3.5 7 L 3.5 18"/>
+  <path d="M 3.5 9 C 3.5 6.4 7.5 6.4 7.5 9 L 7.5 18"/>
+  <path d="M 7.5 9 C 7.5 6.4 11.5 6.4 11.5 9 L 11.5 18"/>
+  <path d="M 11.5 9 C 11.5 6.4 15.5 6.4 15.5 9 L 15.5 18"/>
+  <path d="M 15.5 18 L 20.6 12.9"/>
+  <path d="M 20.6 12.9 L 16.4 12.9 M 20.6 12.9 L 20.6 17.1"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-sagittario" viewBox="0 0 24 24">
+  <path d="M 4 20 L 19.2 4.8"/>
+  <path d="M 19.2 4.8 L 12.4 4.8 M 19.2 4.8 L 19.2 11.6"/>
+  <path d="M 8 9.6 L 14.4 16"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-capricorno" viewBox="0 0 24 24">
+  <path d="M 3.8 6 C 6 10 8 14.6 9 19.4"/>
+  <path d="M 9 19.4 C 9 12 11 6.6 13.2 6.6 C 15.6 6.6 16.2 9.6 15.2 11.8"/>
+  <path d="M 15.2 11.8 C 18.2 10.8 20.4 13.4 19.4 16.4 C 18.4 19.4 14.8 19.6 13.6 17"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-acquario" viewBox="0 0 24 24">
+  <path d="M 3.5 10.5 L 7.7 7 L 11.9 10.5 L 16.1 7 L 20.3 10.5"/>
+  <path d="M 3.5 17 L 7.7 13.5 L 11.9 17 L 16.1 13.5 L 20.3 17"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-pesci" viewBox="0 0 24 24">
+  <path d="M 7 3.5 A 7 9 0 0 0 7 20.5"/>
+  <path d="M 17 3.5 A 7 9 0 0 1 17 20.5"/>
+  <path d="M 3 12 L 21 12"/>
+</symbol>
+
+<!-- ─────────────  aspetti  ───────────── -->
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-congiunzione" viewBox="0 0 24 24">
+  <circle cx="9" cy="15" r="4.6"/>
+  <path d="M 11.8 11.3 L 19.5 4.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-opposizione" viewBox="0 0 24 24">
+  <circle cx="5" cy="12" r="3.2"/>
+  <circle cx="19" cy="12" r="3.2"/>
+  <path d="M 8.2 12 L 15.8 12"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-trigono" viewBox="0 0 24 24">
+  <path d="M 12 4 L 20 19 L 4 19 Z"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-quadrato" viewBox="0 0 24 24">
+  <path d="M 5 5 L 19 5 L 19 19 L 5 19 Z"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-sestile" viewBox="0 0 24 24">
+  <path d="M 12 3 L 12 21 M 4.2 7.5 L 19.8 16.5 M 4.2 16.5 L 19.8 7.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-quinconce" viewBox="0 0 24 24">
+  <path d="M 12 3.5 L 12 20.5 M 12 3.5 L 5 15.5 M 12 3.5 L 19 15.5"/>
+</symbol>
+
+<!-- ─────────────  ornamenti  ───────────── -->
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-stella" viewBox="0 0 24 24">
+  <path fill="currentColor" stroke="none" d="M 12 1.5 C 12.6 9 15 11.4 22.5 12 C 15 12.6 12.6 15 12 22.5
+                          C 11.4 15 9 12.6 1.5 12 C 9 11.4 11.4 9 12 1.5 Z"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-retrogrado" viewBox="0 0 24 24">
+  <path d="M 7 20 L 7 4 L 12 4 A 4.2 4.2 0 0 1 12 12.4 L 7 12.4"/>
+  <path d="M 11.5 12.4 L 17.5 20"/>
+</symbol>
+
+</svg>

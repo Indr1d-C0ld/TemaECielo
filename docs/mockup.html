@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema e Cielo — studio d'estetica</title>
+<style>
+  :root{
+    --notte:#0b1026; --pannello:#121a3a; --pannello2:#0e1530;
+    --oro:#c9a227; --oro-chiaro:#e8d18a; --testo:#e6e9f5; --attenuato:#9aa3c4;
+    --fuoco:#c05a2e; --terra:#6b7f4a; --aria:#c9a227; --acqua:#41739c;
+    --armonico:#3f8f7a; --tensione:#b4432f;
+    --filo:rgba(201,162,39,.32); --filo2:rgba(201,162,39,.14);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--notte); color:var(--testo);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.4;
+    background:radial-gradient(ellipse at 50% 0%,rgba(60,80,160,.18),transparent 60%),
+               radial-gradient(ellipse at 50% 120%,rgba(0,0,0,.6),transparent 60%);
+  }
+  .foglio{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:0 24px 72px}
+
+  header{text-align:center; padding:56px 0 34px}
+  .occhiello{font-size:.72rem; letter-spacing:.42em; text-transform:uppercase;
+    color:var(--attenuato); margin-bottom:18px}
+  h1{font-size:clamp(2.6rem,7vw,4.2rem); font-weight:400; margin:0;
+    letter-spacing:.03em; color:var(--oro-chiaro); font-variant:small-caps}
+  .filetto{display:flex; align-items:center; gap:14px; justify-content:center; margin:20px auto 0; max-width:560px}
+  .filetto i{flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--oro),transparent)}
+  .filetto span{color:var(--oro); font-size:1.1rem}
+  .sottotitolo{color:var(--attenuato); font-style:italic; margin-top:16px; font-size:1.02rem}
+
+  .griglia{display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:34px}
+  @media (max-width:900px){.griglia{grid-template-columns:1fr}}
+
+  .carta{
+    background:linear-gradient(180deg,var(--pannello),var(--pannello2));
+    border:1px solid var(--filo); border-radius:3px; padding:22px;
+    box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 18px 40px -24px #000;
+    position:relative;
+  }
+  .carta::after{content:""; position:absolute; inset:5px; border:1px solid var(--filo2);
+    border-radius:2px; pointer-events:none}
+  .carta h2{margin:0 0 4px; font-size:1.02rem; font-weight:400; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--oro)}
+  .carta .nota{margin:0 0 16px; font-size:.83rem; color:var(--attenuato)}
+  svg{display:block; width:100%; height:auto}
+
+  .anagrafe{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:1px; background:var(--filo2); border:1px solid var(--filo); margin-top:30px}
+  .anagrafe div{background:var(--pannello); padding:13px 15px}
+  .anagrafe dt{font-size:.66rem; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--attenuato); margin:0 0 5px}
+  .anagrafe dd{margin:0; font-size:1rem; color:var(--oro-chiaro)}
+
+  table{width:100%; border-collapse:collapse; font-size:.87rem}
+  th{text-align:left; font-weight:400; font-size:.66rem; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--attenuato); padding:0 8px 9px;
+    border-bottom:1px solid var(--filo)}
+  td{padding:7px 8px; border-bottom:1px solid var(--filo2)}
+  tr:hover td{background:rgba(201,162,39,.055)}
+  .g{font-size:1.12rem; width:26px; text-align:center}
+  .num{font-variant-numeric:tabular-nums; color:var(--oro-chiaro)}
+  .r{color:var(--tensione); font-size:.78rem}
+  .fuoco{color:var(--fuoco)} .terra{color:var(--terra)}
+  .aria{color:var(--aria)} .acqua{color:var(--acqua)}
+
+  .barre{margin-top:6px}
+  .barra{display:grid; grid-template-columns:62px 1fr 34px; align-items:center;
+    gap:12px; margin:9px 0; font-size:.83rem}
+  .barra .traccia{height:7px; background:rgba(255,255,255,.06); border-radius:1px; overflow:hidden}
+  .barra .riemp{height:100%; display:block}
+  .barra .val{text-align:right; font-variant-numeric:tabular-nums; color:var(--attenuato)}
+
+  .linguette{display:flex; gap:0; border-bottom:1px solid var(--filo); margin-bottom:18px}
+  .linguette button{
+    background:none; border:0; border-bottom:2px solid transparent; color:var(--attenuato);
+    font-family:inherit; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase;
+    padding:10px 20px; cursor:pointer;
+  }
+  .linguette button[aria-selected=true]{color:var(--oro); border-bottom-color:var(--oro)}
+  .registro{display:none} .registro.attivo{display:block}
+  .registro p{margin:0 0 14px}
+  .registro p:last-child{margin-bottom:0}
+  .voce{font-size:.66rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--attenuato); display:block; margin-bottom:5px}
+  .capolettera::first-letter{float:left; font-size:3.1rem; line-height:.82; padding:4px 10px 0 0;
+    color:var(--oro); font-variant:small-caps}
+
+  .largo{grid-column:1/-1}
+  .due{display:grid; grid-template-columns:1fr 1fr; gap:34px}
+  @media (max-width:760px){.due{grid-template-columns:1fr}}
+
+  .tavolozza{display:grid; grid-template-columns:repeat(auto-fit,minmax(98px,1fr)); gap:10px}
+  .tinta{border:1px solid var(--filo2)}
+  .tinta i{display:block; height:46px}
+  .tinta b{display:block; font-weight:400; font-size:.7rem; padding:7px 8px 2px; color:var(--testo)}
+  .tinta code{display:block; font-size:.66rem; padding:0 8px 7px; color:var(--attenuato);
+    font-family:ui-monospace,monospace}
+
+  footer{text-align:center; margin-top:44px; padding-top:22px; border-top:1px solid var(--filo2);
+    font-size:.78rem; color:var(--attenuato); font-style:italic}
+</style>
+</head>
+<body>
+<div class="foglio">
+
+<header>
+  <div class="occhiello">Studio d'estetica &middot; non funzionante</div>
+  <h1>Tema e Cielo</h1>
+  <div class="filetto"><i></i><span>&#10022;</span><i></i></div>
+  <p class="sottotitolo">La carta del cielo alla nascita, e il cielo com'era davvero.</p>
+</header>
+
+<dl class="anagrafe">
+  <div><dt>Soggetto</dt><dd>Esempio</dd></div>
+  <div><dt>Data</dt><dd>12 giugno 1978</dd></div>
+  <div><dt>Ora locale</dt><dd>23:14 <span style="color:var(--attenuato);font-size:.8rem">(UTC+2)</span></dd></div>
+  <div><dt>Luogo</dt><dd>Milano, IT</dd></div>
+  <div><dt>Coordinate</dt><dd class="num">45,4642&deg;N 9,1900&deg;E</dd></div>
+  <div><dt>Case</dt><dd>Placido</dd></div>
+</dl>
+
+<div class="griglia">
+
+  <section class="carta">
+    <h2>Il tema natale</h2>
+    <p class="nota">Ascendente 22&deg;&thinsp;Capricorno &middot; Medio Cielo 25&deg;&thinsp;Scorpione &middot; carta notturna</p>
+    <svg id="ruota" viewBox="0 0 640 640" role="img" aria-label="Ruota del tema natale"></svg>
+  </section>
+
+  <section class="carta">
+    <h2>Il cielo di quell'istante</h2>
+    <p class="nota">Volta celeste da Milano, 12.VI.1978 21:14&thinsp;UT &middot; Sole 14&deg; sotto l'orizzonte, crepuscolo astronomico</p>
+    <svg id="volta" viewBox="0 0 640 640" role="img" aria-label="Volta celeste"></svg>
+  </section>
+
+  <section class="carta">
+    <h2>Posizioni</h2>
+    <p class="nota">Longitudine eclittica, casa, dignit&agrave; essenziale</p>
+    <table id="tabella"></table>
+  </section>
+
+  <section class="carta">
+    <h2>Bilanci</h2>
+    <p class="nota">Conteggio pesato: luminari e Ascendente valgono doppio</p>
+    <div class="barre" id="barre"></div>
+    <table style="margin-top:20px" id="aspetti"></table>
+  </section>
+
+  <section class="carta largo">
+    <h2>La lettura</h2>
+    <p class="nota">Ogni voce esiste nei due registri. La linguetta li scambia ovunque nel portale.</p>
+    <div class="linguette" role="tablist">
+      <button role="tab" aria-selected="true" data-reg="trad">Tradizionale</button>
+      <button role="tab" aria-selected="false" data-reg="mod">Moderna</button>
+    </div>
+    <div class="due">
+      <div>
+        <div class="registro attivo" data-reg="trad">
+          <span class="voce">Signore dell'oroscopo &middot; Saturno in Leone, XI casa</span>
+          <p class="capolettera">Saturno regge l'Ascendente in Capricorno e si trova in Leone, segno del suo detrimento: il signore della carta &egrave; peregrino, privo di dignit&agrave; essenziale, e opera in casa undicesima, degli amici e delle speranze. La sua congiunzione con Marte &mdash; malefico minore, in triplicit&agrave; di fuoco &mdash; dice di una volont&agrave; che si esercita contro resistenze scelte da s&eacute;.</p>
+          <p>Il quadrato di Urano dalla nona, a orbe di venti primi, &egrave; applicativo: la configurazione non &egrave; sciolta, ma in atto.</p>
+        </div>
+        <div class="registro" data-reg="mod">
+          <span class="voce">Signore dell'oroscopo &middot; Saturno in Leone, XI casa</span>
+          <p class="capolettera">Saturno governa la soglia della carta e siede nel segno del suo opposto: la struttura chiede di manifestarsi attraverso ci&ograve; che le &egrave; meno congeniale, l'esposizione e il riconoscimento. Nell'undicesima casa la prova si gioca nel gruppo &mdash; appartenere senza sciogliersi, guidare senza dominare.</p>
+          <p>La congiunzione di Marte d&agrave; a questa struttura una spinta che non si placa; il quadrato di Urano, stretto a venti primi, la mette periodicamente in discussione.</p>
+        </div>
+      </div>
+      <div>
+        <div class="registro attivo" data-reg="trad">
+          <span class="voce">Luna congiunta a Plutone &middot; 13&deg; Bilancia, VIII casa</span>
+          <p>Congiunzione a orbe di dodici primi in ottava casa. La Luna, in esilio di dignit&agrave; in Bilancia quanto a triplicit&agrave; notturna, riceve il pi&ugrave; lento dei corpi nel luogo della morte e dei beni altrui: gli affetti passano per ci&ograve; che si eredita e ci&ograve; che si perde.</p>
+          <p>Sestile di Saturno dall'undicesima a orbe di dodici primi, che modera.</p>
+        </div>
+        <div class="registro" data-reg="mod">
+          <span class="voce">Luna congiunta a Plutone &middot; 13&deg; Bilancia, VIII casa</span>
+          <p>Dodici primi separano i due corpi: la vita emotiva e la facolt&agrave; di trasformazione nascono dallo stesso gesto. In ottava casa il sentimento non conosce mezze misure &mdash; ci&ograve; che tocca, lo cambia, e chiede di essere cambiato a sua volta.</p>
+          <p>Il sestile esatto di Saturno offre la forma entro cui tutto questo pu&ograve; reggere nel tempo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="carta largo">
+    <h2>Tavolozza</h2>
+    <p class="nota">I quattro elementi governano ruota, tabelle, barre e grafici delle statistiche: un solo codice cromatico in tutto il portale.</p>
+    <div class="tavolozza">
+      <div class="tinta"><i style="background:#0b1026"></i><b>Notte</b><code>#0b1026</code></div>
+      <div class="tinta"><i style="background:#121a3a"></i><b>Pannello</b><code>#121a3a</code></div>
+      <div class="tinta"><i style="background:#c9a227"></i><b>Oro incisione</b><code>#c9a227</code></div>
+      <div class="tinta"><i style="background:#e8d18a"></i><b>Oro chiaro</b><code>#e8d18a</code></div>
+      <div class="tinta"><i style="background:#c05a2e"></i><b>Fuoco</b><code>#c05a2e</code></div>
+      <div class="tinta"><i style="background:#6b7f4a"></i><b>Terra</b><code>#6b7f4a</code></div>
+      <div class="tinta"><i style="background:#c9a227"></i><b>Aria</b><code>#c9a227</code></div>
+      <div class="tinta"><i style="background:#41739c"></i><b>Acqua</b><code>#41739c</code></div>
+      <div class="tinta"><i style="background:#3f8f7a"></i><b>Armonico</b><code>#3f8f7a</code></div>
+      <div class="tinta"><i style="background:#b4432f"></i><b>Tensione</b><code>#b4432f</code></div>
+      <div class="tinta"><i style="background:#efe6d2"></i><b>Pergamena</b><code>#efe6d2</code></div>
+      <div class="tinta"><i style="background:#2b2418"></i><b>Inchiostro</b><code>#2b2418</code></div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Studio d'estetica per <em>Tema e Cielo</em>. Posizioni verosimili, non calcolate: servono a mostrare
+  la resa. Nella versione definitiva i glifi sono uno sprite SVG disegnato, non caratteri Unicode.
+</footer>
+</div>
+
+<script>
+/* ══════════ dati d'esempio ══════════ */
+const SEGNI=[
+ {n:'Ariete',g:'♈',e:'fuoco'},{n:'Toro',g:'♉',e:'terra'},
+ {n:'Gemelli',g:'♊',e:'aria'},{n:'Cancro',g:'♋',e:'acqua'},
+ {n:'Leone',g:'♌',e:'fuoco'},{n:'Vergine',g:'♍',e:'terra'},
+ {n:'Bilancia',g:'♎',e:'aria'},{n:'Scorpione',g:'♏',e:'acqua'},
+ {n:'Sagittario',g:'♐',e:'fuoco'},{n:'Capricorno',g:'♑',e:'terra'},
+ {n:'Acquario',g:'♒',e:'aria'},{n:'Pesci',g:'♓',e:'acqua'}];
+const EL={fuoco:'#c05a2e',terra:'#6b7f4a',aria:'#c9a227',acqua:'#41739c'};
+
+const CORPI=[
+ {s:'Sole',   g:'☉',L: 81.93,c:5, d:'—',        r:0},
+ {s:'Luna',   g:'☽',L:193.00,c:8, d:'—',        r:0},
+ {s:'Mercurio',g:'☿',L: 94.20,c:6, d:'—',        r:0},
+ {s:'Venere', g:'♀',L: 89.10,c:5, d:'—',        r:0},
+ {s:'Marte',  g:'♂',L:135.10,c:7, d:'triplicità',r:0},
+ {s:'Giove',  g:'♃',L: 92.35,c:5, d:'domicilio',      r:0},
+ {s:'Saturno',g:'♄',L:132.80,c:7, d:'detrimento',     r:0},
+ {s:'Urano',  g:'♅',L:222.55,c:9, d:'—',         r:1},
+ {s:'Nettuno',g:'♆',L:257.35,c:11,d:'—',         r:1},
+ {s:'Plutone',g:'♇',L:193.20,c:8, d:'—',         r:1},
+ {s:'Nodo',   g:'☊',L:151.73,c:7, d:'—',         r:0},
+ {s:'Chirone',g:'⚷',L: 37.83,c:3, d:'—',         r:1}];
+
+const CUSPIDI=[292,340,25,55,75,93,112,160,205,235,255,273];
+const ASC=292, MC=235;
+
+const ASP=[
+ ['Sole','Venere','cong',2.8],['Venere','Giove','cong',3.3],['Giove','Mercurio','cong',1.9],
+ ['Luna','Plutone','cong',0.2],['Marte','Saturno','cong',2.3],
+ ['Sole','Nettuno','opp',4.6],
+ ['Marte','Nettuno','tri',2.3],['Saturno','Nettuno','tri',4.6],
+ ['Nettuno','Plutone','ses',4.2],['Luna','Saturno','ses',0.2],['Luna','Marte','ses',2.1],
+ ['Urano','Marte','qua',2.5],['Urano','Saturno','qua',0.3]];
+const TIPO={cong:{c:'#c9a227',n:'Congiunzione',s:'☌'},opp:{c:'#b4432f',n:'Opposizione',s:'☍'},
+ tri:{c:'#3f8f7a',n:'Trigono',s:'△'},ses:{c:'#3f8f7a',n:'Sestile',s:'✲'},
+ qua:{c:'#b4432f',n:'Quadrato',s:'□'}};
+
+/* ══════════ ruota ══════════ */
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a)=>{const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);return n};
+const CX=320,CY=320;
+const pt=(L,r)=>{const f=(180+(L-ASC))*Math.PI/180;return[CX+r*Math.cos(f),CY-r*Math.sin(f)]};
+const anello=(p,r)=>p.appendChild(el('circle',{cx:CX,cy:CY,r,fill:'none',stroke:'rgba(201,162,39,.30)','stroke-width':1}));
+const segm=(p,L,r1,r2,o)=>{const a=pt(L,r1),b=pt(L,r2);
+  p.appendChild(el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:'#c9a227','stroke-width':o.w||1,opacity:o.o||.3,...(o.d?{'stroke-dasharray':o.d}:{})}))};
+
+function ruota(){
+ const s=document.getElementById('ruota'); s.innerHTML='';
+ const defs=el('defs',{});
+ const gr=el('radialGradient',{id:'fondoRuota'});
+ gr.appendChild(el('stop',{offset:'0%','stop-color':'#0d1330'}));
+ gr.appendChild(el('stop',{offset:'100%','stop-color':'#070b1c'}));
+ defs.appendChild(gr); s.appendChild(defs);
+ s.appendChild(el('circle',{cx:CX,cy:CY,r:302,fill:'url(#fondoRuota)'}));
+
+ [302,296,288,250,222,175,160,146].forEach(r=>anello(s,r));
+
+ /* settori dello zodiaco */
+ for(let i=0;i<12;i++){
+  const L=i*30, sg=SEGNI[i], col=EL[sg.e];
+  const a=pt(L,250), b=pt(L+30,250), c=pt(L+30,288), d=pt(L,288);
+  const arco=(r,x1,y1,x2,y2,sw)=>`A ${r} ${r} 0 0 ${sw} ${x2} ${y2}`;
+  s.appendChild(el('path',{d:`M ${a[0]} ${a[1]} ${arco(250,a[0],a[1],b[0],b[1],0)} L ${c[0]} ${c[1]} ${arco(288,c[0],c[1],d[0],d[1],1)} Z`,
+    fill:col,opacity:.13,stroke:'rgba(201,162,39,.28)','stroke-width':.8}));
+  const m=pt(L+15,269);
+  s.appendChild(el('text',{x:m[0],y:m[1]+8,'text-anchor':'middle','font-size':22,fill:col,opacity:.95})).textContent=sg.g;
+ }
+ /* tacche di grado */
+ for(let L=0;L<360;L++){
+  if(L%30===0) segm(s,L,250,296,{w:1.1,o:.5});
+  else if(L%10===0) segm(s,L,250,240,{w:.9,o:.4});
+  else if(L%5===0) segm(s,L,250,244,{w:.7,o:.28});
+  else segm(s,L,250,247,{w:.5,o:.16});
+ }
+ /* case */
+ CUSPIDI.forEach((L,i)=>{
+  const ang=(i===0||i===9), o=ang?{w:1.8,o:.95}:{w:1,o:.42,d:'4 4'};
+  segm(s,L,146,175,o); if(ang) segm(s,L,175,302,{w:1.6,o:.75});
+  const nxt=CUSPIDI[(i+1)%12], sp=((nxt-L)+360)%360, m=pt(L+sp/2,167);
+  s.appendChild(el('text',{x:m[0],y:m[1]+4,'text-anchor':'middle','font-size':11,
+    fill:'#9aa3c4','letter-spacing':'.08em'})).textContent=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][i];
+ });
+ /* etichette degli assi */
+ [[ASC,'AC',-1],[ASC+180,'DC',1],[MC,'MC',0],[MC+180,'IC',0]].forEach(([L,t])=>{
+  const p=pt(L,312);
+  s.appendChild(el('text',{x:p[0],y:p[1]+4,'text-anchor':'middle','font-size':11.5,
+    fill:'#e8d18a','letter-spacing':'.14em'})).textContent=t;
+ });
+
+ /* tela degli aspetti */
+ const byName=Object.fromEntries(CORPI.map(c=>[c.s,c]));
+ ASP.forEach(([a,b,t,orb])=>{
+  const A=pt(byName[a].L,146), B=pt(byName[b].L,146), T=TIPO[t];
+  const forza=Math.max(.22,1-orb/7);
+  s.appendChild(el('line',{x1:A[0],y1:A[1],x2:B[0],y2:B[1],stroke:T.c,
+    'stroke-width':(t==='cong'?1:.7)+forza*1.6,opacity:.25+forza*.5,
+    ...(t==='ses'||t==='cong'?{'stroke-dasharray':t==='cong'?'3 3':''}:{})}));
+ });
+
+ /* pianeti, con anti-collisione a rilassamento */
+ const ord=[...CORPI].sort((x,y)=>x.L-y.L);
+ let pos=ord.map(c=>c.L);
+ const MIN=9;
+ for(let it=0;it<220;it++){
+  for(let i=0;i<pos.length;i++){
+   const j=(i+1)%pos.length;
+   let d=((pos[j]-pos[i])+360)%360;
+   if(d<MIN){const spinta=(MIN-d)/2; pos[i]-=spinta; pos[j]+=spinta;}
+  }
+ }
+ ord.forEach((c,i)=>{
+  const L=pos[i];
+  const gp=pt(L,222), tacca=pt(c.L,250), guida=pt(L,238);
+  s.appendChild(el('line',{x1:tacca[0],y1:tacca[1],x2:guida[0],y2:guida[1],
+    stroke:'#c9a227',opacity:.45,'stroke-width':.8}));
+  const col=EL[SEGNI[Math.floor(((c.L%360)+360)%360/30)].e];
+  s.appendChild(el('text',{x:gp[0],y:gp[1]+7,'text-anchor':'middle','font-size':19,
+    fill:col})).textContent=c.g;
+  const gr2=pt(L,200);
+  s.appendChild(el('text',{x:gr2[0],y:gr2[1]+3,'text-anchor':'middle','font-size':9,
+    fill:'#9aa3c4'})).textContent=Math.floor(c.L%30)+'°'+(c.r?' ℞':'');
+ });
+}
+
+/* ══════════ volta celeste ══════════ */
+const STELLE=[
+ {n:'Vega',az:78,alt:66,m:0.0},{n:'Arturo',az:222,alt:58,m:-0.05},
+ {n:'Deneb',az:54,alt:44,m:1.25},{n:'Altair',az:103,alt:29,m:0.77},
+ {n:'Antares',az:176,alt:22,m:1.06},{n:'Spica',az:231,alt:33,m:0.98},
+ {n:'Polare',az:0,alt:45,m:1.98},{n:'Alkaid',az:285,alt:63,m:1.85},
+ {n:'Alphecca',az:196,alt:62,m:2.22}];
+const PIANETI_CIELO=[
+ {n:'Marte',g:'♂',az:288,alt:12},{n:'Saturno',g:'♄',az:285,alt:14},
+ {n:'Urano',g:'♅',az:180,alt:21},{n:'Nettuno',g:'♆',az:146,alt:13}];
+
+function volta(){
+ const s=document.getElementById('volta'); s.innerHTML='';
+ const R=282, cx=320, cy=320;
+ const proj=(az,alt)=>{const r=R*(90-alt)/90, a=az*Math.PI/180;return[cx+r*Math.sin(a),cy-r*Math.cos(a)]};
+
+ const defs=el('defs',{});
+ const g=el('radialGradient',{id:'cielo'});
+ [['0%','#0a1430'],['55%','#0c1838'],['82%','#14264e'],['100%','#25406e']]
+   .forEach(([o,c])=>g.appendChild(el('stop',{offset:o,'stop-color':c})));
+ defs.appendChild(g);
+ const cl=el('clipPath',{id:'cupola'});
+ cl.appendChild(el('circle',{cx,cy,r:R})); defs.appendChild(cl);
+ s.appendChild(defs);
+
+ s.appendChild(el('circle',{cx,cy,r:R,fill:'url(#cielo)'}));
+ const dentro=el('g',{'clip-path':'url(#cupola)'}); s.appendChild(dentro);
+
+ /* stelle di fondo, deterministiche */
+ let seme=20260922;
+ const rnd=()=>{seme=(seme*1103515245+12345)&0x7fffffff;return seme/0x7fffffff};
+ for(let i=0;i<620;i++){
+  const az=rnd()*360, alt=Math.acos(rnd())*180/Math.PI;
+  const p=proj(az,90-alt), m=rnd(), rr=.35+m*1.25;
+  const tinta=m>.86?'#cfd8ff':(m>.72?'#fff4d8':(m>.62?'#ffd9b8':'#ffffff'));
+  dentro.appendChild(el('circle',{cx:p[0],cy:p[1],r:rr,fill:tinta,opacity:.25+m*.6}));
+ }
+ /* almucantarat e verticali */
+ [15,30,45,60,75].forEach(a=>dentro.appendChild(el('circle',{cx,cy,r:R*(90-a)/90,
+   fill:'none',stroke:'rgba(201,162,39,.13)','stroke-width':.7,'stroke-dasharray':'2 5'})));
+ for(let az=0;az<360;az+=30){const a=proj(az,0),b=proj(az,88);
+  dentro.appendChild(el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+    stroke:'rgba(201,162,39,.11)','stroke-width':.7,'stroke-dasharray':'2 5'}))}
+ /* eclittica */
+ let d='';
+ for(let az=95;az<=290;az+=3){
+  const alt=42*Math.sin((az-95)/195*Math.PI)-4;
+  const p=proj(az,Math.max(alt,0)); d+=(d?' L ':'M ')+p[0]+' '+p[1];
+ }
+ dentro.appendChild(el('path',{d,fill:'none',stroke:'#c9a227',opacity:.5,
+   'stroke-width':1.1,'stroke-dasharray':'7 5'}));
+
+ /* stelle nominate */
+ STELLE.forEach(st=>{
+  const p=proj(st.az,st.alt), r=3.4-st.m*.55;
+  dentro.appendChild(el('circle',{cx:p[0],cy:p[1],r:r+2.6,fill:'#cfe0ff',opacity:.14}));
+  dentro.appendChild(el('circle',{cx:p[0],cy:p[1],r,fill:'#f2f6ff'}));
+  dentro.appendChild(el('text',{x:p[0]+r+5,y:p[1]+3.5,'font-size':10,
+    fill:'#9aa3c4'})).textContent=st.n;
+ });
+ /* pianeti */
+ PIANETI_CIELO.forEach(pl=>{
+  const p=proj(pl.az,pl.alt);
+  dentro.appendChild(el('circle',{cx:p[0],cy:p[1],r:7,fill:'#c9a227',opacity:.16}));
+  dentro.appendChild(el('text',{x:p[0],y:p[1]+6,'text-anchor':'middle','font-size':16,
+    fill:'#e8d18a'})).textContent=pl.g;
+  dentro.appendChild(el('text',{x:p[0],y:p[1]+21,'text-anchor':'middle','font-size':9.5,
+    fill:'#9aa3c4'})).textContent=pl.n;
+ });
+ /* Luna con fase reale */
+ const lp=proj(205,25);
+ const lg=el('g',{transform:`translate(${lp[0]},${lp[1]}) rotate(24)`});
+ lg.appendChild(el('circle',{cx:0,cy:0,r:20,fill:'#e8d18a',opacity:.10}));
+ lg.appendChild(el('circle',{cx:0,cy:0,r:12,fill:'#0a1430'}));
+ lg.appendChild(el('path',{d:'M 0 -12 A 12 12 0 0 1 0 12 A 7 12 0 0 0 0 -12 Z',fill:'#f0e4c0'}));
+ lg.appendChild(el('circle',{cx:0,cy:0,r:12,fill:'none',stroke:'rgba(232,209,138,.5)','stroke-width':.8}));
+ dentro.appendChild(lg);
+ dentro.appendChild(el('text',{x:lp[0],y:lp[1]+30,'text-anchor':'middle','font-size':9.5,
+   fill:'#9aa3c4'})).textContent='Luna · gibbosa crescente';
+
+ /* orizzonte e cardinali */
+ s.appendChild(el('circle',{cx,cy,r:R,fill:'none',stroke:'#c9a227','stroke-width':1.6,opacity:.75}));
+ s.appendChild(el('circle',{cx,cy,r:R+9,fill:'none',stroke:'rgba(201,162,39,.25)','stroke-width':.8}));
+ [['N',0],['E',90],['S',180],['O',270]].forEach(([t,az])=>{
+  const p=proj(az,-7.5);
+  s.appendChild(el('text',{x:p[0],y:p[1]+5,'text-anchor':'middle','font-size':13,
+    fill:'#e8d18a','letter-spacing':'.1em'})).textContent=t;
+ });
+ s.appendChild(el('text',{x:cx,y:cy-R+0,'text-anchor':'middle','font-size':0}));
+ s.appendChild(el('text',{x:cx,y:26,'text-anchor':'middle','font-size':9.5,
+   fill:'#9aa3c4','letter-spacing':'.18em'})).textContent='ZENIT AL CENTRO · SOLE, MERCURIO, VENERE E GIOVE SOTTO L’ORIZZONTE';
+}
+
+/* ══════════ tabelle ══════════ */
+function tabelle(){
+ const t=document.getElementById('tabella');
+ t.innerHTML='<thead><tr><th></th><th>Corpo</th><th>Posizione</th><th>Casa</th><th>Dignit&agrave;</th></tr></thead>';
+ const tb=document.createElement('tbody');
+ CORPI.forEach(c=>{
+  const i=Math.floor(c.L/30), sg=SEGNI[i];
+  const gr=Math.floor(c.L%30), mi=Math.round((c.L%1)*60);
+  tb.insertAdjacentHTML('beforeend',
+   `<tr><td class="g ${sg.e}">${c.g}</td><td>${c.s}</td>`+
+   `<td class="num">${gr}&deg;${String(mi).padStart(2,'0')}&prime; <span class="${sg.e}">${sg.g} ${sg.n}</span>`+
+   (c.r?' <span class="r">&#8478;</span>':'')+`</td>`+
+   `<td class="num">${['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][c.c-1]}</td>`+
+   `<td style="color:var(--attenuato);font-size:.82rem">${c.d}</td></tr>`);
+ });
+ t.appendChild(tb);
+
+ const a=document.getElementById('aspetti');
+ a.innerHTML='<thead><tr><th colspan="4">Aspetti &mdash; 13 contatti entro orbe</th></tr></thead>';
+ const ab=document.createElement('tbody');
+ const nome=Object.fromEntries(CORPI.map(c=>[c.s,c.g]));
+ [...ASP].sort((x,y)=>x[3]-y[3]).forEach(([x,y,t2,orb])=>{
+  const T=TIPO[t2];
+  ab.insertAdjacentHTML('beforeend',
+   `<tr><td class="g">${nome[x]}</td>`+
+   `<td style="color:${T.c};text-align:center;font-size:1rem">${T.s}</td>`+
+   `<td class="g">${nome[y]}</td>`+
+   `<td class="num" style="text-align:right">${orb.toFixed(1)}&deg;</td></tr>`);
+ });
+ a.appendChild(ab);
+
+ const b=document.getElementById('barre');
+ [['Fuoco',3,'fuoco'],['Terra',4,'terra'],['Aria',2,'aria'],['Acqua',5,'acqua'],
+  ['','',''],['Cardinale',5,'oro'],['Fisso',6,'oro'],['Mobile',3,'oro']].forEach(([n,v,k])=>{
+  if(!n){b.insertAdjacentHTML('beforeend','<div style="height:12px"></div>');return}
+  const col=k==='oro'?'#c9a227':EL[k];
+  b.insertAdjacentHTML('beforeend',
+   `<div class="barra"><span style="color:${col}">${n}</span>`+
+   `<span class="traccia"><i class="riemp" style="width:${v/7*100}%;background:${col}"></i></span>`+
+   `<span class="val">${v}</span></div>`);
+ });
+}
+
+document.querySelectorAll('.linguette button').forEach(b=>{
+ b.addEventListener('click',()=>{
+  document.querySelectorAll('.linguette button').forEach(x=>x.setAttribute('aria-selected',String(x===b)));
+  document.querySelectorAll('.registro').forEach(r=>r.classList.toggle('attivo',r.dataset.reg===b.dataset.reg));
+ });
+});
+
+ruota(); volta(); tabelle();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Configurazione reale: sta in /data/temaecielo-config/, qui non entra mai.
+/config/config.php
+
+# Materiale di terzi: gazetteer, catalogo stellare, poligoni dei fusi, GeoIP.
+# Non e' nostro e la AGPL non ci autorizza a ridistribuirlo. Si scarica con
+# bin/scarica-fonti.sh — vedi docs/FONTI.md.
+/fonti/
+
+# Roba che nasce a runtime.
+/storage/cache/
+/storage/log/
+*.log
+
+# Sporcizia di sistema.
+.DS_Store
+Thumbs.db
+*.swp
+*~
