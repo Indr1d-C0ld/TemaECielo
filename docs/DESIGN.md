@@ -1092,7 +1092,7 @@ sembra un errore del cielo.
 ## 23. Poscritto alla terza revisione
 
 Dopo l'archivio e la sezione Mondo, una revisione in due metà — il codice nuovo, e tutto il resto
-con occhi nuovi — e un secondo lotto di voci d'archivio (74, per un totale di 134). Le lezioni:
+con occhi nuovi — e un secondo e un terzo lotto di voci d'archivio (74 e 91, per un totale di 225). Le lezioni:
 
 ### 23.1 Un progetto scritto prima invecchia accanto al codice
 

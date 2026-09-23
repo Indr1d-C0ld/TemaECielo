@@ -26,7 +26,7 @@ NASA. Niente è approssimato e niente è inventato.
 | **La lettura** | Due registri affiancati — tradizionale (dignità, signorie, Lilly) e moderno (archetipi, Rudhyar) — montati per rilevanza, non concatenati. |
 | **Sinastria** | Rapida segno-contro-segno, o completa carta-contro-carta: aspetti incrociati, sovrapposizione delle case, composita di punti medi, **carta di Davison** — il cielo vero dell'istante a metà fra le due nascite, visto dal punto a metà fra i due luoghi — e quattro punteggi per area. |
 | **Carte del tempo** | Transiti su data scelta, rivoluzione solare, progressioni secondarie, direzioni di arco solare, profezioni annuali. |
-| **Archivio** | **134 carte** di persone celebri, eventi storici e fondazioni di Stati — 83 persone, 30 eventi, 21 nazioni e istituzioni, dal 1801 al 2020 — calcolate e documentate dalla regia: ognuna con la fonte dei dati e la **classe Rodden** dell'ora, dalla AA dell'atto di nascita alla C dell'ora convenzionale. Si aprono come ogni altra carta. Vedi [L'archivio](#larchivio). |
+| **Archivio** | **225 carte** di persone celebri, eventi storici e fondazioni di Stati — 147 persone, 54 eventi, 24 nazioni e istituzioni, dal 1801 al 2022 — calcolate e documentate dalla regia: ognuna con la fonte dei dati e la **classe Rodden** dell'ora, dalla AA dell'atto di nascita alla C dell'ora convenzionale. Si aprono come ogni altra carta. Vedi [L'archivio](#larchivio). |
 | **Il mondo** | L'astrologia mondiale. Gli **ingressi** del Sole nei segni cardinali e le **lunazioni** di un anno qualunque, eretti per una capitale a scelta. Il catalogo delle **eclissi** con serie di Saros, punto di massimo, visibilità dal luogo e i gradi che cadono sulle carte dell'archivio. I **cicli dei pianeti lenti** dal 1800 al 2399, con le congiunzioni triple, le mutazioni di Giove e Saturno e l'**indice ciclico di Barbault** in un grafico affiancato agli eventi storici. Le carte di evento, di fondazione e del mondo hanno una **lettura mondiale**: il Sole è chi governa, la Luna il popolo, e i pianeti sugli angoli vengono per primi. Vedi [Il mondo](#il-mondo). |
 | **Comunità** | Guestbook con due voti distinti (gradimento e attinenza), moderazione, statistiche pubbliche aggregate. |
 | **Regia** | Pannello per corpus, pagine redazionali, impostazioni, blocchi, registro accessi geolocalizzato offline. Tutte le carte salvate consultabili, e da ognuna una scheda per l'archivio. |
@@ -62,9 +62,9 @@ Ascendente. Per la Francia no: dal 1891 l'ora di Parigi era davvero l'ora legale
 
 | tipo | quante | categorie |
 |---|---|---|
-| **Persone** | 83 | scienza, arte, letteratura, musica, cinema, spettacolo, filosofia, politica, esplorazione, sport, religione |
-| **Eventi** | 30 | guerra, rivoluzione, politica, scienza, esplorazione, disastro, economia, cultura |
-| **Nazioni e istituzioni** | 21 | fondazione, costituzione, unione, moneta |
+| **Persone** | 147 | scienza, arte, letteratura, musica, cinema, spettacolo, filosofia, politica, esplorazione, sport, religione |
+| **Eventi** | 54 | guerra, rivoluzione, politica, scienza, esplorazione, disastro, economia, cultura |
+| **Nazioni e istituzioni** | 24 | fondazione, costituzione, unione, moneta |
 
 Si filtra per tipo, categoria, secolo (l'Ottocento è il 1800-1899, come nell'uso italiano) e per
 nome o luogo. Ogni voce ha un indirizzo leggibile e stabile — `/archivio/victor-hugo`,
@@ -86,7 +86,7 @@ di Lois Rodden:
 Sotto una carta di classe C o DD la pagina avverte che Ascendente, Medio Cielo e case vanno
 presi con cautela; nell'elenco l'Ascendente compare solo per le classi AA, A e B.
 
-**Da dove vengono le 134 voci.** Astro-Databank, la raccolta di riferimento, sta dietro un
+**Da dove vengono le 225 voci.** Astro-Databank, la raccolta di riferimento, sta dietro un
 controllo anti-robot che non si è voluto aggirare. I dati delle persone vengono da Astrotheme,
 che pubblica ora, luogo, classe Rodden e collezionista (Rodden, Gauquelin, Scholfield, Bordoni e
 altri): ogni carta è stata ricalcolata con il motore del portale e **confrontata con Ascendente e
@@ -98,7 +98,7 @@ Campion, *The Book of World Horoscopes*, per le carte di fondazione più note.
 esiste: il tempo medio di Roma, quello del luogo, l'ora delle ferrovie, l'ora di guerra. Ogni voce
 porta l'orologio (`LMT`, `RMT`, `CET`, `EST`...) e l'istante in Tempo Universale ricavato dalla
 fonte; l'importatore lo confronta con il fuso che il portale avrebbe applicato e segnala ogni
-differenza. Sono 17 su 134, e tutte volute: Martin Luther King nato ad Atlanta nel 1929 quando la
+differenza. Sono 25 su 225, e tutte volute: Martin Luther King nato ad Atlanta nel 1929 quando la
 città seguiva ancora l'ora del Centro, l'Ohio del 1930 senza ora legale, i lanci da Bajkonur
 cronometrati sull'ora di Mosca, Pietrogrado nel 1917 a tempo medio locale.
 
@@ -362,7 +362,7 @@ assets/              css, js, sprite dei glifi (disegnati, non Unicode), Leaflet
 bin/                 console, worker delle effemeridi, importatori (luoghi, stelle,
                      GeoIP, corpus, archivio)
 db/migrazioni/       SQL numerato, applicato una volta sola
-db/semi/             il corpus interpretativo e le 134 voci dell'archivio
+db/semi/             il corpus interpretativo e le 225 voci dell'archivio
 deploy/              bootstrap, installazione, conf Apache
 docs/                DESIGN.md (il progetto per esteso), FONTI.md
 tests/               414 prove di regressione in 14 file
