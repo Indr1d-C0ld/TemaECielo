@@ -39,7 +39,17 @@ final class StatisticheController
      * quella dei giorni in cui qualcuno aveva guardato il cielo. Una carta e'
      * una riga con un permalink, e nient'altro.
      */
-    private const CARTE_VERE = "tipo = 'natale' AND gettone IS NOT NULL";
+    private const CARTE_VERE = "tipo = 'natale' AND gettone IS NOT NULL
+                                AND id NOT IN (SELECT calcolo_id FROM archivio)";
+
+    /**
+     * Le persone che hanno calcolato una carta, senza quelle dell'archivio: le
+     * statistiche sono dei visitatori, e Einstein o la Repubblica Italiana non
+     * sono visitatori. Si usa come tabella al posto di `soggetti`.
+     */
+    private const VISITATORI = '(SELECT * FROM soggetti WHERE id NOT IN (
+                                    SELECT cs.soggetto_id FROM calcoli_soggetti cs
+                                      JOIN archivio a ON a.calcolo_id = cs.calcolo_id)) soggetti';
 
     /** @var list<array<string,mixed>>|null gli esiti decodificati, letti una volta sola */
     private ?array $carte = null;
@@ -98,9 +108,9 @@ final class StatisticheController
         return [
             'carte'      => (int) Database::valore('SELECT COUNT(*) FROM calcoli WHERE ' . self::CARTE_VERE),
             'richieste'  => (int) Database::valore('SELECT COALESCE(SUM(richieste),0) FROM calcoli WHERE ' . self::CARTE_VERE),
-            'soggetti'   => (int) Database::valore('SELECT COUNT(*) FROM soggetti'),
-            'luoghi'     => (int) Database::valore('SELECT COUNT(DISTINCT luogo_nome) FROM soggetti'),
-            'senza_ora'  => (int) Database::valore('SELECT COUNT(*) FROM soggetti WHERE precisione_ora = ?', ['ignota']),
+            'soggetti'   => (int) Database::valore('SELECT COUNT(*) FROM ' . self::VISITATORI . ''),
+            'luoghi'     => (int) Database::valore('SELECT COUNT(DISTINCT luogo_nome) FROM ' . self::VISITATORI . ''),
+            'senza_ora'  => (int) Database::valore('SELECT COUNT(*) FROM ' . self::VISITATORI . ' WHERE precisione_ora = ?', ['ignota']),
             'messaggi'   => (int) Database::valore('SELECT COUNT(*) FROM guestbook WHERE stato = ?', ['approvato']),
         ];
     }
@@ -201,15 +211,15 @@ final class StatisticheController
     {
         $decenni = Database::righe(
             'SELECT FLOOR(YEAR(data_nascita)/10)*10 AS decennio, COUNT(*) AS n
-               FROM soggetti GROUP BY decennio ORDER BY decennio'
+               FROM ' . self::VISITATORI . ' GROUP BY decennio ORDER BY decennio'
         );
         $mesi = Database::righe(
-            'SELECT MONTH(data_nascita) AS mese, COUNT(*) AS n FROM soggetti GROUP BY mese ORDER BY mese'
+            'SELECT MONTH(data_nascita) AS mese, COUNT(*) AS n FROM ' . self::VISITATORI . ' GROUP BY mese ORDER BY mese'
         );
         // L'ora la sanno solo quelli che l'hanno dichiarata: il grafico dice
         // qualcosa sulle nascite solo se si esclude chi non la conosce.
         $ore = Database::righe(
-            'SELECT HOUR(ora_nascita) AS ora, COUNT(*) AS n FROM soggetti
+            'SELECT HOUR(ora_nascita) AS ora, COUNT(*) AS n FROM ' . self::VISITATORI . '
               WHERE ora_nascita IS NOT NULL AND precisione_ora = ? GROUP BY ora ORDER BY ora',
             ['esatta'],
         );

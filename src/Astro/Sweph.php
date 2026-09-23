@@ -39,6 +39,15 @@ final class Sweph
     // swe_azalt
     public const ECL_A_ORIZZONTE = 0;
 
+    // eclissi: il tipo, come bandiere
+    public const ECL_CENTRALE    = 1;
+    public const ECL_NONCENTRALE = 2;
+    public const ECL_TOTALE      = 4;
+    public const ECL_ANULARE     = 8;
+    public const ECL_PARZIALE    = 16;
+    public const ECL_IBRIDA      = 32;
+    public const ECL_PENOMBRALE  = 64;
+
     private FFI $ffi;
     private bool $conFile;
     private string $versione;
@@ -63,6 +72,14 @@ final class Sweph
         void swe_azalt(double tjd_ut, int calc_flag, double *geopos, double atpress, double attemp,
                        double *xin, double *xaz);
         void swe_cotrans(double *xpo, double *xpn, double eps);
+        int swe_sol_eclipse_when_glob(double tjd_start, int ifl, int ifltype, double *tret, int backward, char *serr);
+        int swe_sol_eclipse_where(double tjd, int ifl, double *geopos, double *attr, char *serr);
+        int swe_sol_eclipse_when_loc(double tjd_start, int ifl, double *geopos, double *tret, double *attr,
+                                     int backward, char *serr);
+        int swe_lun_eclipse_when(double tjd_start, int ifl, int ifltype, double *tret, int backward, char *serr);
+        int swe_lun_eclipse_how(double tjd_ut, int ifl, double *geopos, double *attr, char *serr);
+        int swe_lun_eclipse_when_loc(double tjd_start, int ifl, double *geopos, double *tret, double *attr,
+                                     int backward, char *serr);
         C;
 
     public function __construct(string $percorsoLibreria, string $percorsoEffemeridi)
@@ -356,6 +373,106 @@ final class Sweph
             'azimut'            => Corpi::norma($xaz[0] + 180.0),
             'altezza_vera'      => $xaz[1],
             'altezza_apparente' => $xaz[2],
+        ];
+    }
+
+    /**
+     * La prossima eclissi di Sole sulla Terra dopo un istante, dove e quanto.
+     *
+     * @return array{tipo:int,jd:float,lon:float,lat:float,magnitudine:float,oscuramento:float,saros:int,membro:int}|null
+     */
+    public function eclissiSole(float $jdDa): ?array
+    {
+        $tret = FFI::new('double[10]');
+        $serr = FFI::new('char[256]');
+        $ifl  = $this->conFile ? self::SWIEPH : self::MOSEPH;
+
+        $tipo = $this->ffi->swe_sol_eclipse_when_glob($jdDa, $ifl, 0, $tret, 0, FFI::cast('char *', $serr));
+        if ($tipo <= 0) {
+            return null;
+        }
+        $jd = $tret[0];
+
+        // Il punto della Terra dove l'eclissi e' massima, e i suoi numeri.
+        $geopos = FFI::new('double[10]');
+        $attr   = FFI::new('double[20]');
+        $this->ffi->swe_sol_eclipse_where($jd, $ifl, $geopos, $attr, FFI::cast('char *', $serr));
+
+        return [
+            'tipo'        => $tipo,
+            'jd'          => $jd,
+            'lon'         => $geopos[0],
+            'lat'         => $geopos[1],
+            'magnitudine' => $attr[8] > 0 ? $attr[8] : $attr[0],
+            'oscuramento' => $attr[2],
+            'saros'       => (int) $attr[9],
+            'membro'      => (int) $attr[10],
+        ];
+    }
+
+    /**
+     * La prossima eclissi di Luna dopo un istante.
+     *
+     * @return array{tipo:int,jd:float,magnitudine:float,penombrale:float,saros:int,membro:int}|null
+     */
+    public function eclissiLuna(float $jdDa): ?array
+    {
+        $tret = FFI::new('double[10]');
+        $serr = FFI::new('char[256]');
+        $ifl  = $this->conFile ? self::SWIEPH : self::MOSEPH;
+
+        $tipo = $this->ffi->swe_lun_eclipse_when($jdDa, $ifl, 0, $tret, 0, FFI::cast('char *', $serr));
+        if ($tipo <= 0) {
+            return null;
+        }
+        $jd = $tret[0];
+
+        $geopos = FFI::new('double[3]');
+        $attr   = FFI::new('double[20]');
+        $this->ffi->swe_lun_eclipse_how($jd, $ifl, $geopos, $attr, FFI::cast('char *', $serr));
+
+        return [
+            'tipo'        => $tipo,
+            'jd'          => $jd,
+            'magnitudine' => $attr[0],
+            'penombrale'  => $attr[1],
+            'saros'       => (int) $attr[9],
+            'membro'      => (int) $attr[10],
+        ];
+    }
+
+    /**
+     * La prossima eclissi visibile da un luogo, di Sole o di Luna: il massimo
+     * locale e quanto se ne vede da li'.
+     *
+     * @return array{jd:float,magnitudine:float,oscuramento:float,penombrale:float,altezza:float}|null
+     */
+    public function eclissiLocale(bool $sole, float $jdDa, float $lat, float $lon, float $alt): ?array
+    {
+        $geopos = FFI::new('double[3]');
+        $geopos[0] = $lon; $geopos[1] = $lat; $geopos[2] = $alt;
+        $tret = FFI::new('double[10]');
+        $attr = FFI::new('double[20]');
+        $serr = FFI::new('char[256]');
+        $ifl  = $this->conFile ? self::SWIEPH : self::MOSEPH;
+
+        $r = $sole
+            ? $this->ffi->swe_sol_eclipse_when_loc($jdDa, $ifl, $geopos, $tret, $attr, 0, FFI::cast('char *', $serr))
+            : $this->ffi->swe_lun_eclipse_when_loc($jdDa, $ifl, $geopos, $tret, $attr, 0, FFI::cast('char *', $serr));
+        if ($r <= 0) {
+            return null;
+        }
+
+        return [
+            'jd'          => $tret[0],
+            'magnitudine' => $sole ? ($attr[8] > 0 ? $attr[8] : $attr[0]) : $attr[0],
+            'oscuramento' => $sole ? $attr[2] : 0.0,
+            // Di un'eclissi di penombra conta la magnitudine di penombra: quella
+            // d'ombra, per definizione, e' zero o negativa.
+            'penombrale'  => $sole ? 0.0 : $attr[1],
+            // L'altezza del corpo sull'orizzonte al massimo: sotto zero, da li'
+            // il massimo non si vede, anche se una parte dell'eclissi si'.
+            'altezza'     => $attr[5],
         ];
     }
 }

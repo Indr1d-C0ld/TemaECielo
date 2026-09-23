@@ -15,7 +15,8 @@ $voci = [
     ['/',            'Calcola',      'home',        false],
     ['/cielo',       'Il cielo',     'cielo',       false],
     ['/sinastria',   'Sinastria',    'sinastria',   false],
-    ['/oggi',        'Oggi',         'oggi',        false],
+    ['/archivio',    'Archivio',     'archivio',    false],
+    ['/mondo',       'Mondo',        'mondo',       false],
     ['/statistiche', 'Statistiche',  'statistiche', false],
     ['/guestbook',   'Guestbook',    'guestbook',   false],
 ];

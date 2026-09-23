@@ -777,6 +777,8 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
                border: 1px solid var(--filo-tenue); border-radius: 2px; padding: 1px 7px;
                vertical-align: .12em; }
 .voce.acceso { background: rgba(201, 162, 39, .07); }
+/* Nella lettura mondiale un pianeta sugli angoli «firma» la carta. */
+.voce-angolare .voce-perche { color: var(--oro); border-color: var(--oro); }
 
 @media print {
   .lettura .linguette { display: none; }
@@ -962,6 +964,81 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
 .navigazione .voce-soglia a:hover { opacity: 1; }
 
 /* ===========================================================================
+   L'archivio: persone, eventi, nazioni
+   =========================================================================== */
+
+/* Schede in griglia: tante colonne quante ne stanno, mai sotto i 15rem. Nessuna
+   media query: la griglia si adatta da sola dal telefono al monitor. */
+.archivio-voci { list-style: none; margin: 1.2rem 0 2rem; padding: 0;
+                 display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 12px; }
+.voce-archivio { display: grid; gap: 4px; padding: 14px 16px; background: var(--pannello-2);
+                 border: 1px solid var(--filo-tenue); border-radius: 3px; }
+.voce-archivio:hover { border-color: var(--filo); }
+.voce-nome { font-size: 1.05rem; color: var(--oro-chiaro); text-decoration: none; }
+.voce-nome:hover { color: var(--oro); text-decoration: underline; }
+.voce-quando { font-size: .86rem; }
+.voce-dove { font-size: .82rem; }
+.voce-segni { display: flex; gap: 12px; flex-wrap: wrap; font-size: .82rem; margin-top: 2px; }
+.voce-segno .glifo { width: 1.05em; height: 1.05em; }
+.voce-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+/* Le classi di Rodden: il colore dice a colpo d'occhio quanto e' solida l'ora. */
+.rodden-aa { border-color: var(--armonico); color: var(--armonico); }
+.rodden-a  { border-color: var(--armonico); color: var(--armonico); opacity: .85; }
+.rodden-b  { border-color: var(--oro); color: var(--oro); }
+.rodden-c, .rodden-dd { border-color: var(--tensione); color: var(--tensione); }
+.rodden-x  { border-color: var(--filo); color: var(--attenuato); }
+
+.scheda-archivio { margin: 0 0 1.6rem; padding: 14px 18px; border-left: 3px solid var(--oro);
+                   background: var(--velo); }
+.scheda-archivio .prosa { margin-bottom: .6rem; }
+.scheda-fonte { margin: 0; font-size: .86rem; color: var(--attenuato); }
+.definizioni-rodden { display: grid; gap: 8px; margin: 0 0 18px; }
+.definizioni-rodden div { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: 12px; }
+.definizioni-rodden dt { color: var(--testo); }
+.definizioni-rodden dd { margin: 0; color: var(--attenuato); font-size: .9rem; }
+
+/* --------------------------------------------------------------------------
+   Il mondo: astrologia mondiale
+   -------------------------------------------------------------------------- */
+.mondo-ingressi { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+                  gap: 1.2rem; margin: 2rem 0; }
+.mondo-riquadro { border: 1px solid var(--filo-tenue); padding: 1.1rem 1.3rem; background: var(--velo); }
+.mondo-riquadro h2 { margin-top: 0; font-size: 1.15rem; }
+.mondo-riquadro p { font-size: .9rem; }
+.mondo-prossimo { margin: .6rem 0 0; padding-top: .6rem; border-top: 1px solid var(--filo-tenue); }
+.mondo-prossimo .tenue { display: block; font-size: .64rem; letter-spacing: .16em; text-transform: uppercase; }
+.mondo-scorri { display: flex; justify-content: space-between; margin: 1rem 0; font-size: .9rem; }
+.riga-eclissi td { background: rgba(201, 162, 39, .07); }
+.riga-mutazione td { border-top: 1px solid var(--oro); }
+.eclissi-elenco { list-style: none; padding: 0; margin: 1.5rem 0; }
+.eclissi { border-left: 2px solid var(--filo); padding: .2rem 0 .2rem 1.1rem; margin: 0 0 1.4rem; }
+.eclissi-sole { border-left-color: var(--oro); }
+.eclissi h3 { margin: 0 0 .3rem; font-size: 1.02rem; font-weight: 400; }
+.eclissi h3 .tenue { font-size: .85rem; margin-left: .5rem; }
+.eclissi p { margin: .15rem 0; font-size: .88rem; }
+.eclissi-dati span + span::before { content: " · "; color: var(--attenuato); }
+.indice-riquadro { margin: 1.4rem 0 2rem; }
+.indice-riquadro figcaption { margin-top: .8rem; font-size: .84rem; color: var(--attenuato); }
+.indice-ciclico { display: block; width: 100%; height: auto; }
+.indice-ciclico .ic-griglia { stroke: var(--filo-tenue, #2a3350); stroke-width: 1; }
+.indice-ciclico .ic-secolo { stroke: var(--filo, #3d4870); }
+.indice-ciclico .ic-media { stroke: var(--attenuato, #8a93b0); stroke-width: 1; stroke-dasharray: 4 4; }
+.indice-ciclico .ic-curva { fill: none; stroke: var(--oro, #c9a227); stroke-width: 1.6; stroke-linejoin: round; }
+.indice-ciclico .ic-minimo { fill: var(--tensione, #c0574f); }
+.indice-ciclico .ic-oggi { stroke: var(--armonico, #5f9e7a); stroke-width: 1.5; }
+.indice-ciclico .ic-evento { stroke: var(--testo, #d8dcea); stroke-width: 1.5; opacity: .75; }
+.indice-ciclico .ic-nazione { stroke: var(--oro-chiaro, #e2c766); }
+.indice-ciclico a:hover .ic-evento { opacity: 1; stroke-width: 3; }
+.indice-ciclico text { font-family: inherit; fill: var(--attenuato, #8a93b0); }
+.indice-ciclico .ic-etichetta { font-size: 11px; }
+.indice-ciclico .ic-anno { font-size: 10px; fill: var(--tensione, #c0574f); }
+.indice-ciclico .ic-legenda { font-size: 10px; }
+details.ciclo { border-top: 1px solid var(--filo-tenue); padding: .4rem 0; }
+details.ciclo summary { cursor: pointer; list-style-position: outside; }
+details.ciclo summary h2 { display: inline; font-size: 1.15rem; }
+
+/* ===========================================================================
    Adattamento a schermi stretti e a dita
 
    Sta in fondo di proposito. Un foglio di stile si legge dall'alto in basso e
@@ -1073,4 +1150,8 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
 
 @media (max-width: 720px) {
   .due { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .definizioni-rodden div { grid-template-columns: 1fr; gap: 2px; }
 }

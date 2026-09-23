@@ -47,6 +47,9 @@ final class Motore
      */
     private const VERSIONE = 3;
 
+    /** Versione dei calcoli mondiali in cache su file (vedi mondo()). */
+    private const VERSIONE_MONDO = 2;
+
     /** Quanti giorni si tiene una riga di cache che nessuno richiede piu'. */
     private const CACHE_GIORNI = 30;
 
@@ -115,6 +118,46 @@ final class Motore
     public function ritorno(array $dati): array
     {
         return $this->invoca(['operazione' => 'ritorno'] + $dati);
+    }
+
+    /**
+     * I calcoli dell'astrologia mondiale: l'anno (ingressi e lunazioni), le
+     * eclissi, i cicli dei lenti.
+     *
+     * Non vanno nella tabella della cache: non sono carte, non hanno una
+     * persona, e non scadono mai — il cielo del 1848 non cambia. Stanno in
+     * file JSON sotto storage/cache/mondo, uno per domanda. La versione entra
+     * nella chiave come per le carte: alzarla rifa' tutto.
+     *
+     * @param 'anno'|'eclissi'|'cicli' $operazione
+     * @param array<string,mixed> $dati
+     * @return array<string,mixed>
+     */
+    public function mondo(string $operazione, array $dati): array
+    {
+        $domanda = ['operazione' => $operazione] + $dati;
+        $cartella = $this->radice . '/storage/cache/mondo';
+        $file = $cartella . '/' . $operazione . '-' . substr(self::impronta($domanda + ['v' => self::VERSIONE_MONDO]), 0, 24) . '.json';
+
+        if (is_file($file)) {
+            $letto = json_decode((string) file_get_contents($file), true);
+            if (is_array($letto) && ($letto['ok'] ?? false) === true) {
+                return $letto;
+            }
+        }
+
+        $esito = $this->invoca($domanda);
+
+        if (is_dir($cartella) || @mkdir($cartella, 02775, true)) {
+            // Scrittura atomica: chi legge nello stesso istante trova il file
+            // vecchio o quello nuovo, mai uno a meta'.
+            $tmp = $file . '.' . bin2hex(random_bytes(4));
+            if (@file_put_contents($tmp, (string) json_encode($esito)) !== false) {
+                @rename($tmp, $file);
+            }
+        }
+
+        return $esito;
     }
 
     /** @return array<string,mixed> */

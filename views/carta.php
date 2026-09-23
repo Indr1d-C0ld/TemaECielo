@@ -22,10 +22,44 @@ $offsetTesto = sprintf('%s%02d:%02d',
     intdiv(abs((int) $soggetto['offset_minuti']), 60),
     abs((int) $soggetto['offset_minuti']) % 60);
 ?>
+<?php
+$scheda = $scheda ?? null;
+$archivio = $scheda !== null && (int) $scheda['pubblicata'] === 1;
+// Una carta d'archivio si rilegge al suo indirizzo pubblico, non al gettone.
+$indirizzo = $archivio ? '/archivio/' . $scheda['slug'] : '/carta/' . $gettone;
+$occhiello = match ($scheda['tipo'] ?? '') {
+    'evento'  => 'Carta di evento',
+    'nazione' => 'Carta di fondazione',
+    default   => 'Tema natale',
+};
+?>
 <article class="cartiglio">
-  <p class="occhiello">Tema natale</p>
-  <h1><?= e($soggetto['nome'] !== '' ? $soggetto['nome'] : 'Carta anonima') ?></h1>
+  <p class="occhiello"><?= e($occhiello) ?><?= $archivio ? ' &middot; <a href="' . e(url('/archivio')) . '">archivio</a>' : '' ?></p>
+  <h1><?= e($scheda !== null ? (string) $scheda['nome'] : ($soggetto['nome'] !== '' ? $soggetto['nome'] : 'Carta anonima')) ?></h1>
   <div class="filetto"><i></i><span>&#10022;</span><i></i></div>
+
+  <?php if ($scheda !== null): ?>
+    <div class="scheda-archivio">
+      <?php if (trim((string) $scheda['nota']) !== ''): ?>
+        <div class="prosa"><?= \App\Support\Markdown::rendi((string) $scheda['nota']) ?></div>
+      <?php endif; ?>
+      <p class="scheda-fonte">
+        <span class="bollino rodden-<?= e(strtolower((string) $scheda['rodden'])) ?>"
+              title="<?= e(\App\Archivio\Archivio::RODDEN[$scheda['rodden']][1] ?? '') ?>">Rodden <?= e((string) $scheda['rodden']) ?></span>
+        <?= e(\App\Archivio\Archivio::RODDEN[$scheda['rodden']][0] ?? '') ?>
+        <?php if ((string) $scheda['fonte'] !== ''): ?>&middot; <?= e((string) $scheda['fonte']) ?><?php endif; ?>
+        <?php if ((string) $scheda['url_fonte'] !== ''): ?>
+          &middot; <a href="<?= e((string) $scheda['url_fonte']) ?>" rel="noopener noreferrer nofollow">fonte</a>
+        <?php endif; ?>
+      </p>
+      <?php if (in_array($scheda['rodden'], ['C', 'DD'], true)): ?>
+        <p class="tenue piccolo">Con un'ora incerta, Ascendente, Medio Cielo e case vanno presi con cautela; i pianeti nei segni no.</p>
+      <?php endif; ?>
+    </div>
+  <?php endif; ?>
+  <?php if (\App\Auth\Auth::amministratore()): ?>
+    <p class="nota-piccola"><a href="<?= e(url('/admin/carte/' . $gettone)) ?>"><?= $scheda !== null ? 'Modifica la scheda d\'archivio' : 'Metti questa carta nell\'archivio' ?></a></p>
+  <?php endif; ?>
 
   <dl class="anagrafe">
     <div><dt>Data</dt><dd><?= e(date('j/n/Y', strtotime((string) $soggetto['data_nascita']))) ?></dd></div>
@@ -98,7 +132,7 @@ $offsetTesto = sprintf('%s%02d:%02d',
       <h2>La lettura</h2>
       <div class="linguette" role="tablist" aria-label="Registro interpretativo">
         <?php foreach (['tradizionale' => 'Tradizionale', 'moderno' => 'Moderna'] as $reg => $eti): ?>
-          <a class="linguetta" role="tab" href="<?= e(url('/carta/' . $gettone . '?registro=' . $reg)) ?>"
+          <a class="linguetta" role="tab" href="<?= e(url($indirizzo . '?registro=' . $reg)) ?>"
              aria-selected="<?= $registro === $reg ? 'true' : 'false' ?>"><?= e($eti) ?></a>
         <?php endforeach; ?>
       </div>
@@ -142,6 +176,10 @@ $offsetTesto = sprintf('%s%02d:%02d',
         Il corpus cresce: le voci pi&ugrave; frequenti vengono scritte per prime.
       </p>
     </section>
+  <?php endif; ?>
+
+  <?php if (($mondana ?? null) !== null): ?>
+    <?= vista('partials/lettura-mondiale', ['lettura' => $mondana]) ?>
   <?php endif; ?>
 
   <figure class="ruota-riquadro">
@@ -419,6 +457,7 @@ $offsetTesto = sprintf('%s%02d:%02d',
     </div>
   </nav>
 
+  <?php if (!$archivio): ?>
   <div class="permalink">
     <h2>Il tuo indirizzo</h2>
     <p class="condotto">
@@ -426,14 +465,17 @@ $offsetTesto = sprintf('%s%02d:%02d',
       nessun account da cui recuperarla.
     </p>
     <p class="permalink-url"><code><?= e(rtrim((string) \App\Core\Config::get('app.url_pubblico'), '/') . '/carta/' . $gettone) ?></code></p>
-    <p class="tenue piccolo">
+  </div>
+  <?php endif; ?>
+
+  <p class="tenue piccolo">
       Calcolata con Swiss Ephemeris <?= e((string) ($tema['meta']['versione_swe'] ?? '')) ?>
       in <?= e((string) ($tema['meta']['durata_ms'] ?? '?')) ?> ms
       &middot; &Delta;T <?= e(number_format((float) $tema['tempo']['delta_t_secondi'], 1, ',', '')) ?> s
       &middot; giorno giuliano <?= e(number_format((float) $tema['tempo']['jd_ut'], 5, ',', '')) ?>
-    </p>
-  </div>
+  </p>
 
+  <?php if (!$archivio || \App\Auth\Auth::amministratore()): ?>
   <details class="avanzate cancella-carta">
     <summary>Cancella questa carta</summary>
     <form method="post" action="<?= e(url('/carta/' . $gettone . '/elimina')) ?>" class="modulo">
@@ -449,4 +491,5 @@ $offsetTesto = sprintf('%s%02d:%02d',
       <button type="submit" class="bottone bottone-male">Cancella</button>
     </form>
   </details>
+  <?php endif; ?>
 </article>

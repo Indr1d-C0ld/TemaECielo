@@ -18,6 +18,9 @@ use App\Controllers\SinastriaController;
 use App\Controllers\StatisticheController;
 use App\Controllers\PagineController;
 use App\Admin\AccessoController;
+use App\Admin\ArchivioController as AdminArchivio;
+use App\Controllers\ArchivioController;
+use App\Controllers\MondoController;
 use App\Admin\CorpusController;
 use App\Admin\GuestbookController as AdminGuestbook;
 use App\Admin\PannelloController;
@@ -53,6 +56,17 @@ $router->get('/api/fuso',         [ApiController::class, 'fuso']);
 // perche' la loro regola e' la piu' larga e mangerebbe le rotte fisse.
 $router->get('/pagina/{slug}', [PagineController::class, 'mostra']);
 
+// L'archivio pubblico: persone, eventi, nazioni.
+$router->get('/archivio',        [ArchivioController::class, 'elenco']);
+$router->get('/archivio/{slug}', [ArchivioController::class, 'mostra']);
+
+// L'astrologia mondiale: l'anno, le eclissi, i cicli, e la carta di un istante.
+$router->get('/mondo',          [MondoController::class, 'indice']);
+$router->get('/mondo/anno',     [MondoController::class, 'anno']);
+$router->get('/mondo/eclissi',  [MondoController::class, 'eclissi']);
+$router->get('/mondo/cicli',    [MondoController::class, 'cicli']);
+$router->get('/mondo/carta',    [MondoController::class, 'carta']);
+
 // --- Accesso ----------------------------------------------------------------
 $router->get('/accesso',  [AccessoController::class, 'modulo']);
 $router->post('/accesso', [AccessoController::class, 'entra']);
@@ -75,4 +89,7 @@ $router->post('/admin/corpus/{id}',      [CorpusController::class, 'salva'],    
 $router->get('/admin/guestbook',         [AdminGuestbook::class, 'elenco'],       ['admin']);
 $router->post('/admin/guestbook/{id}',   [AdminGuestbook::class, 'azione'],       ['admin']);
 $router->get('/admin/blocchi',           [AdminGuestbook::class, 'blocchi'],      ['admin']);
+$router->get('/admin/carte',             [AdminArchivio::class, 'elenco'],        ['admin']);
+$router->get('/admin/carte/{gettone}',   [AdminArchivio::class, 'scheda'],        ['admin']);
+$router->post('/admin/carte/{gettone}',  [AdminArchivio::class, 'salva'],         ['admin']);
 $router->post('/admin/blocchi',          [AdminGuestbook::class, 'salvaBlocco'],  ['admin']);

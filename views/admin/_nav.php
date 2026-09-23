@@ -1,5 +1,6 @@
 <nav class="regia-nav" aria-label="Sezioni della regia">
   <a href="<?= e(url('/admin')) ?>">Cruscotto</a>
+  <a href="<?= e(url('/admin/carte')) ?>">Carte</a>
   <a href="<?= e(url('/admin/accessi')) ?>">Accessi</a>
   <a href="<?= e(url('/admin/pagine')) ?>">Pagine</a>
   <a href="<?= e(url('/admin/guestbook')) ?>">Guestbook</a>

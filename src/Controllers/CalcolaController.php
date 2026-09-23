@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\Vista;
 use App\Corpus\Corpus;
+use App\Corpus\Mondana;
 use App\Corpus\Montatore;
 use App\Luogo\Gazetteer;
 use App\Grafica\RuotaTema;
@@ -137,6 +138,23 @@ final class CalcolaController
         Session::togli('__errori');
         Session::togli('__ambigua');
 
+        // La regia puo' mettere la carta nell'archivio pubblico gia' dal modulo.
+        if ($r->post('archivio') === '1' && \App\Auth\Auth::amministratore()) {
+            $calcoloId = (int) Database::valore('SELECT id FROM calcoli WHERE gettone = ?', [$gettone]);
+            try {
+                $slug = \App\Archivio\Archivio::salva($calcoloId, [
+                    'nome' => $dati['nome'], 'tipo' => $r->post('archivio_tipo'),
+                    'categoria' => $r->post('archivio_categoria'), 'rodden' => $r->post('archivio_rodden'),
+                    'fonte' => $r->post('archivio_fonte'), 'pubblicata' => true,
+                ]);
+                \App\Auth\Auth::traccia('archivio:scheda', $slug, $dati['nome']);
+                Session::lampo('bene', 'La carta e\' nell\'archivio. Completa la scheda con una nota e la fonte.');
+                return Response::redirect(url('/admin/carte/' . $gettone));
+            } catch (\InvalidArgumentException $e) {
+                Session::lampo('male', 'Carta salvata, ma non in archivio: ' . $e->getMessage());
+            }
+        }
+
         return Response::redirect(url('/carta/' . $gettone));
     }
 
@@ -166,6 +184,12 @@ final class CalcolaController
         }
 
         $id = Database::valore('SELECT id FROM calcoli WHERE gettone = ? LIMIT 1', [$gettone]);
+        // Una carta dell'archivio ha l'indirizzo pubblico: chiunque la vede, e
+        // chiunque potrebbe cancellarla. Si toglie solo dalla regia.
+        if ($id !== null && \App\Archivio\Archivio::perCalcolo((int) $id) !== null && !\App\Auth\Auth::amministratore()) {
+            Session::lampo('male', 'Questa carta fa parte dell\'archivio: non si cancella da qui.');
+            return Response::redirect(url('/carta/' . $gettone));
+        }
         if ($id === null) {
             return Response::html(Vista::pagina('errors/generico', [
                 'titolo' => 'Carta non trovata', 'stato' => 404,
@@ -173,14 +197,31 @@ final class CalcolaController
             ]), 404);
         }
 
+        self::cancella((int) $id);
+
+        if (Session::get('__ultima_carta') === $gettone) {
+            Session::togli('__ultima_carta');
+        }
+        Telemetria::evento('carta_cancellata');
+        Session::lampo('bene', 'La carta e i dati di nascita sono stati cancellati. L\'indirizzo non porta piu\' a nulla.');
+
+        return Response::redirect(url('/'));
+    }
+
+    /**
+     * Cancella una carta e i dati di nascita di chi non compare in altre carte.
+     * La usa anche l'importatore dell'archivio, per ricalcolare una scheda.
+     */
+    public static function cancella(int $calcoloId): void
+    {
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
             $soggetti = array_map('intval', array_column(
-                Database::righe('SELECT soggetto_id FROM calcoli_soggetti WHERE calcolo_id = ?', [(int) $id]),
+                Database::righe('SELECT soggetto_id FROM calcoli_soggetti WHERE calcolo_id = ?', [$calcoloId]),
                 'soggetto_id',
             ));
-            Database::esegui('DELETE FROM calcoli WHERE id = ?', [(int) $id]);
+            Database::esegui('DELETE FROM calcoli WHERE id = ?', [$calcoloId]);
             foreach ($soggetti as $s) {
                 // Solo se la persona non compare in nessun'altra carta.
                 Database::esegui(
@@ -194,20 +235,20 @@ final class CalcolaController
             $pdo->rollBack();
             throw $e;
         }
-
-        if (Session::get('__ultima_carta') === $gettone) {
-            Session::togli('__ultima_carta');
-        }
-        Telemetria::evento('carta_cancellata');
-        Session::lampo('bene', 'La carta e i dati di nascita sono stati cancellati. L\'indirizzo non porta piu\' a nulla.');
-
-        return Response::redirect(url('/'));
     }
 
     /** GET /carta/{gettone} */
     public function carta(Request $r, array $argomenti): Response
     {
-        $gettone = preg_replace('/[^a-f0-9]/', '', (string) ($argomenti['gettone'] ?? ''));
+        return $this->mostraCarta($r, (string) preg_replace('/[^a-f0-9]/', '', (string) ($argomenti['gettone'] ?? '')));
+    }
+
+    /**
+     * La pagina di una carta. La usa anche l'archivio pubblico, che mostra la
+     * stessa carta sotto un indirizzo leggibile e con la sua scheda.
+     */
+    public function mostraCarta(Request $r, string $gettone): Response
+    {
 
         $riga = Database::riga(
             'SELECT c.id, c.esito, c.creato, c.richieste, s.nome, s.data_nascita, s.ora_nascita,
@@ -238,6 +279,10 @@ final class CalcolaController
             ]), 500);
         }
 
+        $scheda = \App\Archivio\Archivio::perCalcolo((int) $riga['id']);
+        $pubblica = $scheda !== null && (int) $scheda['pubblicata'] === 1;
+        $mondiale = $scheda !== null && in_array($scheda['tipo'], ['evento', 'nazione'], true);
+
         // Il registro scelto resta in sessione: chi legge in tradizionale
         // vuole leggere in tradizionale anche la carta dopo.
         $registro = (string) ($r->query('registro') ?? '');
@@ -246,26 +291,43 @@ final class CalcolaController
         }
         Session::set('__registro', $registro);
         // Serve al guestbook: un voto di attinenza senza la carta a cui si
-        // riferisce non e' verificabile da nessuno.
-        Session::set('__ultima_carta', $gettone);
+        // riferisce non e' verificabile da nessuno. Una carta dell'archivio non
+        // e' la propria, e non si vota.
+        if (!$pubblica) {
+            Session::set('__ultima_carta', $gettone);
+        }
 
+        $lettura = null;
+        $mondana = null;
         try {
-            $lettura = (new Montatore(new Corpus($registro)))->monta($tema);
+            // Una Repubblica o un terremoto non hanno «una vita emotiva»: le
+            // carte di evento e di fondazione si leggono con le chiavi mondiali.
+            if ($mondiale) {
+                $mondana = Mondana::monta($tema, (string) $scheda['tipo']);
+            } else {
+                $lettura = (new Montatore(new Corpus($registro)))->monta($tema);
+            }
         } catch (\Throwable $e) {
             registro('montaggio della lettura fallito: ' . $e->getMessage(), 'warn');
             // Una carta senza parole resta una carta: i dati ci sono tutti.
-            $lettura = null;
         }
 
-        return Response::html(Vista::pagina('carta', [
-            'titolo'   => 'Tema di ' . ($riga['nome'] !== '' ? $riga['nome'] : 'anonimo'),
+        $risposta = Response::html(Vista::pagina('carta', [
+            'scheda'   => $scheda,
+            'titolo'   => $scheda !== null ? (string) $scheda['nome']
+                : 'Tema di ' . ($riga['nome'] !== '' ? $riga['nome'] : 'anonimo'),
             'sezione'  => 'carta',
             'soggetto' => $riga,
             'tema'     => $tema,
             'gettone'  => $gettone,
             'lettura'  => $lettura,
+            'mondana'  => $mondana,
             'registro' => $registro,
-        ]))->conIntestazione('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        ]));
+
+        // Una carta d'archivio pubblicata e' fatta per essere trovata; quella di
+        // un visitatore no, mai.
+        return $pubblica ? $risposta : $risposta->conIntestazione('X-Robots-Tag', 'noindex, nofollow, noarchive');
     }
 
     /**
@@ -434,11 +496,15 @@ final class CalcolaController
     }
 
     /**
+     * Scrive la persona e il permalink della sua carta. Pubblica perche' la
+     * usa anche bin/importa-archivio.php: le carte dell'archivio nascono
+     * esattamente come quelle dei visitatori.
+     *
      * @param array<string,mixed> $d
      * @param array{anno:int,mese:int,giorno:int,ora_ut:float} $componenti
      * @param array<string,mixed> $tema
      */
-    private function archivia(array $d, array $componenti, int $offset, string $precisione, array $tema): string
+    public function archivia(array $d, array $componenti, int $offset, string $precisione, array $tema): string
     {
         $pdo = Database::pdo();
         $pdo->beginTransaction();

@@ -35,6 +35,9 @@ final class Worker
             'posizioni' => $this->posizioni($domanda),
             'stato'     => $this->stato(),
             'ritorno'   => $this->ritorno($domanda),
+            'anno'      => $this->annoMondiale($domanda),
+            'eclissi'   => $this->eclissi($domanda),
+            'cicli'     => $this->cicli($domanda),
             default     => throw new RuntimeException('Operazione sconosciuta: ' . (string) ($domanda['operazione'] ?? '')),
         };
     }
@@ -694,5 +697,208 @@ final class Worker
         }
 
         return ['ok' => true, 'jd_ut' => $jd, 'corpi' => $corpi];
+    }
+
+    /**
+     * Tutti gli istanti in cui una funzione continua passa per lo zero.
+     *
+     * La funzione e' un angolo ridotto a [-180, 180): si annulla nel passaggio
+     * cercato e salta di 360 gradi dalla parte opposta. Un cambio di segno con
+     * entrambi i valori piccoli e' un passaggio vero; con valori grandi e' solo
+     * il giro dell'angolo. Il passo va scelto piu' corto del tempo in cui la
+     * funzione percorre novanta gradi.
+     *
+     * @param callable(float):float $f
+     * @return list<float> giorni giuliani UT
+     */
+    private function passaggi(callable $f, float $da, float $a, float $passo): array
+    {
+        $fuori = [];
+        $t0 = $da;
+        $v0 = $f($t0);
+        while ($t0 < $a) {
+            $t1 = min($a, $t0 + $passo);
+            $v1 = $f($t1);
+            if ($v0 * $v1 < 0 && abs($v0) < 90.0 && abs($v1) < 90.0) {
+                [$x, $y, $fx] = [$t0, $t1, $v0];
+                for ($i = 0; $i < 50; $i++) {
+                    $m = ($x + $y) / 2.0;
+                    $fm = $f($m);
+                    if ($fx * $fm <= 0) { $y = $m; } else { [$x, $fx] = [$m, $fm]; }
+                }
+                $fuori[] = ($x + $y) / 2.0;
+            } elseif ($v1 === 0.0) {
+                $fuori[] = $t1;
+            }
+            [$t0, $v0] = [$t1, $v1];
+        }
+
+        return $fuori;
+    }
+
+    /** Un angolo ridotto a [-180, 180). */
+    private static function ridotto(float $x): float
+    {
+        $x = Corpi::norma($x);
+
+        return $x >= 180.0 ? $x - 360.0 : $x;
+    }
+
+    /**
+     * L'anno mondiale: i quattro ingressi del Sole nei segni cardinali e tutte
+     * le lunazioni.
+     *
+     * L'ingresso in Ariete e' la carta che la tradizione mondiale usa per
+     * l'anno intero; gli altri tre valgono per la loro stagione. Noviluni e
+     * pleniluni scandiscono i mesi.
+     *
+     * @param array<string,mixed> $d
+     * @return array<string,mixed>
+     */
+    private function annoMondiale(array $d): array
+    {
+        $anno = (int) $d['anno'];
+        $da = $this->swe->giornoGiuliano($anno, 1, 1, 0.0);
+        $a  = $this->swe->giornoGiuliano($anno + 1, 1, 1, 0.0);
+        $sole = fn (float $t): float => $this->swe->posizione($t, Corpi::SOLE)['lon'];
+        $luna = fn (float $t): float => $this->swe->posizione($t, Corpi::LUNA)['lon'];
+
+        $ingressi = [];
+        foreach ([0, 90, 180, 270] as $g) {
+            foreach ($this->passaggi(fn (float $t): float => self::ridotto($sole($t) - $g), $da, $a, 5.0) as $jd) {
+                $ingressi[] = ['jd' => $jd, 'lon' => (float) $g, 'segno' => intdiv($g, 30)];
+            }
+        }
+        usort($ingressi, static fn (array $x, array $y): int => $x['jd'] <=> $y['jd']);
+
+        $lunazioni = [];
+        foreach (['novilunio' => 0.0, 'plenilunio' => 180.0] as $tipo => $angolo) {
+            foreach ($this->passaggi(fn (float $t): float => self::ridotto($luna($t) - $sole($t) - $angolo), $da, $a, 1.0) as $jd) {
+                $lon = $luna($jd);
+                $lunazioni[] = ['jd' => $jd, 'tipo' => $tipo, 'lon' => $lon, 'segno' => (int) floor($lon / 30.0)];
+            }
+        }
+        usort($lunazioni, static fn (array $x, array $y): int => $x['jd'] <=> $y['jd']);
+
+        return ['ok' => true, 'anno' => $anno, 'ingressi' => $ingressi, 'lunazioni' => $lunazioni];
+    }
+
+    /**
+     * Le eclissi fra due istanti: dove sono massime, di che tipo, di che Saros,
+     * e — se si da' un luogo — quanto se ne vede da li'.
+     *
+     * @param array<string,mixed> $d
+     * @return array<string,mixed>
+     */
+    private function eclissi(array $d): array
+    {
+        $da = (float) $d['jd_da'];
+        // Mezzo secolo al massimo per domanda: bastano e avanzano per una
+        // pagina, e tengono il lavoro sotto il secondo.
+        $a = min((float) $d['jd_a'], $da + 50 * 365.25);
+        $luogo = isset($d['lat'], $d['lon']) ? [(float) $d['lat'], (float) $d['lon'], (float) ($d['alt'] ?? 0)] : null;
+
+        $elenco = [];
+        foreach ([true, false] as $sole) {
+            $t = $da;
+            while (($e = $sole ? $this->swe->eclissiSole($t) : $this->swe->eclissiLuna($t)) !== null && $e['jd'] <= $a) {
+                $corpo = $this->swe->posizione($e['jd'], $sole ? Corpi::SOLE : Corpi::LUNA)['lon'];
+                $e += ['corpo' => $sole ? 'sole' : 'luna', 'lon_eclittica' => $corpo, 'segno' => (int) floor($corpo / 30.0)];
+                $elenco[] = $e;
+                $t = $e['jd'] + 1.0;
+            }
+
+            if ($luogo === null) {
+                continue;
+            }
+            // Le eclissi visibili dal luogo, abbinate a quelle globali: lo
+            // stesso fenomeno ha il massimo locale entro qualche ora da quello
+            // globale.
+            $t = $da;
+            while (($l = $this->swe->eclissiLocale($sole, $t, ...$luogo)) !== null && $l['jd'] <= $a + 1.0) {
+                foreach ($elenco as $i => $e) {
+                    if ($e['corpo'] === ($sole ? 'sole' : 'luna') && abs($e['jd'] - $l['jd']) < 0.5) {
+                        $elenco[$i]['locale'] = $l;
+                    }
+                }
+                $t = $l['jd'] + 1.0;
+            }
+        }
+        usort($elenco, static fn (array $x, array $y): int => $x['jd'] <=> $y['jd']);
+
+        return ['ok' => true, 'eclissi' => $elenco];
+    }
+
+    /**
+     * I cicli dei pianeti lenti: le congiunzioni fra coppie e l'indice ciclico
+     * di Barbault.
+     *
+     * L'indice e' la somma delle dieci distanze angolari fra Giove, Saturno,
+     * Urano, Nettuno e Plutone. Quando i lenti si raccolgono l'indice scende, e
+     * Andre' Barbault ci leggeva i periodi di crisi del mondo. Calcolato qui, i
+     * minimi del Novecento cadono nel 1918, nel 1943 e nel 1983; poi viene il
+     * lungo avvallamento del 2020-2023.
+     *
+     * @param array<string,mixed> $d
+     * @return array<string,mixed>
+     */
+    private function cicli(array $d): array
+    {
+        $da = (float) $d['jd_da'];
+        $a  = (float) $d['jd_a'];
+        $passo = max(5.0, (float) ($d['passo'] ?? 10.0));
+        $lenti = ['giove' => Corpi::GIOVE, 'saturno' => Corpi::SATURNO, 'urano' => Corpi::URANO,
+                  'nettuno' => Corpi::NETTUNO, 'plutone' => Corpi::PLUTONE];
+        $coppie = [];
+        $chiavi = array_keys($lenti);
+        foreach ($chiavi as $i => $x) {
+            foreach (array_slice($chiavi, $i + 1) as $y) {
+                $coppie[] = [$x, $y];
+            }
+        }
+
+        $campioni = [];
+        for ($t = $da; $t <= $a; $t += $passo) {
+            $r = [];
+            foreach ($lenti as $k => $ipl) {
+                $r[$k] = $this->swe->posizione($t, $ipl)['lon'];
+            }
+            $campioni[] = [$t, $r];
+        }
+
+        // L'indice, un valore ogni tre campioni (circa un mese).
+        $indice = [];
+        foreach ($campioni as $n => [$t, $r]) {
+            if ($n % 3 !== 0) {
+                continue;
+            }
+            $somma = 0.0;
+            foreach ($coppie as [$x, $y]) {
+                $somma += Corpi::distanza($r[$x], $r[$y]);
+            }
+            $indice[] = [round($t, 1), round($somma, 1)];
+        }
+
+        // Le congiunzioni: il cambio di segno nei campioni, poi la bisezione
+        // sulle posizioni vere. Una congiunzione tripla — i due corpi che si
+        // incrociano, uno retrocede, si reincrociano — da' tre passaggi.
+        $congiunzioni = [];
+        foreach ($coppie as [$x, $y]) {
+            $f = fn (float $t): float => self::ridotto(
+                $this->swe->posizione($t, $lenti[$x])['lon'] - $this->swe->posizione($t, $lenti[$y])['lon']);
+            for ($n = 1, $c = count($campioni); $n < $c; $n++) {
+                $v0 = self::ridotto($campioni[$n - 1][1][$x] - $campioni[$n - 1][1][$y]);
+                $v1 = self::ridotto($campioni[$n][1][$x] - $campioni[$n][1][$y]);
+                if ($v0 * $v1 < 0 && abs($v0) < 90.0 && abs($v1) < 90.0) {
+                    foreach ($this->passaggi($f, $campioni[$n - 1][0], $campioni[$n][0], $passo) as $jd) {
+                        $lon = $this->swe->posizione($jd, $lenti[$x])['lon'];
+                        $congiunzioni[] = ['a' => $x, 'b' => $y, 'jd' => $jd, 'lon' => $lon, 'segno' => (int) floor($lon / 30.0)];
+                    }
+                }
+            }
+        }
+        usort($congiunzioni, static fn (array $p, array $q): int => $p['jd'] <=> $q['jd']);
+
+        return ['ok' => true, 'indice' => $indice, 'congiunzioni' => $congiunzioni];
     }
 }

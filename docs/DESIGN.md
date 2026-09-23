@@ -643,6 +643,8 @@ fuso applicato, offset applicato.
 `calcoli` — token pubblico, tipo, impronta, opzioni, esito JSON, riferimento all'SVG, numero
 di richieste, tempi, esito o errore.
 `calcoli_soggetti` — il ponte molti-a-molti, perché una sinastria ha due soggetti.
+`archivio` — la scheda pubblica di una carta: nome, tipo (persona, evento, nazione),
+categoria, nota, fonte, classe Rodden, pubblicata o no. Punta al calcolo e se ne va con lui.
 
 **Corpus**
 `testi` — ambito, chiave, registro, titolo, corpo, peso, stato, revisione.
@@ -775,6 +777,23 @@ progressioni, direzioni, profezioni. *Risultato: c'è un motivo per tornare più
 registro accessi con GeoIP offline, statistiche pubbliche, pannello di regia completo,
 gestione pagine, esportazioni, manutenzione. *Risultato: il portale è finito e si governa da
 solo.*
+
+**F8 — Le carte in regia.** Tutte le carte salvate consultabili dal pannello, con ricerca
+e filtro; l'informativa e il modulo lo dicono. *Risultato: chi gestisce il portale sa che cosa
+contiene.*
+
+**F9 — L'archivio.** Schede pubbliche su carte calcolate dalla regia: persone, eventi,
+fondazioni di Stati, ciascuna con fonte e classe Rodden. Sessanta voci iniziali seminate da
+`db/semi/archivio.php` con `bin/importa-archivio.php`. Le carte di evento e di fondazione si
+leggono con le chiavi mondiali. *Risultato: c'è qualcosa da guardare anche senza la propria
+carta.*
+
+**F10 — L'anno mondiale.** Ingressi del Sole nei segni cardinali e lunazioni, per un anno
+qualunque e una capitale a scelta. **F11 — Le eclissi.** Catalogo per intervalli fino a
+trent'anni, con Saros, punto di massimo, visibilità dal luogo e colpi sulle carte
+dell'archivio. **F12 — I cicli.** Congiunzioni dei pianeti lenti dal 1800 al 2399, mutazioni di
+Giove e Saturno, indice ciclico di Barbault in un grafico con gli eventi dell'archivio.
+*Risultato: la sezione «Mondo».*
 
 **Dopo** — armoniche e zodiaco siderale, relazione in PDF, carta eliocentrica, glossario
 navigabile, condivisione come immagine.
@@ -1001,3 +1020,70 @@ bastato rilanciarlo per aggiornare la conf Apache perché l'indirizzo pubblico t
 Il montatore registra quante volte ogni voce del corpus viene letta, e con quel conteggio la
 regia decide quali voci scrivere per prime. Le prove montano letture a decine: ogni esecuzione
 della suite spostava la classifica. Da riga di comando ora l'uso non si conta.
+
+---
+
+## 22. Poscritto all'archivio e al mondo
+
+Le fasi F8–F12 hanno aggiunto la consultazione delle carte in regia, l'archivio pubblico e la
+sezione di astrologia mondiale. Le lezioni che valgono oltre il caso singolo:
+
+### 22.1 Una scheda sulla carta, non una carta diversa
+
+L'archivio non ha un suo motore né un suo formato: una voce è una carta come quelle dei
+visitatori, con una scheda accanto che la indica. Tutto ciò che il portale sa fare con una
+carta — lettura, volta, transiti, sinastria — l'archivio lo ha gratis, e quando la carta se ne
+va la scheda la segue per chiave esterna. Il prezzo è uno solo e va pagato ovunque: le
+statistiche «dei visitatori» devono escludere le carte dell'archivio, o sessanta celebrità
+spostano la distribuzione dei segni.
+
+### 22.2 L'istante vero è quello della fonte
+
+Un atto di nascita del 1874 a Bologna segna un'ora su un orologio che oggi non esiste più: il
+tempo medio di Roma, o quello del luogo, o quello delle ferrovie. Il database dei fusi fa una
+scelta, la fonte astrologica talvolta un'altra. I semi portano quindi l'istante in Tempo
+Universale come la fonte lo ricava, e l'importatore confronta con il fuso del portale e segnala
+ogni differenza invece di correggerla. Dieci voci su sessanta ne hanno una, e sono tutte volute.
+
+### 22.3 Una Repubblica non ha una vita emotiva
+
+Il corpus è scritto per una persona. Mostrato sotto la carta della Repubblica Italiana diceva
+«il centro della coscienza prende la forma dei Gemelli». Le carte di evento, di fondazione e
+tutte quelle del mondo si leggono con le chiavi mondiali — il Sole è chi governa, la Luna il
+popolo, la casa X il vertice dello Stato — e i pianeti sugli angoli vengono per primi, perché
+nella tradizione sono loro a «firmare» un istante.
+
+### 22.4 Il Plutone di tutti non è di nessuno
+
+Il primo elenco dei «colpi» di un'eclissi sulle carte dell'archivio era dominato da Plutone,
+Nettuno e Urano: stanno anni nello stesso grado, e un'eclissi che cade sul Plutone di una carta
+cade su quello di tutte le carte di quegli anni. Un dato che vale per tutti non dice niente di
+nessuno: i colpi si cercano sui sette pianeti tradizionali e sugli angoli, e questi solo nelle
+carte con un'ora affidabile.
+
+### 22.5 Coordinate della Luna su una Terra
+
+La ricerca aveva eretto l'allunaggio dell'Apollo 11 sulle coordinate selenografiche della Base
+della Tranquillità. Il motore le avrebbe lette come un punto della Terra, in Africa centrale, e
+la volta celeste avrebbe mostrato un cielo africano. Una coordinata ha senso solo nel sistema per
+cui è stata scritta: la carta è eretta per Houston, e la nota spiega perché.
+
+### 22.6 Il cielo del 1848 non scade
+
+Ingressi, eclissi e cicli non sono carte: non hanno una persona, e non cambiano mai. Stanno in
+file JSON sotto `storage/cache/mondo`, uno per domanda, scritti in modo atomico e con la
+versione nella chiave. Tutti i cicli dal 1800 al 2399 costano due secondi una volta sola.
+
+### 22.7 Un titolo non si prende dall'indirizzo
+
+La prima versione della carta di un'eclissi riceveva il titolo come testo libero
+nell'indirizzo: chiunque poteva fabbricare un collegamento al portale con un titolo inventato.
+Ora il titolo si compone da valori in elenco chiuso — il genere dell'eclissi, la coppia della
+congiunzione — e ciò che non è in elenco non arriva in pagina.
+
+### 22.8 Di un'eclissi di penombra si misura la penombra
+
+Le eclissi di penombra risultavano di «magnitudine 0,000»: si leggeva la magnitudine d'ombra,
+che per quelle eclissi è zero o negativa per definizione. Un numero giusto nel campo sbagliato
+sembra un errore del cielo.
+

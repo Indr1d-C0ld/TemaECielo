@@ -313,10 +313,11 @@ prova('Ogni carta ha un solo soggetto «primo»', static function () {
     return $n === 0 ?: "{$n} carte condivise fra piu' persone";
 });
 
-prova('Le statistiche contano le carte, non la cache del motore', static function () {
+prova('Le statistiche contano le carte dei visitatori: non la cache del motore, non l\'archivio', static function () {
     $m = new ReflectionMethod(\App\Controllers\StatisticheController::class, 'generale');
     $g = $m->invoke(new \App\Controllers\StatisticheController());
-    $vere = (int) Database::valore("SELECT COUNT(*) FROM calcoli WHERE tipo = 'natale' AND gettone IS NOT NULL");
+    $vere = (int) Database::valore("SELECT COUNT(*) FROM calcoli WHERE tipo = 'natale' AND gettone IS NOT NULL
+                                     AND id NOT IN (SELECT calcolo_id FROM archivio)");
     return $g['carte'] === $vere ?: "dice {$g['carte']}, sono {$vere}";
 });
 

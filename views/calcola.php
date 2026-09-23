@@ -176,11 +176,52 @@ $err = static fn (string $k): string => isset($errori[$k])
       <p class="lampo lampo-male" role="alert"><?= e($errori['motore']) ?></p>
     <?php endif; ?>
 
+    <?php if (\App\Auth\Auth::amministratore()): ?>
+      <!-- Solo per la regia: la carta puo' andare subito nell'archivio pubblico. -->
+      <fieldset class="avanzate-regia">
+        <legend>Archivio (regia)</legend>
+        <label class="scelta">
+          <input type="checkbox" name="archivio" value="1">
+          <span class="scelta-corpo"><span class="scelta-titolo">Metti questa carta nell'archivio pubblico</span>
+            <span class="scelta-spiega">Il nome della carta diventa il nome pubblico. Nota e collegamento si aggiungono dopo, dalla scheda.</span></span>
+        </label>
+        <div class="quadro-griglia">
+          <div class="campo">
+            <label for="archivio_tipo">Tipo</label>
+            <select id="archivio_tipo" name="archivio_tipo">
+              <?php foreach (\App\Archivio\Archivio::TIPI as $k => $n): ?><option value="<?= e($k) ?>"><?= e($n) ?></option><?php endforeach; ?>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="archivio_categoria">Categoria</label>
+            <select id="archivio_categoria" name="archivio_categoria">
+              <?php foreach (\App\Archivio\Archivio::CATEGORIE as $tipo => $cats): ?>
+                <optgroup label="<?= e(\App\Archivio\Archivio::TIPI[$tipo]) ?>">
+                  <?php foreach ($cats as $c): ?><option value="<?= e($c) ?>"><?= e($c) ?></option><?php endforeach; ?>
+                </optgroup>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="archivio_rodden">Affidabilit&agrave; dell'ora</label>
+            <select id="archivio_rodden" name="archivio_rodden">
+              <?php foreach (\App\Archivio\Archivio::RODDEN as $k => [$n]): ?><option value="<?= e($k) ?>" <?= $k === 'C' ? 'selected' : '' ?>><?= e($k . ' — ' . $n) ?></option><?php endforeach; ?>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="archivio_fonte">Fonte</label>
+            <input type="text" id="archivio_fonte" name="archivio_fonte" maxlength="500">
+          </div>
+        </div>
+      </fieldset>
+    <?php endif; ?>
+
     <button type="submit" class="bottone bottone-primo">Calcola il tema</button>
 
     <p class="nota-piccola">
       Il risultato vive a un indirizzo con un gettone segreto: conservalo per ritrovarlo, o per
       cancellarlo. Non serve nessuna registrazione e non viene chiesta nessuna e-mail.
+      La regia del portale pu&ograve; consultare le carte salvate; non le pubblica.
       Leggi l'<a href="<?= e(url('/pagina/informativa')) ?>">informativa</a>.
     </p>
   </form>

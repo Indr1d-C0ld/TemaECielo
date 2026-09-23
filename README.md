@@ -26,10 +26,12 @@ NASA. Niente è approssimato e niente è inventato.
 | **La lettura** | Due registri affiancati — tradizionale (dignità, signorie, Lilly) e moderno (archetipi, Rudhyar) — montati per rilevanza, non concatenati. |
 | **Sinastria** | Rapida segno-contro-segno, o completa carta-contro-carta: aspetti incrociati, sovrapposizione delle case, composita di punti medi, **carta di Davison** — il cielo vero dell'istante a metà fra le due nascite, visto dal punto a metà fra i due luoghi — e quattro punteggi per area. |
 | **Carte del tempo** | Transiti su data scelta, rivoluzione solare, progressioni secondarie, direzioni di arco solare, profezioni annuali. |
+| **Archivio** | Carte di persone celebri, di eventi storici e di fondazioni di Stati, calcolate e documentate dalla regia: ognuna con la fonte dei dati e la **classe Rodden** dell'ora, dalla AA dell'atto di nascita alla C dell'ora convenzionale. Sessanta voci iniziali, dal 1801 al 2001. Si aprono come ogni altra carta. |
+| **Il mondo** | L'astrologia mondiale. Gli **ingressi** del Sole nei segni cardinali e le **lunazioni** di un anno qualunque, eretti per una capitale a scelta. Il catalogo delle **eclissi** con serie di Saros, punto di massimo, visibilità dal luogo e i gradi che cadono sulle carte dell'archivio. I **cicli dei pianeti lenti** dal 1800 al 2399, con le congiunzioni triple, le mutazioni di Giove e Saturno e l'**indice ciclico di Barbault** in un grafico affiancato agli eventi storici. Le carte di evento, di fondazione e del mondo hanno una **lettura mondiale**: il Sole è chi governa, la Luna il popolo, e i pianeti sugli angoli vengono per primi. |
 | **Comunità** | Guestbook con due voti distinti (gradimento e attinenza), moderazione, statistiche pubbliche aggregate. |
-| **Regia** | Pannello per corpus, pagine redazionali, impostazioni, blocchi, registro accessi geolocalizzato offline. |
+| **Regia** | Pannello per corpus, pagine redazionali, impostazioni, blocchi, registro accessi geolocalizzato offline. Tutte le carte salvate consultabili, e da ognuna una scheda per l'archivio. |
 
-**358 prove di regressione**, che non confrontano i risultati con altri programmi di
+**401 prove di regressione**, che non confrontano i risultati con altri programmi di
 astrologia — potrebbero sbagliare insieme — ma con fatti verificabili: agli equinozi il Sole
 risulta a 0° entro un centesimo di grado, la Stella Polare sta a un'altezza pari alla
 latitudine, a Longyearbyen il Sole non tramonta a giugno.
@@ -139,6 +141,7 @@ php bin/importa-luoghi.php           gazetteer GeoNames
 php bin/importa-stelle.php           catalogo stellare e costellazioni
 php bin/importa-geoip.php            geolocalizzazione degli indirizzi
 php bin/importa-corpus.php           testi interpretativi (--sostituisci per riallineare)
+php bin/importa-archivio.php         le voci dell'archivio  (--prova, --sostituisci, --ricalcola)
 ```
 
 ### La cache, e perché va tenuta d'occhio
@@ -152,6 +155,11 @@ chiedere il cielo di una data e di un luogo qualunque non ce l'ha più: trentami
 fanno un gigabyte. Il portale se ne difende da solo — una scrittura su duecento butta ciò che
 nessuno richiede da oltre trenta giorni — ma il pannello di manutenzione mostra i numeri, e
 `cache:purga` fa pulizia subito. **In nessuno dei due casi i permalink vengono toccati.**
+
+I calcoli del mondo — ingressi, lunazioni, eclissi, cicli — non sono carte e non vanno in
+quella tabella: stanno in file JSON sotto `storage/cache/mondo`, uno per domanda, e non scadono
+mai, perché il cielo di un anno passato non cambia. Cancellarli è sicuro: al primo accesso si
+rifanno.
 
 Le prove si lanciano una per una, e nessuna lascia traccia nel database — quelle che devono
 scriverci lo fanno dentro una transazione che poi annullano:
@@ -297,7 +305,14 @@ Il portale tratta insieme **data-ora-luogo di nascita** e **indirizzi IP**. Chi 
 Nel modello di configurazione le ultime due sono **disattivate**: la scelta è di chi installa.
 
 I permalink portano `X-Robots-Tag: noindex`. Un tema natale con nome e cognome indicizzato dai
-motori di ricerca sarebbe un problema serio, ed è escluso per costruzione.
+motori di ricerca sarebbe un problema serio, ed è escluso per costruzione. Fanno eccezione solo
+le carte dell'archivio pubblicate, che sono fatte per essere trovate, e che un visitatore non
+può cancellare.
+
+**La regia può consultare tutte le carte salvate** — nome, data, ora e luogo — dal pannello.
+Il modello dell'informativa e il modulo di calcolo lo dicono; chi installa il portale deve
+tenerlo scritto nella propria. Le carte dei visitatori non finiscono mai nell'archivio da sole:
+ci va solo ciò che la regia ha calcolato e documentato.
 
 I dati della seconda persona in una sinastria **non vengono archiviati**: chi partecipa a un
 confronto non ha scelto di essere nel portale.
@@ -337,3 +352,7 @@ confronto non ha scelto di essere nel portale.
 - **Stellarium** — GPL-2.0, per le figure delle costellazioni
 - **DB-IP Lite** — CC BY 4.0
 - **Leaflet** — BSD-2-Clause · tessere **Esri**
+- **Dati dell'archivio** — ogni scheda cita la propria fonte: per le persone le raccolte di
+  dati di nascita pubblicate da Astrotheme (Rodden, Gauquelin e altri collezionisti), per eventi e
+  fondazioni NASA, INGV, la Commissione sull'11 settembre, le cronache d'epoca, e Nicholas
+  Campion (*The Book of World Horoscopes*) per le carte di fondazione più note
