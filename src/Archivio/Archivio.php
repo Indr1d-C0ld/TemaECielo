@@ -28,11 +28,21 @@ final class Archivio
     /** @var array<string,list<string>> le categorie ammesse, per tipo */
     public const CATEGORIE = [
         'persona' => ['scienza', 'arte', 'letteratura', 'musica', 'cinema', 'spettacolo',
-                      'filosofia', 'politica', 'esplorazione', 'sport', 'religione'],
+                      'filosofia', 'politica', 'esplorazione', 'sport', 'religione', 'cronaca-nera'],
         'evento'  => ['guerra', 'rivoluzione', 'politica', 'scienza', 'esplorazione',
-                      'disastro', 'economia', 'cultura'],
+                      'disastro', 'economia', 'cultura', 'cronaca-nera'],
         'nazione' => ['fondazione', 'costituzione', 'unione', 'moneta'],
     ];
+
+    /**
+     * Come si legge una categoria: la chiave e' una parola sola, anche quando
+     * il nome ne ha due («cronaca-nera» → «cronaca nera»), perche' viaggia negli
+     * indirizzi dei filtri.
+     */
+    public static function etichetta(string $categoria): string
+    {
+        return str_replace('-', ' ', $categoria);
+    }
 
     /**
      * Le classi di affidabilita' di Lois Rodden: quanto e' certa l'ORA, che e'

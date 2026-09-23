@@ -206,13 +206,31 @@ prova('In oceano si ripiega sul fuso nautico', static function () {
 
 echo "\n\033[1;36m══ Tempi di risposta ══\033[0m\n";
 
+/**
+ * Il tempo migliore su tre esecuzioni. La prova vuole scoprire una ricerca
+ * lenta per costruzione — un indice che manca, una scansione dell'intera
+ * tabella — e quella resta lenta tutte e tre le volte. Una sola misura a freddo
+ * falliva invece per ragioni che col codice non c'entrano: la cache del
+ * database svuotata dal dump notturno, o un altro servizio che carica la
+ * macchina.
+ */
+function migliore(callable $f): float
+{
+    $meglio = INF;
+    for ($i = 0; $i < 3; $i++) {
+        $t0 = microtime(true);
+        $f();
+        $meglio = min($meglio, (microtime(true) - $t0) * 1000);
+    }
+
+    return $meglio;
+}
+
 prova('Una ricerca per nome sta sotto i 150 ms', static function () {
     $peggio = 0.0;
     $lento = '';
     foreach (['roma', 'milano', 'sant agata', 'new york', 'reggio', 'firenze'] as $q) {
-        $t0 = microtime(true);
-        Gazetteer::cerca($q);
-        $ms = (microtime(true) - $t0) * 1000;
+        $ms = migliore(static fn () => Gazetteer::cerca($q));
         if ($ms > $peggio) { $peggio = $ms; $lento = $q; }
     }
 
@@ -222,9 +240,7 @@ prova('Una ricerca per nome sta sotto i 150 ms', static function () {
 prova('Un click sulla mappa sta sotto i 150 ms', static function () {
     $peggio = 0.0;
     foreach ([[41.9, 12.5], [45.46, 9.19], [35.68, 139.77], [23.4, 25.1]] as [$la, $lo]) {
-        $t0 = microtime(true);
-        Gazetteer::piuVicino($la, $lo);
-        $peggio = max($peggio, (microtime(true) - $t0) * 1000);
+        $peggio = max($peggio, migliore(static fn () => Gazetteer::piuVicino($la, $lo)));
     }
 
     return $peggio < 150.0 ? true : sprintf('%.0f ms nel caso peggiore', $peggio);

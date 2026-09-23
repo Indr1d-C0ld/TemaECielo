@@ -59,7 +59,7 @@ ksort($categorie);
     <select name="categoria" aria-label="Categoria">
       <option value="">ogni categoria</option>
       <?php foreach ($categorie as $c => $n): ?>
-        <option value="<?= e($c) ?>" <?= $filtri['categoria'] === $c ? 'selected' : '' ?>><?= e($c) ?> (<?= e((string) $n) ?>)</option>
+        <option value="<?= e($c) ?>" <?= $filtri['categoria'] === $c ? 'selected' : '' ?>><?= e(Archivio::etichetta($c)) ?> (<?= e((string) $n) ?>)</option>
       <?php endforeach; ?>
     </select>
     <select name="secolo" aria-label="Secolo">
@@ -90,7 +90,7 @@ ksort($categorie);
             <?= $v['ora_nascita'] !== null && in_array($v['rodden'], ['AA', 'A', 'B'], true) ? $segno($v['segno_asc'], 'Asc') : '' ?>
           </span>
           <span class="voce-meta">
-            <span class="bollino"><?= e((string) $v['categoria']) ?></span>
+            <span class="bollino"><?= e(Archivio::etichetta((string) $v['categoria'])) ?></span>
             <span class="bollino rodden-<?= e(strtolower((string) $v['rodden'])) ?>" title="<?= e(Archivio::RODDEN[$v['rodden']][0] ?? '') ?>"><?= e((string) $v['rodden']) ?></span>
           </span>
         </li>

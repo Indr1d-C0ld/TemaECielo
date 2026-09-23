@@ -100,6 +100,14 @@ prova('Lo slug si legge: accenti, apostrofi e lettere straniere diventano ASCII'
     return true;
 });
 
+prova('«Cronaca nera»: una categoria di due parole, per persone ed eventi, con la chiave a trattino', static function () {
+    $p = Archivio::pulisci(['nome' => 'X', 'tipo' => 'persona', 'categoria' => 'cronaca-nera']);
+    $e = Archivio::pulisci(['nome' => 'X', 'tipo' => 'evento', 'categoria' => 'cronaca-nera']);
+    $filtro = preg_replace('/[^a-z-]/', '', 'cronaca-nera');
+    return ($p['categoria'] === 'cronaca-nera' && $e['categoria'] === 'cronaca-nera'
+        && Archivio::etichetta('cronaca-nera') === 'cronaca nera' && $filtro === 'cronaca-nera') ?: json_encode([$p, $e]);
+});
+
 prova('Una scheda senza nome o di tipo sconosciuto viene rifiutata', static function () {
     foreach ([['nome' => '  ', 'tipo' => 'persona'], ['nome' => 'X', 'tipo' => 'pianeta']] as $d) {
         try { Archivio::pulisci($d); return 'accettata: ' . json_encode($d); } catch (\InvalidArgumentException) {}

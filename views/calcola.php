@@ -198,7 +198,7 @@ $err = static fn (string $k): string => isset($errori[$k])
             <select id="archivio_categoria" name="archivio_categoria">
               <?php foreach (\App\Archivio\Archivio::CATEGORIE as $tipo => $cats): ?>
                 <optgroup label="<?= e(\App\Archivio\Archivio::TIPI[$tipo]) ?>">
-                  <?php foreach ($cats as $c): ?><option value="<?= e($c) ?>"><?= e($c) ?></option><?php endforeach; ?>
+                  <?php foreach ($cats as $c): ?><option value="<?= e($c) ?>"><?= e(\App\Archivio\Archivio::etichetta($c)) ?></option><?php endforeach; ?>
                 </optgroup>
               <?php endforeach; ?>
             </select>

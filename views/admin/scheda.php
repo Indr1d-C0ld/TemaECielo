@@ -44,7 +44,7 @@ use App\Archivio\Archivio;
           <?php foreach (Archivio::CATEGORIE as $tipo => $cats): ?>
             <optgroup label="<?= e(Archivio::TIPI[$tipo]) ?>">
               <?php foreach ($cats as $c): ?>
-                <option value="<?= e($c) ?>" <?= $scheda['categoria'] === $c && $scheda['tipo'] === $tipo ? 'selected' : '' ?>><?= e($c) ?></option>
+                <option value="<?= e($c) ?>" <?= $scheda['categoria'] === $c && $scheda['tipo'] === $tipo ? 'selected' : '' ?>><?= e(\App\Archivio\Archivio::etichetta($c)) ?></option>
               <?php endforeach; ?>
             </optgroup>
           <?php endforeach; ?>

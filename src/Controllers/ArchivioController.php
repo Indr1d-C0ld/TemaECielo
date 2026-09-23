@@ -27,7 +27,7 @@ final class ArchivioController
     {
         $filtri = [
             'tipo'      => (string) ($r->query('tipo') ?? ''),
-            'categoria' => preg_replace('/[^a-z]/', '', (string) ($r->query('categoria') ?? '')) ?? '',
+            'categoria' => preg_replace('/[^a-z-]/', '', (string) ($r->query('categoria') ?? '')) ?? '',
             'q'         => trim(mb_substr((string) ($r->query('q') ?? ''), 0, 80)),
             'secolo'    => (int) ($r->query('secolo') ?? 0),
         ];
