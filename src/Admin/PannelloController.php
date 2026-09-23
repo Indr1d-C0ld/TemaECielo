@@ -249,6 +249,17 @@ final class PannelloController
                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = \'accessi\' AND PARTITION_NAME IS NOT NULL
                   ORDER BY PARTITION_ORDINAL_POSITION'
             ),
+            // La tabella `calcoli` fa due mestieri: i permalink delle carte,
+            // che sono per sempre, e la cache del motore, che e' buttabile.
+            // Vanno contati separati, o il numero non dice niente.
+            'cache' => Database::riga(
+                'SELECT COUNT(*)                                        AS righe,
+                        COALESCE(SUM(gettone IS NOT NULL), 0)           AS permalink,
+                        COALESCE(SUM(gettone IS NULL), 0)               AS cache,
+                        ROUND(COALESCE(SUM(LENGTH(esito)), 0)/1048576, 1) AS mb,
+                        MIN(CASE WHEN gettone IS NULL THEN ultima_richiesta END) AS piu_vecchia
+                   FROM calcoli'
+            ) ?? [],
         ]));
     }
 

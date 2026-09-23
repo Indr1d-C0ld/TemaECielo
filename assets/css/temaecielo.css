@@ -308,6 +308,22 @@ blockquote { margin: 1.4rem 0; padding-left: 1.2rem; border-left: 2px solid var(
 .riga-fondo { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0; }
 .sep { opacity: .5; }
 
+/* --- il menu richiudibile -------------------------------------------------
+   Il pulsante e' nascosto su monitor e scoperto dal JavaScript: la regola di
+   visibilita' sta qui, ma chi decide se mostrarlo e' la larghezza. */
+
+.menu-tasto {
+  display: none; align-items: center; gap: 9px; margin-left: auto;
+  background: none; border: 1px solid var(--filo); border-radius: 2px;
+  color: var(--oro-chiaro); font: inherit; font-size: .74rem;
+  letter-spacing: .18em; text-transform: uppercase;
+  padding: 9px 14px; cursor: pointer; min-height: 42px;
+}
+.menu-tasto:hover { background: var(--velo); color: var(--oro); }
+.menu-tasto:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+.menu-barre { display: grid; gap: 3px; width: 17px; }
+.menu-barre i { display: block; height: 2px; background: currentColor; border-radius: 1px; }
+
 /* --- adattamento ---------------------------------------------------------- */
 
 @media (max-width: 960px) {
@@ -316,25 +332,6 @@ blockquote { margin: 1.4rem 0; padding-left: 1.2rem; border-left: 2px solid var(
   .tre { grid-template-columns: 1fr; }
   .fasi li { grid-template-columns: 2.6rem 1fr; row-gap: 2px; }
   .fase-cosa, .fase-stato { grid-column: 2; text-align: left; }
-}
-
-@media (max-width: 620px) {
-  body { font-size: 16px; }
-  .cartiglio { padding: 22px 18px 26px; }
-  .testata .dentro { padding: 12px 16px; }
-  .navigazione { margin-left: 0; width: 100%; }
-  .foglio { padding: 26px 16px 56px; }
-}
-
-@media print {
-  body::before, .testata, .piede, .veste, .regia-nav { display: none !important; }
-  body { background: #fff; color: #000; }
-  .cartiglio { border: 1px solid #999; box-shadow: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  * { animation: none !important; transition: none !important; }
 }
 
 /* ===========================================================================
@@ -676,11 +673,48 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
    =========================================================================== */
 
 .volta-riquadro { margin: 1.8rem 0 2.4rem; text-align: center; }
-.volta { display: block; width: 100%; max-width: 44rem; height: auto; margin: 0 auto;
+.volta-tela { position: relative; width: 100%; max-width: 44rem; margin-inline: auto;
+              border-radius: 4px; overflow: hidden; }
+.volta { display: block; width: 100%; height: auto; margin: 0 auto;
          filter: drop-shadow(0 22px 46px rgba(0, 0, 0, .5)); }
 .volta text { font-family: inherit; }
 .volta-riquadro figcaption { margin-top: 1rem; font-size: .84rem; color: var(--attenuato);
                              max-width: 52rem; margin-inline: auto; }
+
+/* --- la volta che si sfoglia --------------------------------------------- */
+
+/* `volta-viva` la mette solo il JavaScript: senza, il riquadro resta
+   un'immagine ferma e il cursore non promette cose che non succedono. */
+.volta-viva .volta-tela { cursor: grab; }
+.volta-in-mano .volta-tela { cursor: grabbing; }
+
+/* Il dito: finche' la volta e' intera non c'e' niente da spostare, quindi lo
+   scorrimento verticale resta della pagina — altrimenti in mezzo a uno schermo
+   di telefono si aprirebbe una zona morta alta trecento pixel. `pan-y` lascia
+   comunque a noi il pizzico, che e' il modo per entrare; una volta ingranditi
+   il comando passa tutto qui, perche' a quel punto spostarsi dentro il disegno
+   e' quello che si vuole fare. */
+.volta-viva .volta-tela { touch-action: pan-y; }
+.volta-viva.volta-zoomata .volta-tela { touch-action: none; }
+.volta-tela:focus-visible { outline: 2px solid var(--oro); outline-offset: 3px; }
+
+.volta-attrezzi { position: absolute; top: 10px; right: 10px; z-index: 2;
+                  display: flex; flex-direction: column; gap: 5px; }
+.volta-tasto {
+  width: 34px; height: 34px; display: grid; place-items: center; padding: 0;
+  font: inherit; font-size: 1.05rem; line-height: 1; cursor: pointer;
+  color: var(--oro-chiaro); background: rgba(11, 16, 38, .74);
+  border: 1px solid var(--filo); border-radius: 3px;
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.volta-tasto:hover { background: rgba(11, 16, 38, .92); color: var(--oro); border-color: var(--oro); }
+.volta-tasto:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+
+.volta-aiuto { margin: .7rem auto 0; max-width: 44rem; font-size: .78rem;
+               color: var(--attenuato); }
+.volta-aiuto kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                   font-size: .92em; padding: 1px 5px; border: 1px solid var(--filo-tenue);
+                   border-radius: 3px; background: var(--velo); }
 
 /* Il cielo e' nero anche sulla pergamena: un cielo beige non e' un cielo.
    Solo la cornice e le etichette si adattano alla veste. */
@@ -691,7 +725,9 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
 @media print {
   /* La volta si stampa com'e': il fondo scuro qui e' il soggetto, non la
      decorazione, e schiarirlo cancellerebbe le stelle. */
-  .volta { max-width: 15cm; filter: none; page-break-inside: avoid; }
+  .volta-tela { max-width: 15cm; }
+  .volta { filter: none; page-break-inside: avoid; }
+  .volta-attrezzi, .volta-aiuto, .quadro-cielo { display: none !important; }
   .volta-riquadro figcaption a { display: none; }
 }
 
@@ -850,3 +886,168 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
 .profezione-nome { display: block; font-size: 1.15rem; color: var(--oro-chiaro); font-variant: small-caps;
                    letter-spacing: .06em; }
 .profezione p { margin: 0 0 .5rem; }
+
+/* ===========================================================================
+   Il quadro di comando della volta: da dove, e quando
+   =========================================================================== */
+
+.quadro-cielo {
+  border: 1px solid var(--filo-tenue); border-radius: 4px;
+  padding: 20px 22px 22px; margin: 0 0 2.2rem; background: var(--pannello-2);
+}
+.quadro-titolo {
+  margin: 0 0 16px; font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--attenuato); border: 0; padding: 0;
+}
+
+/* Due colonne sul largo, una sullo stretto. Il campo del luogo occupa la riga
+   intera perche' il suo elenco a tendina ha bisogno di spazio per respirare. */
+.quadro-griglia { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.quadro-griglia .campo-largo { grid-column: 1 / -1; }
+.quadro-griglia .campo { margin: 0; }
+
+.quadro-azioni { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+
+/* Un pulsante che non grida: e' un'alternativa, non l'azione principale. */
+.bottone-tenue {
+  display: inline-block; padding: 10px 20px; text-decoration: none;
+  font-size: .74rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--attenuato); border: 1px solid var(--filo-tenue); border-radius: 2px;
+}
+.bottone-tenue:hover { color: var(--oro-chiaro); border-color: var(--filo); background: var(--velo); }
+
+/* I salti nel tempo sono collegamenti veri: si aprono in una scheda nuova, si
+   salvano, e funzionano con JavaScript spento. */
+.scorri-tempo { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px;
+                padding-top: 14px; border-top: 1px solid var(--filo-tenue); }
+.scorri-tempo a {
+  padding: 6px 12px; text-decoration: none; font-size: .74rem;
+  color: var(--attenuato); border: 1px solid var(--filo-tenue); border-radius: 2px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.scorri-tempo a:hover { color: var(--oro-chiaro); border-color: var(--filo); background: var(--velo); }
+
+.mappa-piega { margin-top: 18px; }
+.mappa-piega > summary {
+  cursor: pointer; padding: 10px 0; font-size: .72rem; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--attenuato);
+}
+.mappa-piega > summary:hover { color: var(--oro-chiaro); }
+.mappa-piega > summary:focus-visible { outline: 2px solid var(--oro); outline-offset: 3px; }
+.mappa-piega[open] > summary { margin-bottom: 14px; }
+.mappa-piega .mappa-riquadro { margin-bottom: 0; }
+.mappa-piega .mappa { height: 20rem; }
+
+/* La soglia della regia: distinta dalle sezioni del portale, che sono un'altra
+   cosa. Un filetto verticale basta a dirlo senza aggiungere parole. */
+.navigazione .voce-soglia { margin-left: 8px; padding-left: 10px;
+                            border-left: 1px solid var(--filo-tenue); }
+.navigazione .voce-soglia a { color: var(--oro-chiaro); opacity: .82; }
+.navigazione .voce-soglia a:hover { opacity: 1; }
+
+/* ===========================================================================
+   Adattamento a schermi stretti e a dita
+
+   Sta in fondo di proposito. Un foglio di stile si legge dall'alto in basso e
+   a parita' di peso vince l'ultima regola scritta: una media query messa a
+   meta' documento viene scavalcata in silenzio da ogni regola di base che le
+   segue. E' successo davvero, ed e' il genere di guasto che non da' errori —
+   si vede solo misurando la pagina.
+   =========================================================================== */
+
+/* Sotto i 780px le sette voci del menu non stanno piu' su una riga: da qui in
+   giu' la barra diventa un pannello che si apre. */
+@media (max-width: 780px) {
+  .menu-tasto { display: flex; }
+  .navigazione { margin-left: 0; width: 100%; order: 3; }
+  .navigazione.richiudibile { display: none; }
+  .navigazione.richiudibile.aperta { display: block; }
+  .navigazione ul { flex-direction: column; gap: 0; margin-top: 10px;
+                    border-top: 1px solid var(--filo-tenue); }
+  .navigazione li { border-bottom: 1px solid var(--filo-tenue); }
+  .navigazione a { padding: 13px 4px; border-bottom: 0; font-size: .8rem; }
+  .navigazione a[aria-current="page"] { border-bottom: 0; }
+  .navigazione a[aria-current="page"]::before { content: '\203A\00a0'; }
+  /* Il filetto verticale che stacca la regia non ha senso in colonna. */
+  .navigazione .voce-soglia { margin-left: 0; padding-left: 0; border-left: 0;
+                              border-top: 1px solid var(--filo); }
+}
+
+@media (max-width: 620px) {
+  body { font-size: 16px; }
+  .cartiglio { padding: 22px 16px 26px; }
+  .testata .dentro { padding: 12px 16px; gap: 12px; }
+  .foglio { padding: 24px 14px 52px; }
+
+  /* Il marchio non deve spingere fuori il pulsante del menu. */
+  .marchio-nome { font-size: 1.16rem; }
+  .marchio-motto { font-size: .7rem; letter-spacing: .12em; }
+
+  /* Griglie a due colonne: sullo stretto vanno in colonna sola. */
+  .quadro-griglia { grid-template-columns: 1fr; }
+
+  /* Un titoletto di sezione lungo, tutto maiuscolo e spaziato, su 340px di
+     larghezza diventa un muro: si accorcia la spaziatura, non il testo. */
+  .occhiello { font-size: .74rem; letter-spacing: .2em; }
+  .lettura-sezione { letter-spacing: .14em; }
+  h1 { font-size: 1.62rem; }
+
+  /* Sotto gli 11,5px il testo non si legge piu' a braccio teso. Queste sono
+     le voci che ci finivano: intestazioni di tabella, etichette, didascalie. */
+  .griglia th, .anagrafe dt, .numero-eti { font-size: .76rem; letter-spacing: .1em; }
+  .modulo label, .campo > label { font-size: .78rem; letter-spacing: .12em; }
+  .modulo-nascita legend { font-size: .76rem; letter-spacing: .16em; }
+  .voce-perche, .risposta-chi, .fase-stato, .fase-cosa { font-size: .76rem; }
+  .piede .dentro { font-size: .86rem; }
+  .mappa-crediti, .mappa-istruzione, .mappa-vest { font-size: .76rem; }
+  .aiuto, .volta-aiuto { font-size: .82rem; }
+  .volta-aiuto kbd { font-size: .8rem; }
+  .avanzate summary, .mappa-piega > summary { font-size: .76rem; }
+  .facoltativo { font-size: .9em; }
+
+  /* La mappa e la volta non devono riempire tutto lo schermo: intorno deve
+     restare pagina da scorrere, perche' dentro il dito serve ad altro. */
+  .mappa, .mappa-piega .mappa { height: 17rem; }
+  .volta-tela { max-height: 78vh; }
+
+  /* La griglia degli aspetti e' una matrice di dieci per dieci: su un telefono
+     l'orbe scritto dentro la cella scende a otto pixel, cioe' a un disegno. Si
+     toglie — l'aspetto resta leggibile dal glifo, e l'orbe esatto sta comunque
+     nella tabella «Aspetti» poco piu' sotto, che sullo stretto e' il posto
+     giusto per leggerlo. */
+  .scaletta-orbe { display: none; }
+  .scaletta td, .scaletta th { width: 2.45rem; height: 2.45rem; }
+  .scaletta-cella .glifo { width: 1.05rem; height: 1.05rem; margin: 0 auto; }
+}
+
+/* Dove si tocca invece di puntare, un bersaglio di quindici pixel non si
+   prende. Si allarga lo spazio attorno, non il carattere: il disegno resta
+   quello, cambia quanto e' facile centrarlo. */
+@media (hover: none), (pointer: coarse), (max-width: 620px) {
+  .riga-fondo a, .riga-fondo .collegamento,
+  figcaption a, .mappa-crediti a, .nota-piccola a {
+    display: inline-block; padding: 7px 2px; min-height: 34px;
+  }
+  .linguetta { padding: 13px 18px; }
+  .regia-nav a { padding: 12px 16px; }
+  .paginazione a { display: inline-block; padding: 8px 6px; min-height: 34px; }
+  .mappa-vest { padding: 12px 16px; }
+  .scorri-tempo a { padding: 10px 14px; }
+  .volta-tasto { width: 42px; height: 42px; font-size: 1.2rem; }
+  .filtri .bottone, .azioni-moderazione .bottone { padding: 11px 18px; }
+  .avanzate summary, .mappa-piega > summary { padding: 14px 0; }
+
+  /* Tredici pixel di quadratino non si centrano col pollice. */
+  input[type="radio"], input[type="checkbox"] { width: 20px; height: 20px; }
+}
+
+@media print {
+  body::before, .testata, .piede, .veste, .regia-nav { display: none !important; }
+  body { background: #fff; color: #000; }
+  .cartiglio { border: 1px solid #999; box-shadow: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation: none !important; transition: none !important; }
+}

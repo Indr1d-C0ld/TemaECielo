@@ -5,6 +5,10 @@
    per nome, cliccare sulla mappa, digitare le coordinate. Toccandone uno, gli
    altri due si aggiornano.
 
+   Il completamento automatico sta in `luoghi.js`, che lo condivide con il
+   quadro di comando della volta celeste: qui c'e' solo cosa fare del luogo
+   scelto, che e' l'unica parte davvero diversa fra le due pagine.
+
    Senza JavaScript il modulo resta usabile: i campi di latitudine, longitudine
    e fuso sono normali campi di testo, e il calcolo parte lo stesso. Quello che
    si perde e' la comodita', non la funzione.
@@ -15,6 +19,10 @@
   var base = document.body.getAttribute('data-base') || '';
   var modulo = document.getElementById('modulo-nascita');
   if (!modulo) { return; }
+  // `luoghi.js` arriva prima nell'ordine del documento e gli script differiti
+  // rispettano quell'ordine: se manca, e' un guasto vero e tacere sarebbe
+  // peggio che fermarsi qui.
+  if (!window.TEC || !window.TEC.autocompletaLuoghi) { return; }
 
   var $ = function (id) { return document.getElementById(id); };
   var campoCerca = $('cerca-luogo');
@@ -61,14 +69,14 @@
       posaSegnaposto(ev.latlng.lat, ev.latlng.lng, true);
     });
 
-    document.querySelectorAll('.mappa-vest').forEach(function (b) {
+    modulo.querySelectorAll('.mappa-vest').forEach(function (b) {
       b.addEventListener('click', function () {
         var quale = b.getAttribute('data-strato');
         Object.keys(strati).forEach(function (k) {
           if (mappa.hasLayer(strati[k])) { mappa.removeLayer(strati[k]); }
         });
         strati[quale].addTo(mappa);
-        document.querySelectorAll('.mappa-vest').forEach(function (x) {
+        modulo.querySelectorAll('.mappa-vest').forEach(function (x) {
           x.classList.toggle('attiva', x === b);
         });
       });
@@ -96,106 +104,29 @@
 
   /* --- ricerca per nome -------------------------------------------------- */
 
-  var attesa = null, ultimaQuery = '', indiceAttivo = -1, risultatiCorrenti = [];
+  var ricerca = window.TEC.autocompletaLuoghi({
+    campo: campoCerca,
+    lista: lista,
+    base: base,
+    prefisso: 'luogo',
+    onScelta: function (r) {
+      campoCerca.value = r.nome + (r.contesto ? ' — ' + r.contesto : '');
+      campoNome.value  = r.nome + (r.contesto ? ', ' + r.contesto : '');
+      campoId.value    = r.id;
+      campoLat.value   = r.lat.toFixed(6);
+      campoLon.value   = r.lon.toFixed(6);
+      campoAlt.value   = r.altitudine;
+      campoFuso.value  = r.fuso;
 
-  function cerca(q) {
-    if (q.length < 3) { chiudiLista(); return; }
-    if (q === ultimaQuery) { return; }
-    ultimaQuery = q;
+      ricerca.sincronizza();
 
-    fetch(base + '/api/luoghi?q=' + encodeURIComponent(q), { headers: { Accept: 'application/json' } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d || !d.risultati) { chiudiLista(); return; }
-        mostraRisultati(d.risultati);
-      })
-      .catch(chiudiLista);
-  }
-
-  function mostraRisultati(risultati) {
-    risultatiCorrenti = risultati;
-    indiceAttivo = -1;
-    lista.textContent = '';
-
-    if (!risultati.length) {
-      var vuoto = document.createElement('li');
-      vuoto.className = 'risultato-vuoto';
-      vuoto.textContent = 'Nessun luogo trovato. Prova con un nome diverso, o indica il punto sulla mappa.';
-      lista.appendChild(vuoto);
-      apriLista();
-      return;
-    }
-
-    risultati.forEach(function (r, i) {
-      var li = document.createElement('li');
-      li.className = 'risultato';
-      li.setAttribute('role', 'option');
-      li.setAttribute('id', 'luogo-' + i);
-      li.setAttribute('data-indice', String(i));
-
-      var nome = document.createElement('span');
-      nome.className = 'risultato-nome';
-      nome.textContent = r.nome;
-      li.appendChild(nome);
-
-      // Se l'utente ha trovato il luogo digitando un altro nome — cerca
-      // «Londra» e il luogo si chiama «London» — glielo si mostra, altrimenti
-      // non capirebbe perche' quella riga e' comparsa.
-      if (r.trovato_come) {
-        var alias = document.createElement('span');
-        alias.className = 'risultato-alias';
-        alias.textContent = '«' + r.trovato_come + '»';
-        li.appendChild(alias);
+      if (mappa) {
+        mappa.setView([r.lat, r.lon], 12);
+        posaSegnaposto(r.lat, r.lon, false);
       }
-
-      var ctx = document.createElement('span');
-      ctx.className = 'risultato-contesto';
-      ctx.textContent = r.contesto;
-      li.appendChild(ctx);
-
-      li.addEventListener('mousedown', function (ev) {
-        ev.preventDefault();       // prima che il campo perda il fuoco
-        scegli(i);
-      });
-      lista.appendChild(li);
-    });
-
-    apriLista();
-  }
-
-  function apriLista()  { lista.hidden = false; campoCerca.setAttribute('aria-expanded', 'true'); }
-  function chiudiLista() { lista.hidden = true;  campoCerca.setAttribute('aria-expanded', 'false'); indiceAttivo = -1; }
-
-  function evidenzia(i) {
-    var voci = lista.querySelectorAll('.risultato');
-    voci.forEach(function (v, k) { v.classList.toggle('attivo', k === i); });
-    if (i >= 0 && voci[i]) {
-      voci[i].scrollIntoView({ block: 'nearest' });
-      campoCerca.setAttribute('aria-activedescendant', 'luogo-' + i);
+      aggiornaFuso();
     }
-  }
-
-  function scegli(i) {
-    var r = risultatiCorrenti[i];
-    if (!r) { return; }
-
-    campoCerca.value = r.nome + (r.contesto ? ' — ' + r.contesto : '');
-    campoNome.value  = r.nome + (r.contesto ? ', ' + r.contesto : '');
-    campoId.value    = r.id;
-    campoLat.value   = r.lat.toFixed(6);
-    campoLon.value   = r.lon.toFixed(6);
-    campoAlt.value   = r.altitudine;
-    campoFuso.value  = r.fuso;
-
-    chiudiLista();
-    ultimaQuery = campoCerca.value;
-
-    if (mappa) {
-      mappa.setView([r.lat, r.lon], 12);
-      posaSegnaposto(r.lat, r.lon, false);
-    }
-    aggiornaFuso();
-  }
+  });
 
   /* --- click sulla mappa → luogo e fuso ---------------------------------- */
 
@@ -222,7 +153,7 @@
           campoNome.value = 'Punto a ' + lat.toFixed(4) + ', ' + lon.toFixed(4);
           campoCerca.value = campoNome.value;
         }
-        ultimaQuery = campoCerca.value;
+        ricerca.sincronizza();
         aggiornaFuso();
       })
       .catch(function () { /* la mappa resta usabile anche senza */ });
@@ -267,26 +198,6 @@
   }
 
   /* --- collegamenti ------------------------------------------------------ */
-
-  campoCerca.addEventListener('input', function () {
-    clearTimeout(attesa);
-    var q = campoCerca.value.trim();
-    // Un quarto di secondo di attesa: si cerca quando si smette di digitare,
-    // non a ogni tasto premuto.
-    attesa = setTimeout(function () { cerca(q); }, 250);
-  });
-
-  campoCerca.addEventListener('keydown', function (ev) {
-    if (lista.hidden) { return; }
-    var n = risultatiCorrenti.length;
-
-    if (ev.key === 'ArrowDown')      { ev.preventDefault(); indiceAttivo = (indiceAttivo + 1) % n; evidenzia(indiceAttivo); }
-    else if (ev.key === 'ArrowUp')   { ev.preventDefault(); indiceAttivo = (indiceAttivo - 1 + n) % n; evidenzia(indiceAttivo); }
-    else if (ev.key === 'Enter' && indiceAttivo >= 0) { ev.preventDefault(); scegli(indiceAttivo); }
-    else if (ev.key === 'Escape')    { chiudiLista(); }
-  });
-
-  campoCerca.addEventListener('blur', function () { setTimeout(chiudiLista, 150); });
 
   [campoLat, campoLon].forEach(function (c) {
     c.addEventListener('change', function () {

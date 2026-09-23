@@ -77,6 +77,7 @@ exit(match ($comando) {
     'admin:password' => cmdAdminPassword(),
     'admin:esiste'   => cmdAdminEsiste(),
     'partizioni'     => cmdPartizioni(),
+    'cache:purga'    => cmdCachePurga($argv),
     'astro'          => cmdAstro(),
     'astro:prova'    => cmdAstroProva($argv),
     default          => cmdAiuto(),
@@ -93,9 +94,38 @@ function cmdAiuto(): int
     scrivi("  admin:password   crea o cambia la password dell'amministratore");
     scrivi("  admin:esiste     esce con 0 se un amministratore esiste gia'");
     scrivi("  partizioni       aggiunge le partizioni mensili mancanti ad `accessi`");
+    scrivi("  cache:purga      butta la cache del motore   [giorni, 0 = tutta]");
     scrivi("  astro            stato del motore astronomico");
     scrivi("  astro:prova      calcola una carta di prova   [AAAA-MM-GG HH:MM lat lon]");
     scrivi('');
+
+    return 0;
+}
+
+/**
+ * Butta la cache del motore. I permalink non si toccano.
+ *
+ * Senza argomento tiene quello che qualcuno ha richiesto negli ultimi trenta
+ * giorni. Con «0» svuota tutto: serve dopo aver alzato `Motore::VERSIONE`,
+ * quando le righe vecchie hanno una struttura che il portale non sa piu'
+ * leggere e tenerle e' solo peso.
+ */
+function cmdCachePurga(array $argv): int
+{
+    $giorni = isset($argv[2]) && is_numeric($argv[2]) ? max(0, (int) $argv[2]) : 30;
+
+    titolo('Cache del motore');
+
+    $prima = (int) \App\Core\Database::valore('SELECT COUNT(*) FROM calcoli WHERE gettone IS NULL');
+    $permalink = (int) \App\Core\Database::valore('SELECT COUNT(*) FROM calcoli WHERE gettone IS NOT NULL');
+
+    $tolte = \App\Astro\Motore::purgaCache($giorni);
+
+    bene(sprintf('righe di cache prima:  %d', $prima));
+    bene(sprintf('tolte:                 %d%s', $tolte,
+        $giorni > 0 ? "  (non richieste da oltre {$giorni} giorni)" : '  (tutte)'));
+    bene(sprintf('righe di cache dopo:   %d', $prima - $tolte));
+    bene(sprintf('permalink intatti:     %d', $permalink));
 
     return 0;
 }

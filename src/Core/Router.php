@@ -50,12 +50,28 @@ final class Router
         $percorso = $richiesta->percorso();
         $percorsoTrovato = false;
 
+        // HEAD e' un GET a cui si butta via il corpo. Nessuna rotta e' dichiarata
+        // come HEAD — sarebbe assurdo dichiararle tutte due volte — quindi senza
+        // questa riga ogni richiesta HEAD trovava il percorso, non trovava il
+        // metodo e finiva in un 405.
+        //
+        // Non e' un dettaglio di forma. Chi usa HEAD sono i sorveglianti di
+        // servizio, i controllori di collegamenti e una parte dei motori di
+        // ricerca: al sorvegliante il portale risultava guasto, e al motore di
+        // ricerca la pagina di errore arrivava SENZA l'intestazione `noindex`,
+        // che Apache applica solo ai percorsi delle carte. Un HEAD su un
+        // permalink era quindi l'unico modo di toccare una carta senza ricevere
+        // il divieto di indicizzarla.
+        //
+        // Il corpo lo scarta PHP da solo: non c'e' niente da fare qui.
+        $metodo = $richiesta->metodo() === 'HEAD' ? 'GET' : $richiesta->metodo();
+
         foreach ($this->rotte as $rotta) {
             if (preg_match($rotta['regex'], $percorso, $m) !== 1) {
                 continue;
             }
             $percorsoTrovato = true;
-            if ($rotta['metodo'] !== $richiesta->metodo()) {
+            if ($rotta['metodo'] !== $metodo) {
                 continue;
             }
 

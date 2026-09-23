@@ -215,6 +215,12 @@ final class Tempo
                 $locale->format('H:i'),
             ),
             'proposta_ora'  => $locale->format('H:i'),
+            // L'istante c'e' anche qui, benche' `ok` sia falso: chi non sta
+            // ricostruendo una nascita — la carta del cielo, per esempio — ha
+            // comunque bisogno di un istante su cui calcolare, e questo e' il
+            // primo esistente dopo il salto. Chi invece deve fermarsi guarda
+            // `ok`, come ha sempre fatto.
+            'istante'       => $proposta,
             'componenti_ut' => self::componenti($proposta),
         ];
     }

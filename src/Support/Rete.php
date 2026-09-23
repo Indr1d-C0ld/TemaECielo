@@ -52,22 +52,37 @@ final class Rete
             return null;
         }
 
+        if (!self::instradabile($ip)) {
+            return null;
+        }
+
         try {
+            // Una sola ricerca sull'indice, e il contenimento si verifica qui.
+            //
+            // Prima erano due interrogazioni, e la seconda — quella che
+            // chiedeva `ip_da <= ? AND ip_a >= ?` — era una trappola. Gli
+            // intervalli sono ordinati e non si sovrappongono, quindi il
+            // candidato e' sempre e solo l'ultimo che comincia prima
+            // dell'indirizzo cercato: quello lo trova gia' la prima query, con
+            // un salto sull'indice. La seconda invece partiva da li' e tornava
+            // indietro riga per riga finche' non ne incontrava una che
+            // arrivasse abbastanza avanti — e se l'indirizzo cadeva in un buco
+            // fra due intervalli, o prima del primo, non la incontrava MAI e
+            // scandiva tutti e sette milioni e settecentomila.
+            //
+            // In pratica: gli indirizzi presenti costavano due millisecondi,
+            // quelli assenti da tre a cinque SECONDI. E fra gli assenti c'e'
+            // tutto cio' che non e' pubblico — compresi gli indirizzi di rete
+            // locale da cui si guarda il proprio portale da casa.
             $r = Database::riga(
-                'SELECT paese, regione, citta, lat, lon FROM geoip_reti
+                'SELECT paese, regione, citta, lat, lon, ip_a FROM geoip_reti
                   WHERE ip_da <= ? ORDER BY ip_da DESC LIMIT 1',
                 [$b],
             );
-            if ($r === null) {
-                return null;
-            }
-
-            $dentro = Database::valore(
-                'SELECT 1 FROM geoip_reti WHERE ip_da <= ? AND ip_a >= ? ORDER BY ip_da DESC LIMIT 1',
-                [$b, $b],
-            );
-            if ($dentro === null) {
-                return null;
+            // `strcmp` su stringhe binarie confronta byte per byte, che per
+            // interi a sedici byte in ordine di rete e' l'ordine giusto.
+            if ($r === null || strcmp((string) $r['ip_a'], $b) < 0) {
+                return null;   // l'indirizzo cade in un buco fra due intervalli
             }
         } catch (\Throwable) {
             return null;   // il database geografico puo' non essere importato
@@ -95,19 +110,41 @@ final class Rete
             return null;
         }
 
+        if (!self::instradabile($ip)) {
+            return null;
+        }
+
         try {
+            // Stessa trappola di `geolocalizza`, stessa cura: un salto solo.
             $r = Database::riga(
-                'SELECT asn, organizzazione FROM geoip_asn
-                  WHERE ip_da <= ? AND ip_a >= ? ORDER BY ip_da DESC LIMIT 1',
-                [$b, $b],
+                'SELECT asn, organizzazione, ip_a FROM geoip_asn
+                  WHERE ip_da <= ? ORDER BY ip_da DESC LIMIT 1',
+                [$b],
             );
         } catch (\Throwable) {
             return null;
         }
 
-        return $r === null
+        return ($r === null || strcmp((string) $r['ip_a'], $b) < 0)
             ? null
             : ['asn' => (int) $r['asn'], 'organizzazione' => (string) $r['organizzazione']];
+    }
+
+    /**
+     * Se ha senso cercare questo indirizzo nelle tabelle geografiche.
+     *
+     * Rete locale, loopback, link-local, documentazione: non sono in nessun
+     * archivio GeoIP e non lo saranno mai, perche' non appartengono a nessuno.
+     * Chiederlo al database e' tempo buttato — ed e' anche sbagliato nel
+     * merito: 192.168.1.10 non sta in un paese.
+     */
+    private static function instradabile(string $ip): bool
+    {
+        return filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+        ) !== false;
     }
 
     /**

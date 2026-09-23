@@ -37,6 +37,12 @@ final class Motore
      */
     private const VERSIONE = 2;
 
+    /** Quanti giorni si tiene una riga di cache che nessuno richiede piu'. */
+    private const CACHE_GIORNI = 30;
+
+    /** Ogni quante scritture si controlla se c'e' cache vecchia da buttare. */
+    private const SFOLTIMENTO_UNA_SU = 200;
+
     public function __construct(
         private ?string $radice = null,
         private ?string $php = null,
@@ -266,8 +272,77 @@ final class Motore
                     (int) round((float) ($tema['meta']['durata_ms'] ?? 0)),
                 ],
             );
+            $this->sfoltisci();
         } catch (\Throwable $e) {
             registro('cache carte in scrittura: ' . $e->getMessage(), 'warn');
         }
+    }
+
+    /**
+     * La valvola: ogni tanto, e senza che nessuno se ne accorga, butta via la
+     * cache vecchia.
+     *
+     * Serve perche' la crescita di `calcoli` non ha piu' un tetto naturale.
+     * Finche' la volta celeste mostrava solo «adesso», le righe possibili erano
+     * un minuto per luogo; da quando si puo' chiedere una data e un luogo
+     * qualunque, sono tutte le date per tutti i luoghi. A trentun kilobyte
+     * l'una, trentamila richieste fanno un gigabyte, e riempire il disco di
+     * qualcun altro non deve costare cosi' poco.
+     *
+     * Si fa qui e non in un compito periodico perche' un compito periodico
+     * bisogna ricordarsi di installarlo, e chi installa il portale su un'altra
+     * macchina non lo sa. Una volta su duecento scritture e' abbastanza spesso
+     * da non lasciare accumulare nulla, e abbastanza raro da non pesare: la
+     * cancellazione va sull'indice `i_ultima_richiesta` e tocca solo le righe
+     * senza gettone.
+     *
+     * I PERMALINK NON SI TOCCANO MAI. Una riga con `gettone` non e' cache: e'
+     * l'unica copia di una carta, e il suo indirizzo e' l'unica chiave che il
+     * visitatore possiede. Da qui il `gettone IS NULL`, che e' la riga piu'
+     * importante di questo metodo.
+     */
+    private function sfoltisci(): void
+    {
+        if (random_int(1, self::SFOLTIMENTO_UNA_SU) !== 1) {
+            return;
+        }
+
+        try {
+            $tolte = Database::esegui(
+                'DELETE FROM calcoli
+                  WHERE gettone IS NULL
+                    AND ultima_richiesta < NOW() - INTERVAL ? DAY
+                  LIMIT 500',
+                [self::CACHE_GIORNI],
+            )->rowCount();
+
+            if ($tolte > 0) {
+                registro("cache carte: sfoltite {$tolte} righe non piu' richieste", 'info');
+            }
+        } catch (\Throwable $e) {
+            registro('cache carte in sfoltimento: ' . $e->getMessage(), 'warn');
+        }
+    }
+
+    /**
+     * Svuota la cache del motore, lasciando intatti i permalink.
+     *
+     * La usano la console (`cache:purga`) e il pannello di manutenzione.
+     *
+     * @return int quante righe sono state tolte
+     */
+    public static function purgaCache(int $giorni = 0): int
+    {
+        if (!Database::disponibile()) {
+            return 0;
+        }
+
+        // Zero giorni vuol dire «tutta»: si usa dopo aver alzato la VERSIONE
+        // della struttura, quando le righe vecchie non sono piu' leggibili.
+        $sql = $giorni > 0
+            ? 'DELETE FROM calcoli WHERE gettone IS NULL AND ultima_richiesta < NOW() - INTERVAL ? DAY'
+            : 'DELETE FROM calcoli WHERE gettone IS NULL';
+
+        return Database::esegui($sql, $giorni > 0 ? [$giorni] : [])->rowCount();
     }
 }

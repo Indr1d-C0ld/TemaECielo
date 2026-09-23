@@ -838,3 +838,89 @@ Cose che non bloccano il disegno ma vanno fissate prima di scrivere codice.
    registro.
 5. **Nomi delle persone.** Se conservarli nel registro dei calcoli o sostituirli con le sole
    iniziali: incide su §15.3 e sulla serenità con cui si tiene il registro.
+
+---
+
+## 20. Poscritto: quello che si è scoperto dopo
+
+Il documento sopra è stato scritto prima di cominciare, e si è scelto di non riscriverlo: serve
+a capire *perché* il portale è fatto così. Qui sotto stanno invece le cose che si sono viste
+solo costruendolo e usandolo, e che cambiano il disegno.
+
+### 20.1 La volta doveva essere navigabile fin dall'inizio
+
+Nel progetto la volta celeste era un'illustrazione: il cielo dell'istante di nascita, da
+guardare. Alla prova dei fatti la prima cosa che si vuole fare davanti a una carta del cielo è
+**spostarsi** — di un'ora, di un giorno, di un luogo — e la seconda è **avvicinarsi**, perché
+le stelle deboli e i nomi ci sono già tutti nel disegno e si vedono solo ingrandendo.
+
+Nessuna delle due richiede il server: lo zoom agisce sul `viewBox` dell'SVG, e lo spostamento
+nel tempo è un collegamento con parametri diversi. La lezione generale è che un disegno
+vettoriale generato dal server non è meno interattivo di uno costruito nel browser — è
+interattivo in un altro punto, e quel punto costa molto meno.
+
+### 20.2 Una cache senza scadenza è un difetto, non una scelta
+
+`calcoli` tiene insieme due cose che sembravano affini e non lo sono: i permalink, che sono
+dati veri e irripetibili, e la cache del motore, che è ricalcolabile. Finché la volta mostrava
+solo «adesso», la cache cresceva piano e nessuno se n'è accorto. Bastata rendere scegliibili
+data e luogo perché diventasse illimitata.
+
+La cura non è un compito periodico — chi installa il portale altrove non sa di doverlo
+installare — ma una valvola dentro la scrittura, che una volta su duecento butta ciò che
+nessuno richiede da un mese. La riga che conta è `gettone IS NULL`.
+
+### 20.3 Un indirizzo IP *assente* costa quanto tutta la tabella
+
+È il difetto peggiore trovato, e valeva quasi cinque secondi su ogni pagina.
+
+La ricerca geografica di un indirizzo si fa su una tabella di sette milioni e settecentomila
+intervalli. La domanda ingenua — «dammi l'intervallo con `ip_da <= X AND ip_a >= X`» — si
+comporta benissimo quando l'indirizzo c'è: il database salta sull'indice e trova subito.
+Quando l'indirizzo **non** c'è, torna indietro riga per riga cercando un intervallo che
+arrivi abbastanza avanti, e non lo trova mai: scandisce tutto.
+
+La forma giusta è un salto solo — «l'ultimo intervallo che comincia prima di X» — e poi il
+confronto sul suo estremo destro, fatto in PHP. Gli intervalli non si sovrappongono, quindi
+quel candidato è l'unico possibile.
+
+Il motivo per cui è sfuggito così a lungo è istruttivo: in prova si usano indirizzi veri, e
+gli indirizzi veri ci sono. A non esserci sono gli indirizzi di rete locale — cioè quelli da
+cui si guarda il proprio portale da casa. **Il caso lento era esattamente quello dello
+sviluppatore, e nessuna prova lo toccava.**
+
+### 20.4 `fastcgi_finish_request` non esiste sotto mod_php
+
+Il front controller manda la risposta, poi chiude la connessione con
+`fastcgi_finish_request()` e solo dopo registra la visita. Con PHP-FPM funziona. Con mod_php
+quella funzione **non esiste**, il blocco non fa nulla e la telemetria resta dentro il tempo
+di risposta.
+
+Non è un guaio di per sé — sono pochi millisecondi — ma è una falsa sicurezza: tutto ciò che
+sta dopo la risposta dev'essere veloce *di suo*, e non perché si crede che nessuno lo stia
+aspettando. Era proprio lì che si nascondevano i cinque secondi di §20.3.
+
+### 20.5 HEAD non è un metodo esotico
+
+Nessuna rotta è dichiarata come HEAD, e non avrebbe senso dichiararle tutte due volte: deve
+pensarci lo smistatore, traducendolo in GET. Non facendolo, ogni richiesta HEAD riceveva un
+405 — e con esso una pagina d'errore che, non stando sotto `/carta/`, **non portava
+l'intestazione `noindex`**. Un HEAD su un permalink era l'unico modo di toccare una carta
+senza ricevere il divieto di indicizzarla.
+
+### 20.6 La barra delle sezioni non stava su un telefono
+
+Sette voci in maiuscoletto spaziato occupano settecento pixel distese. Su uno schermo da
+trecentosettantacinque diventavano tre righe, e la testata si mangiava un terzo dello schermo
+prima che cominciasse il contenuto — su ogni pagina.
+
+Il pulsante che la richiude nasce `hidden` nel documento ed è il JavaScript a scoprirlo:
+nascondere il menu senza dare modo di riaprirlo chiuderebbe fuori chi non ha JavaScript.
+Chiudere il menu è una comodità; poterci entrare non lo è.
+
+### 20.7 Una media query a metà foglio viene scavalcata in silenzio
+
+Le regole adattive erano state messe accanto alle altre, a metà del foglio di stile. Un foglio
+di stile si legge dall'alto in basso e a parità di peso vince l'ultima regola scritta: tutto
+ciò che veniva definito più sotto le annullava. Non c'è nessun errore, nessun avviso, e la
+pagina sembra semplicemente non adattarsi. Ora stanno in fondo, e c'è scritto perché.

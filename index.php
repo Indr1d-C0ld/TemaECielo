@@ -114,8 +114,17 @@ foreach (Csp::intestazioni() as $nome => $valore) {
 $risposta->invia();
 
 // --- Telemetria, dopo aver risposto -----------------------------------------
-// Il visitatore ha gia' la sua pagina: il conto delle visite non deve mai
-// stare fra lui e il contenuto.
+// Il conto delle visite non deve stare fra il visitatore e il contenuto.
+//
+// Con PHP-FPM `fastcgi_finish_request` chiude davvero la risposta e quel che
+// segue non costa niente a chi guarda. Con mod_php quella funzione NON ESISTE,
+// il blocco qui sotto non fa nulla, e la telemetria resta dentro il tempo di
+// risposta: vale la pena saperlo, perche' e' facile credersi al riparo.
+//
+// Percio' cio' che sta dopo dev'essere veloce per conto proprio, e non perche'
+// qualcuno non lo sta guardando. Oggi lo e' — una manciata di millisecondi —
+// ma lo e' diventato: la ricerca geografica dell'indirizzo, prima di essere
+// corretta, ne costava quattromila. Vedi `Rete::geolocalizza`.
 if (function_exists('fastcgi_finish_request')) {
     fastcgi_finish_request();
 }

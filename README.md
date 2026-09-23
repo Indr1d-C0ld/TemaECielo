@@ -22,16 +22,21 @@ NASA. Niente è approssimato e niente è inventato.
 | **Tema natale** | 10 pianeti più Chirone, Lilith, Nodi, Vertex, Parte di Fortuna e i quattro asteroidi maggiori. Undici sistemi di case. Aspetti maggiori e minori, con applicativo/separativo. Dignità essenziali e accidentali col punteggio di Lilly. Paralleli di declinazione, antiscia, configurazioni. |
 | **La ruota** | SVG generato dal server: funziona senza JavaScript, si stampa nitida, si scarica come file unico. Anti-collisione dei glifi con linea guida al grado vero. |
 | **La volta celeste** | Il cielo *vero* di quell'istante: 8.900 stelle fino alla sesta magnitudine e mezzo, 88 costellazioni, eclittica, pianeti, la Luna nella fase e nell'inclinazione giuste, e il colore del cielo che segue l'altezza del Sole. |
+| **Il cielo, da dove e quando vuoi** | La volta si ingrandisce fino a dodici volte e si sposta — rotella, trascinamento, pizzico, tastiera — agendo sul `viewBox` dell'SVG: nessuna richiesta al server, e ingrandire mostra davvero piu' dettaglio invece di sgranare. Luogo a scelta fra 287.039, dalla ricerca per nome o dalla mappa; data e ora dal 1800 al 2399, con salti di dieci minuti, un'ora, un giorno. Ogni cielo ha un indirizzo proprio, che si salva e si manda. |
 | **La lettura** | Due registri affiancati — tradizionale (dignità, signorie, Lilly) e moderno (archetipi, Rudhyar) — montati per rilevanza, non concatenati. |
 | **Sinastria** | Rapida segno-contro-segno, o completa carta-contro-carta: aspetti incrociati, sovrapposizione delle case, composita, quattro punteggi per area. |
 | **Carte del tempo** | Transiti su data scelta, rivoluzione solare, progressioni secondarie, direzioni di arco solare, profezioni annuali. |
 | **Comunità** | Guestbook con due voti distinti (gradimento e attinenza), moderazione, statistiche pubbliche aggregate. |
 | **Regia** | Pannello per corpus, pagine redazionali, impostazioni, blocchi, registro accessi geolocalizzato offline. |
 
-**296 prove di regressione**, che non confrontano i risultati con altri programmi di
+**330 prove di regressione**, che non confrontano i risultati con altri programmi di
 astrologia — potrebbero sbagliare insieme — ma con fatti verificabili: agli equinozi il Sole
 risulta a 0° entro un centesimo di grado, la Stella Polare sta a un'altezza pari alla
 latitudine, a Longyearbyen il Sole non tramonta a giugno.
+
+Funziona su telefono e su tablet quanto su un monitor: la barra delle sezioni si richiude,
+le tabelle larghe scorrono dentro il proprio riquadro invece di sfondare la pagina, e dove
+si tocca invece di puntare i bersagli si allargano senza che cambi il disegno.
 
 ---
 
@@ -117,6 +122,7 @@ php bin/console.php migra            applica le migrazioni pendenti
 php bin/console.php migra:stato      elenca applicate e pendenti
 php bin/console.php admin:password   crea o cambia la password dell'amministratore
 php bin/console.php partizioni       aggiunge le partizioni mensili ad `accessi`
+php bin/console.php cache:purga      butta la cache del motore    [giorni, 0 = tutta]
 php bin/console.php astro            stato del motore astronomico
 php bin/console.php astro:prova      calcola una carta di prova   [AAAA-MM-GG HH:MM lat lon]
 
@@ -126,7 +132,20 @@ php bin/importa-geoip.php            geolocalizzazione degli indirizzi
 php bin/importa-corpus.php           testi interpretativi (--sostituisci per riallineare)
 ```
 
-Le prove si lanciano una per una:
+### La cache, e perché va tenuta d'occhio
+
+La tabella `calcoli` fa due mestieri. I **permalink** sono l'unica copia di una carta — chi ne
+perde l'indirizzo perde la carta — e non si buttano mai. Le righe di **cache** sono calcoli già
+fatti, tenuti per non rifarli, e pesano una trentina di kilobyte l'una.
+
+Finché la volta mostrava solo «adesso» la crescita aveva un tetto naturale. Da quando si può
+chiedere il cielo di una data e di un luogo qualunque non ce l'ha più: trentamila richieste
+fanno un gigabyte. Il portale se ne difende da solo — una scrittura su duecento butta ciò che
+nessuno richiede da oltre trenta giorni — ma il pannello di manutenzione mostra i numeri, e
+`cache:purga` fa pulizia subito. **In nessuno dei due casi i permalink vengono toccati.**
+
+Le prove si lanciano una per una, e nessuna lascia traccia nel database — quelle che devono
+scriverci lo fanno dentro una transazione che poi annullano:
 
 ```bash
 for t in tests/test_*.php; do php "$t"; done
@@ -151,17 +170,48 @@ src/
   Support/           telemetria, impostazioni, Markdown, indirizzi di rete
 views/               PHP puro, nessun templating
 assets/              css, js, sprite dei glifi (disegnati, non Unicode), Leaflet
+                     js/luoghi.js   completamento automatico, condiviso fra due pagine
+                     js/cielo.js    volta navigabile + quadro «da dove e quando»
 bin/                 console, worker delle effemeridi, importatori
 db/migrazioni/       SQL numerato, applicato una volta sola
 db/semi/             il corpus interpretativo
 deploy/              bootstrap, installazione, conf Apache
 docs/                DESIGN.md (il progetto per esteso), FONTI.md
-tests/               296 prove di regressione
+tests/               330 prove di regressione
 ```
 
 ---
 
 ## Le decisioni che spiegano il resto
+
+### La volta si sfoglia senza tornare al server
+
+Ingrandire il cielo non chiede niente a nessuno: il disegno è un SVG, e spostare il suo
+`viewBox` mostra le stelle deboli e i nomi che erano già lì, alla risoluzione dello schermo
+invece che a quella di un'immagine. Rotella, trascinamento, pizzico e tastiera fanno tutti la
+stessa cosa — cambiano quattro numeri.
+
+Il punto sotto il dito resta fermo mentre si ingrandisce, e il riquadro non si stacca mai dal
+bordo del disegno. Questo secondo vincolo è meno ovvio del primo: senza, dopo tre gesti ci si
+ritrova a guardare il vuoto senza capire dove sia finito il cielo.
+
+Il tocco è trattato in due modi a seconda dello stato. Finché la volta è intera non c'è niente
+da spostare, quindi il dito scorre la pagina; appena si ingrandisce, il comando passa al
+riquadro. Bloccarlo sempre aprirebbe in mezzo allo schermo di un telefono una zona morta alta
+trecento pixel.
+
+### Ogni cielo ha un indirizzo
+
+Luogo, data e ora stanno nella stringa di ricerca, non nella sessione. Ne discendono tre cose
+che non sarebbero venute gratis altrimenti: un cielo si può salvare e mandare a qualcuno; i
+salti nel tempo sono collegamenti veri, quindi funzionano anche con JavaScript spento e si
+aprono in una scheda nuova; e la cache per impronta lavora anche qui, perché due persone che
+chiedono lo stesso istante dallo stesso posto fanno un calcolo solo.
+
+L'ora si legge **nel fuso del luogo osservato**, non in quello di chi guarda: le 22:30 a Tokyo
+sono le 22:30 a Tokyo anche se stai guardando da Milano. È l'unica lettura sensata per una
+carta del cielo, e per ottenerla il fuso si ricava dalle coordinate con la stessa catena
+storica che usa il modulo di nascita.
 
 ### Il calcolo passa dalla riga di comando
 

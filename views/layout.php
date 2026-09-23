@@ -12,13 +12,20 @@ use App\Core\Session;
 
 $lampi = Session::lampi();
 $voci = [
-    ['/',            'Calcola',      'home'],
-    ['/cielo',       'Il cielo',     'cielo'],
-    ['/sinastria',   'Sinastria',    'sinastria'],
-    ['/oggi',        'Oggi',         'oggi'],
-    ['/statistiche', 'Statistiche',  'statistiche'],
-    ['/guestbook',   'Guestbook',    'guestbook'],
+    ['/',            'Calcola',      'home',        false],
+    ['/cielo',       'Il cielo',     'cielo',       false],
+    ['/sinastria',   'Sinastria',    'sinastria',   false],
+    ['/oggi',        'Oggi',         'oggi',        false],
+    ['/statistiche', 'Statistiche',  'statistiche', false],
+    ['/guestbook',   'Guestbook',    'guestbook',   false],
 ];
+
+// L'accesso alla regia sta in fondo al menu, non solo nel pie' di pagina:
+// e' una porta, e una porta si mette dove si cerca. Il quarto elemento la
+// stacca dalle altre voci, che sono sezioni del portale e non una soglia.
+$voci[] = Auth::amministratore()
+    ? ['/admin',   'Regia',   'admin',   true]
+    : ['/accesso', 'Accesso', 'accesso', true];
 ?>
 <!doctype html>
 <html lang="it" data-veste="notte">
@@ -44,10 +51,21 @@ $voci = [
       <span class="marchio-motto">carta del cielo &amp; volta celeste</span>
     </a>
 
-    <nav class="navigazione" aria-label="Sezioni del portale">
+    <!-- Il pulsante nasce nascosto e lo scopre il JavaScript: senza, il menu
+         resta aperto e la testata si limita a mandare le voci a capo, che e'
+         esattamente quello che faceva prima. Nessuno resta chiuso fuori. -->
+    <button type="button" class="menu-tasto" id="menu-tasto" hidden
+            aria-expanded="true" aria-controls="navigazione">
+      <span class="menu-barre" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="menu-parola">Menu</span>
+    </button>
+
+    <nav class="navigazione" id="navigazione" aria-label="Sezioni del portale">
       <ul>
-        <?php foreach ($voci as [$percorso, $etichetta, $chiave]): ?>
-          <li><a href="<?= e(url($percorso)) ?>"<?= ($sezione ?? '') === $chiave ? ' aria-current="page"' : '' ?>><?= e($etichetta) ?></a></li>
+        <?php foreach ($voci as [$percorso, $etichetta, $chiave, $soglia]): ?>
+          <li<?= $soglia ? ' class="voce-soglia"' : '' ?>>
+            <a href="<?= e(url($percorso)) ?>"<?= ($sezione ?? '') === $chiave ? ' aria-current="page"' : '' ?>><?= e($etichetta) ?></a>
+          </li>
         <?php endforeach; ?>
       </ul>
     </nav>
@@ -105,7 +123,11 @@ $voci = [
 <script src="<?= e(risorsa('js/portale.js')) ?>" nonce="<?= e(nonce()) ?>" defer></script>
 <?php if (($mappa ?? false) === true): ?>
   <script src="<?= e(risorsa('leaflet/leaflet.js')) ?>" nonce="<?= e(nonce()) ?>"></script>
+  <script src="<?= e(risorsa('js/luoghi.js')) ?>" nonce="<?= e(nonce()) ?>" defer></script>
   <script src="<?= e(risorsa('js/mappa.js')) ?>" nonce="<?= e(nonce()) ?>" defer></script>
+<?php endif; ?>
+<?php if (($cielo ?? false) === true): ?>
+  <script src="<?= e(risorsa('js/cielo.js')) ?>" nonce="<?= e(nonce()) ?>" defer></script>
 <?php endif; ?>
 </body>
 </html>

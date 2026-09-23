@@ -63,4 +63,51 @@
     var n = ev.target.closest('[data-corpo]');
     if (n) { evidenzia(n.getAttribute('data-corpo'), false); }
   });
+
+  /* --- il menu che si richiude sugli schermi stretti ----------------------
+     Sette voci in maiuscoletto spaziato occupano tre righe su un telefono: la
+     testata arrivava a mangiarsi un terzo dello schermo prima che cominciasse
+     il contenuto.
+
+     Il pulsante esiste solo quando c'e' JavaScript, e per questo nel documento
+     nasce `hidden`: se lo script non gira, nascondere il menu senza dare modo
+     di riaprirlo chiuderebbe fuori il visitatore. Chiudere il menu e' una
+     comodita'; poterci entrare non lo e'.                                    */
+
+  var menu = document.getElementById('menu-tasto');
+  var navigazione = document.getElementById('navigazione');
+
+  if (menu && navigazione) {
+    menu.hidden = false;
+    navigazione.classList.add('richiudibile');
+
+    function mostraMenu(aperto) {
+      navigazione.classList.toggle('aperta', aperto);
+      menu.setAttribute('aria-expanded', aperto ? 'true' : 'false');
+    }
+
+    // Si parte chiusi, ma solo dove il pulsante si vede davvero: su un monitor
+    // la barra e' sempre distesa e la classe non deve toglierla.
+    function stretto() { return getComputedStyle(menu).display !== 'none'; }
+    mostraMenu(!stretto());
+
+    menu.addEventListener('click', function () {
+      mostraMenu(menu.getAttribute('aria-expanded') !== 'true');
+    });
+
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && menu.getAttribute('aria-expanded') === 'true' && stretto()) {
+        mostraMenu(false);
+        menu.focus();
+      }
+    });
+
+    // Girando il telefono si passa da stretto a largo: il menu deve tornare
+    // disteso, o resta chiuso su una barra che avrebbe spazio da vendere.
+    var ultimoStretto = stretto();
+    window.addEventListener('resize', function () {
+      var ora = stretto();
+      if (ora !== ultimoStretto) { ultimoStretto = ora; mostraMenu(!ora); }
+    });
+  }
 }());
