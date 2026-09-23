@@ -27,6 +27,22 @@ final class Voce
     ) {
     }
 
+    /**
+     * Rete di sicurezza: se una forma «{maschile|femminile}» e' arrivata fin
+     * qui senza essere risolta, esce al maschile invece di mostrare le graffe.
+     */
+    public static function nuova(
+        string $ambito, string $chiave, string $titolo, string $corpo, float $rilevanza,
+        string $fonte, array $etichette = [], array $soggetti = [], bool $femminile = false,
+    ): self {
+        return new self(
+            $ambito, $chiave,
+            Lingua::accorda($titolo, $femminile),
+            Lingua::accorda($corpo, $femminile),
+            $rilevanza, $fonte, $etichette, $soggetti,
+        );
+    }
+
     public function con(float $rilevanza, string $perche = ''): self
     {
         return new self(

@@ -56,6 +56,18 @@ final class Response
         return $this;
     }
 
+    /** Il valore di un'intestazione gia' impostata, senza badare alle maiuscole. */
+    public function intestazione(string $nome): ?string
+    {
+        foreach ($this->intestazioni as $k => $v) {
+            if (strcasecmp($k, $nome) === 0) {
+                return (string) $v;
+            }
+        }
+
+        return null;
+    }
+
     public function stato(): int
     {
         return $this->stato;

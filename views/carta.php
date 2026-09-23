@@ -13,6 +13,9 @@
 $rom = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 $ignota = ($tema['carta']['ora_ignota'] ?? false) === true;
 $inatt  = static fn (string $k): bool => in_array($k, $tema['carta']['inattendibili'] ?? [], true);
+// Catene di dispositori e manico arrivano come chiavi interne («mercurio»): in
+// pagina va il nome, «Mercurio».
+$nomeDi = static fn (string $k): string => (string) (\App\Astro\Corpi::elenco()[$k]['nome'] ?? ucfirst($k));
 
 $offsetTesto = sprintf('%s%02d:%02d',
     (int) $soggetto['offset_minuti'] < 0 ? '-' : '+',
@@ -28,6 +31,7 @@ $offsetTesto = sprintf('%s%02d:%02d',
     <div><dt>Data</dt><dd><?= e(date('j/n/Y', strtotime((string) $soggetto['data_nascita']))) ?></dd></div>
     <div><dt>Ora locale</dt><dd>
       <?= $soggetto['ora_nascita'] !== null ? e(substr((string) $soggetto['ora_nascita'], 0, 5)) : 'ignota' ?>
+      <?php if (($soggetto['precisione_ora'] ?? '') === 'approssimativa'): ?><span class="tenue">circa</span><?php endif; ?>
       <?php if ($soggetto['ora_nascita'] !== null): ?>
         <span class="tenue"><?= e($offsetTesto) ?></span>
       <?php endif; ?>
@@ -48,6 +52,36 @@ $offsetTesto = sprintf('%s%02d:%02d',
       interi. Ascendente, Medio Cielo, cuspidi, Parte di Fortuna e Vertex
       <strong>non sono attendibili</strong> e sono segnati come tali. Le posizioni dei corpi,
       invece, valgono: sotto trovi di quanto si sono mossi nelle ventiquattro ore.
+    </p>
+  <?php endif; ?>
+
+  <?php
+    $ripiego = (array) ($tema['carta']['effemeride_ripiego'] ?? []);
+    $mancanti = array_map(
+        static fn (string $k): string => (string) (\App\Astro\Corpi::elenco()[$k]['nome'] ?? $k),
+        array_keys((array) ($tema['errori_corpi'] ?? [])),
+    );
+  ?>
+  <?php if ($ripiego !== [] || $mancanti !== []): ?>
+    <p class="lampo lampo-attento">
+      Questa data sta al margine dell'arco coperto dai file delle effemeridi.
+      <?php if ($ripiego !== []): ?>
+        Per <?= e(implode(', ', $ripiego)) ?> il calcolo &egrave; passato al modello analitico di
+        Moshier: preciso a meno di un secondo d'arco per i pianeti, ma non &egrave; quello delle altre posizioni.
+      <?php endif; ?>
+      <?php if ($mancanti !== []): ?>
+        <?= e(implode(', ', $mancanti)) ?> non <?= count($mancanti) === 1 ? '&egrave; calcolabile' : 'sono calcolabili' ?>
+        per questa data, e <?= count($mancanti) === 1 ? 'manca' : 'mancano' ?> dalla carta.
+      <?php endif; ?>
+    </p>
+  <?php endif; ?>
+
+  <?php if (($soggetto['precisione_ora'] ?? '') === 'approssimativa'): ?>
+    <p class="lampo lampo-attento">
+      <strong>L'ora di nascita &egrave; approssimativa.</strong>
+      L'Ascendente si sposta di circa un grado ogni quattro minuti, e le cuspidi con lui:
+      un quarto d'ora di incertezza basta a cambiare il segno che sorge o la casa di un pianeta
+      vicino a una cuspide. Le posizioni dei corpi restano valide; case e angoli vanno presi con cautela.
     </p>
   <?php endif; ?>
 
@@ -102,7 +136,7 @@ $offsetTesto = sprintf('%s%02d:%02d',
         $tot = $c['scritte'] + $c['composte'];
         ?>
         Di <?= e((string) $tot) ?> passaggi, <?= e((string) $c['scritte']) ?>
-        <?= $c['scritte'] === 1 ? 'e' : 'sono' ?> scritt<?= $c['scritte'] === 1 ? 'o' : 'i' ?> a mano
+        <?= $c['scritte'] === 1 ? '&egrave;' : 'sono' ?> scritt<?= $c['scritte'] === 1 ? 'o' : 'i' ?> a mano
         e <?= e((string) $c['composte']) ?> compost<?= $c['composte'] === 1 ? 'o' : 'i' ?> dai frammenti
         del corpus &mdash; li riconosci dal filetto pi&ugrave; tenue a sinistra.
         Il corpus cresce: le voci pi&ugrave; frequenti vengono scritte per prime.
@@ -202,6 +236,13 @@ $offsetTesto = sprintf('%s%02d:%02d',
     </table>
   </div>
 
+  <?php if ($inatt('setta')): ?>
+    <p class="nota-piccola">
+      Senza l'ora di nascita il punteggio delle dignit&agrave; non conta la casa, e usa i signori di
+      triplicit&agrave; del giorno: non si sa se la nascita sia avvenuta di giorno o di notte.
+    </p>
+  <?php endif; ?>
+
   <h2>Punti</h2>
   <div class="tabella-scorre">
     <table class="griglia">
@@ -294,7 +335,11 @@ $offsetTesto = sprintf('%s%02d:%02d',
       endforeach; ?>
 
       <h3>Emisferi</h3>
-      <?php $em = $tema['bilanci']['emisferi']; ?>
+      <?php $em = $tema['bilanci']['emisferi'] ?? null; ?>
+      <?php if ($em === null): ?>
+        <p class="tenue">Non determinabili: senza l'ora di nascita non si sa dove stesse l'orizzonte,
+          e quindi quali pianeti fossero sopra o sotto, a oriente o a occidente.</p>
+      <?php else: ?>
       <table class="griglia definizioni">
         <tbody>
           <tr><th>Sopra l'orizzonte</th><td class="num"><?= e((string) $em['sopra_orizzonte']) ?> su 10</td></tr>
@@ -306,6 +351,7 @@ $offsetTesto = sprintf('%s%02d:%02d',
           </td></tr>
         </tbody>
       </table>
+      <?php endif; ?>
     </div>
 
     <div>
@@ -316,17 +362,19 @@ $offsetTesto = sprintf('%s%02d:%02d',
       <p class="tenue piccolo">
         Ampiezza <?= e(number_format((float) $f['ampiezza'], 1, ',', '')) ?>&deg;,
         vuoto massimo <?= e(number_format((float) $f['vuoto_massimo'], 1, ',', '')) ?>&deg;<?php
-        if ($f['manico'] !== null): ?>, manico: <?= e((string) $f['manico']) ?><?php endif; ?>.
+        if ($f['manico'] !== null): ?>, manico: <?= e($nomeDi((string) $f['manico'])) ?><?php endif; ?>.
       </p>
 
-      <?php $d = $tema['bilanci']['dispositori']; ?>
+      <?php
+        $d = $tema['bilanci']['dispositori'];
+      ?>
       <h3>Dispositori</h3>
       <?php if ($d['dispositori_finali'] !== []): ?>
-        <p>Dispositore finale: <strong><?= e(implode(', ', $d['dispositori_finali'])) ?></strong>
+        <p>Dispositore finale: <strong><?= e(implode(', ', array_map($nomeDi, $d['dispositori_finali']))) ?></strong>
            &mdash; governa l'intera catena della carta.</p>
       <?php elseif ($d['anelli'] !== []): ?>
         <p>Nessun dispositore finale. La catena si chiude in un anello:
-           <strong><?= e(implode(' &harr; ', $d['anelli'][0])) ?></strong>,
+           <strong><?= e(implode(' ↔ ', array_map($nomeDi, $d['anelli'][0]))) ?></strong>,
            pianeti che si governano a vicenda senza che nessuno comandi.</p>
       <?php else: ?>
         <p class="tenue">Catena non determinabile.</p>
@@ -385,4 +433,20 @@ $offsetTesto = sprintf('%s%02d:%02d',
       &middot; giorno giuliano <?= e(number_format((float) $tema['tempo']['jd_ut'], 5, ',', '')) ?>
     </p>
   </div>
+
+  <details class="avanzate cancella-carta">
+    <summary>Cancella questa carta</summary>
+    <form method="post" action="<?= e(url('/carta/' . $gettone . '/elimina')) ?>" class="modulo">
+      <?= csrf() ?>
+      <p class="aiuto">
+        Si cancellano la carta e i dati di nascita. L'indirizzo smetter&agrave; di funzionare per
+        chiunque l'abbia ricevuto, e non c'&egrave; modo di recuperarla.
+      </p>
+      <label class="scelta">
+        <input type="checkbox" name="conferma" value="si" required>
+        <span class="scelta-corpo"><span class="scelta-titolo">S&igrave;, cancellala per sempre</span></span>
+      </label>
+      <button type="submit" class="bottone bottone-male">Cancella</button>
+    </form>
+  </details>
 </article>

@@ -28,7 +28,9 @@ final class GuestbookController
     {
         $stato = in_array($r->query('stato'), ['coda', 'approvato', 'rifiutato', 'cestino'], true)
             ? (string) $r->query('stato') : 'coda';
-        $pagina = max(1, (int) ($r->query('p') ?? '1'));
+        // Un tetto: senza, un numero di pagina enorme fa traboccare l'offset in
+        // virgola mobile e l'SQL si rompe con un 500.
+        $pagina = min(1_000_000, max(1, (int) ($r->query('p') ?? '1')));
 
         return Response::html(Vista::pagina('admin/guestbook', [
             'titolo'   => 'Guestbook',

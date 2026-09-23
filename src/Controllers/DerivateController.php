@@ -61,6 +61,15 @@ final class DerivateController
         $motore = new Motore();
         $errori = [];
 
+        // Il sistema di case della carta natale, non Placido d'ufficio: una
+        // progressione o una rivoluzione si confrontano con la natale, e
+        // confrontare case di sistemi diversi e' confrontare misure diverse.
+        // Per la carta solare (ora ignota) restano i segni interi.
+        $sistema = (string) ($natale['carta']['sistema_case'] ?? 'placido');
+        if (!array_key_exists($sistema, \App\Astro\Corpi::sistemiCase())) {
+            $sistema = 'segni_interi';
+        }
+
         // --- progressioni secondarie ----------------------------------------
         $progresso = null;
         $contatti = [];
@@ -68,11 +77,14 @@ final class DerivateController
             $jdProg = Derivate::jdProgresso($jdNatale, $jdQuando);
             $progresso = $motore->tema($this->componentiDa($jdProg) + [
                 'lat' => (float) $primo['lat'], 'lon' => (float) $primo['lon'],
-                'alt' => (int) $primo['altitudine'], 'sistema_case' => 'placido',
+                'alt' => (int) $primo['altitudine'], 'sistema_case' => $sistema,
             ]);
             $contatti = Derivate::contatti($progresso, $natale);
         } catch (\Throwable $e) {
-            $errori['progressioni'] = $e->getMessage();
+            // Il messaggio vero va nel diario, non nella pagina: puo' contenere
+            // l'uscita d'errore del processo di calcolo, con percorsi del server.
+            registro('derivate/progressioni: ' . $e->getMessage(), 'warn');
+            $errori['progressioni'] = 'Il calcolo non e\' riuscito. Riprova fra poco.';
         }
 
         // --- direzioni di arco solare ---------------------------------------
@@ -100,11 +112,14 @@ final class DerivateController
                     'anno' => $ritorno['anno'], 'mese' => $ritorno['mese'],
                     'giorno' => $ritorno['giorno'], 'ora_ut' => $ritorno['ora_ut'],
                     'lat' => (float) $primo['lat'], 'lon' => (float) $primo['lon'],
-                    'alt' => (int) $primo['altitudine'], 'sistema_case' => 'placido',
+                    'alt' => (int) $primo['altitudine'], 'sistema_case' => $sistema,
                 ]),
             ];
         } catch (\Throwable $e) {
-            $errori['rivoluzione'] = $e->getMessage();
+            // Il messaggio vero va nel diario, non nella pagina: puo' contenere
+            // l'uscita d'errore del processo di calcolo, con percorsi del server.
+            registro('derivate/rivoluzione: ' . $e->getMessage(), 'warn');
+            $errori['rivoluzione'] = 'Il calcolo non e\' riuscito. Riprova fra poco.';
         }
 
         Telemetria::evento('derivate', (string) $anno);
@@ -162,7 +177,9 @@ final class DerivateController
                FROM calcoli c
                JOIN calcoli_soggetti cs ON cs.calcolo_id = c.id AND cs.ruolo = \'primo\'
                JOIN soggetti s ON s.id = cs.soggetto_id
-              WHERE c.gettone = ? LIMIT 1',
+              WHERE c.gettone = ?
+              ORDER BY cs.soggetto_id
+              LIMIT 1',
             [$gettone],
         );
 

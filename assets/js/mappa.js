@@ -65,8 +65,11 @@
 
     if (haPunto) { posaSegnaposto(lat, lon, false); }
 
+    // `wrap()`: oltre l'antimeridiano Leaflet restituisce longitudini fuori
+    // scala, che il modulo rifiuta.
     mappa.on('click', function (ev) {
-      posaSegnaposto(ev.latlng.lat, ev.latlng.lng, true);
+      var p = ev.latlng.wrap();
+      posaSegnaposto(p.lat, p.lng, true);
     });
 
     modulo.querySelectorAll('.mappa-vest').forEach(function (b) {
@@ -91,7 +94,7 @@
     } else {
       segnaposto = L.marker([lat, lon], { draggable: true }).addTo(mappa);
       segnaposto.on('dragend', function () {
-        var p = segnaposto.getLatLng();
+        var p = segnaposto.getLatLng().wrap();
         posaSegnaposto(p.lat, p.lng, true);
       });
     }
@@ -170,7 +173,8 @@
 
     fetch(base + '/api/fuso?data=' + encodeURIComponent(campoData.value)
                + '&ora=' + encodeURIComponent(campoOra.value)
-               + '&zona=' + encodeURIComponent(campoFuso.value),
+               + '&zona=' + encodeURIComponent(campoFuso.value)
+               + (campoLon.value !== '' ? '&lon=' + encodeURIComponent(campoLon.value) : ''),
           { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
@@ -185,6 +189,11 @@
         } else if (d.stato === 'ambiguo') {
           esitoFuso.classList.add('esito-attento');
           esitoFuso.textContent = d.avviso || 'Quell’ora è esistita due volte quella notte.';
+        } else if (d.ok && d.abbreviazione === 'LMT') {
+          // Prima dei fusi: si dice che cosa si sta facendo, non solo lo scarto.
+          esitoFuso.textContent = 'Ora locale media del luogo, ' + d.offset_testo
+            + ' dalla longitudine: a quella data i fusi orari non erano ancora in uso.'
+            + ' → ' + d.utc.replace('T', ' ').replace('Z', ' UT');
         } else if (d.ok) {
           esitoFuso.textContent = 'Scarto applicato: ' + d.offset_testo
             + (d.abbreviazione ? ' (' + d.abbreviazione + ')' : '')

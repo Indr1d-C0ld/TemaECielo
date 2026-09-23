@@ -44,7 +44,7 @@ final class CieloController
     {
         $luogo  = $this->luogoDa($r);
         $quando = $this->istanteDa($r, $luogo);
-        $tema   = $this->cieloA($luogo, $quando['istante']);
+        $tema   = $this->cieloA($luogo, $quando);
 
         Telemetria::evento('cielo_visto', $luogo['nome'], $quando['adesso'] ? 'adesso' : 'scelto');
 
@@ -66,7 +66,7 @@ final class CieloController
     {
         $luogo  = $this->luogoDa($r);
         $quando = $this->istanteDa($r, $luogo);
-        $tema   = $this->cieloA($luogo, $quando['istante']);
+        $tema   = $this->cieloA($luogo, $quando);
 
         Telemetria::evento('oggi_visto', $luogo['nome']);
 
@@ -91,7 +91,7 @@ final class CieloController
     {
         $luogo  = $this->luogoDa($r);
         $quando = $this->istanteDa($r, $luogo);
-        $tema   = $this->cieloA($luogo, $quando['istante']);
+        $tema   = $this->cieloA($luogo, $quando);
 
         $nome = sprintf(
             'cielo-%s-%s.svg',
@@ -119,11 +119,15 @@ final class CieloController
      * millisecondo.
      *
      * @param array<string,mixed> $luogo
+     * @param array<string,mixed> $quando
      * @return array<string,mixed>
      */
-    private function cieloA(array $luogo, int $istante): array
+    private function cieloA(array $luogo, array $quando): array
     {
-        $c = Tempo::componenti($istante);
+        $c = Tempo::componenti((int) $quando['istante']);
+        $scarto = (new \DateTimeImmutable('@' . (int) $quando['istante']))
+            ->setTimezone(new \DateTimeZone((string) $quando['zona']))
+            ->getOffset();
 
         return (new Motore())->tema([
             'anno'         => $c['anno'],
@@ -134,6 +138,8 @@ final class CieloController
             'lon'          => (float) $luogo['lon'],
             'alt'          => (int) $luogo['alt'],
             'sistema_case' => 'placido',
+            // Alba e tramonto del giorno sull'orologio del luogo osservato.
+            'offset_secondi' => $scarto,
         ]);
     }
 
@@ -185,7 +191,7 @@ final class CieloController
             ));
         }
 
-        $esito = Tempo::risolvi($data, $ora . ':00', $zona);
+        $esito = Tempo::risolviNelLuogo($data, $ora . ':00', $zona, (float) $luogo['lon']);
 
         // Un'ora ambigua o inesistente non e' un errore da fermare: qui non si
         // sta ricostruendo una nascita, si sta guardando in alto. Si sceglie
@@ -244,6 +250,20 @@ final class CieloController
                 'lat'  => round((float) $lat, 6), 'lon' => round((float) $lon, 6),
                 'alt'  => $vicino['altitudine'] ?? 0, 'id' => $vicino['id'] ?? 0,
             ];
+        }
+
+        // Senza JavaScript il quadro manda solo il nome scritto nel campo di
+        // ricerca: lo si cerca qui, come avrebbe fatto il completamento.
+        $testo = trim((string) ($r->query('luogo_testo') ?? ''));
+        if (mb_strlen($testo) >= 3) {
+            $trovato = Gazetteer::cerca(mb_substr($testo, 0, 120), null, 1)[0] ?? null;
+            if ($trovato !== null) {
+                return [
+                    'nome' => $trovato['nome'] . ($trovato['contesto'] !== '' ? ', ' . $trovato['contesto'] : ''),
+                    'lat'  => $trovato['lat'], 'lon' => $trovato['lon'],
+                    'alt'  => $trovato['altitudine'], 'id' => $trovato['id'],
+                ];
+            }
         }
 
         $id = (int) ($r->query('luogo') ?? 0);

@@ -28,6 +28,7 @@ $router->get('/calcola',    [CalcolaController::class, 'modulo']);
 $router->post('/calcola',   [CalcolaController::class, 'calcola']);
 $router->get('/carta/{gettone}', [CalcolaController::class, 'carta']);
 $router->get('/carta/{gettone}/ruota.svg', [CalcolaController::class, 'ruota']);
+$router->post('/carta/{gettone}/elimina',  [CalcolaController::class, 'elimina']);
 $router->get('/carta/{gettone}/cielo.svg', [CalcolaController::class, 'cielo']);
 $router->get('/carta/{gettone}/sinastria',  [SinastriaController::class, 'modulo']);
 $router->post('/carta/{gettone}/sinastria', [SinastriaController::class, 'calcola']);

@@ -18,11 +18,7 @@
     try { localStorage.setItem(CHIAVE, veste); } catch (e) { /* navigazione privata */ }
   }
 
-  var salvata = null;
-  try { salvata = localStorage.getItem(CHIAVE); } catch (e) { /* idem */ }
-  if (salvata === 'notte' || salvata === 'pergamena') {
-    radice.setAttribute('data-veste', salvata);
-  }
+  // La veste salvata la applica gia' veste.js, nel <head>, prima del disegno.
 
   var tasto = document.getElementById('cambia-veste');
   if (tasto) {

@@ -91,11 +91,18 @@ final class Request
 
         $fidati = (array) Config::get('sicurezza.proxy_fidati', ['127.0.0.1', '::1']);
         if (in_array($diretto, $fidati, true)) {
-            $avanti = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
-            if ($avanti !== '') {
-                $primo = trim(explode(',', $avanti)[0]);
-                if (filter_var($primo, FILTER_VALIDATE_IP) !== false) {
-                    return $primo;
+            // Si legge la catena da DESTRA: l'ultimo elemento l'ha scritto
+            // l'intermediario fidato, e ogni elemento prima di lui l'ha scritto
+            // chi gli stava davanti. Il primo a sinistra lo sceglie il client,
+            // e prenderlo per buono vorrebbe dire lasciargli decidere il proprio
+            // indirizzo — e con esso freni, blocchi e tentativi di accesso.
+            $catena = array_reverse(array_map('trim', explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))));
+            foreach ($catena as $voce) {
+                if (filter_var($voce, FILTER_VALIDATE_IP) === false) {
+                    break;
+                }
+                if (!in_array($voce, $fidati, true)) {
+                    return $voce;
                 }
             }
         }

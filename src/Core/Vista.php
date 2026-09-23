@@ -28,11 +28,28 @@ final class Vista
             throw new RuntimeException("Vista non trovata: {$nome}");
         }
 
-        extract($dati, EXTR_SKIP);
-        ob_start();
-        require $file;
+        // La vista si rende in un ambito tutto suo, dove le sole variabili locali
+        // hanno nomi che nessuna vista userebbe.
+        //
+        // Prima `extract` girava qui, accanto a `$nome`, `$dati` e `$file`, con
+        // EXTR_SKIP: le chiavi con quei nomi venivano scartate in silenzio, e la
+        // vista trovava al loro posto le variabili di questo metodo. Il modulo
+        // dell'ora ambigua riceveva cosi' in `$dati` l'intero pacchetto della
+        // pagina invece dei dati di nascita, scriveva i campi nascosti sbagliati,
+        // e la scelta fra le due ore non arrivava mai a una carta. Per lo stesso
+        // motivo i moduli non si ricompilavano dopo un errore.
+        return (static function (string $__vista, array $__dati): string {
+            extract($__dati, EXTR_SKIP);
+            ob_start();
+            try {
+                require $__vista;
+            } catch (\Throwable $e) {
+                ob_end_clean();
+                throw $e;
+            }
 
-        return (string) ob_get_clean();
+            return (string) ob_get_clean();
+        })($file, $dati);
     }
 
     /**

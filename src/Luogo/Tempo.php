@@ -226,6 +226,43 @@ final class Tempo
     }
 
     /**
+     * Come `risolvi`, ma sapendo DOVE: prima dell'adozione dei fusi l'ora di un
+     * atto di nascita e' l'ora locale media del luogo, non quella della citta'
+     * che da' il nome alla zona.
+     *
+     * Il tzdata, per le date anteriori ai fusi, risponde con l'ora media della
+     * citta' di riferimento: «LMT» di Chicago per tutto l'Illinois, «RMT» —
+     * l'ora di Roma — per tutta l'Italia dal 1866 al 1893. Ma l'ora di Roma era
+     * quella delle ferrovie e dei telegrafi; nei comuni si segnava l'ora del
+     * proprio meridiano. Per una nascita a Milano nel 1880 l'errore era di
+     * tredici minuti, a Torino di diciannove: qualche grado di Ascendente.
+     *
+     * La regola non si allarga a ogni «ora media di una capitale»: in Francia
+     * l'ora di Parigi divento' davvero ora civile nazionale nel 1891, ed e'
+     * giusto che resti tale. Per questo «RMT» e' trattata come locale solo per
+     * le zone italiane.
+     *
+     * @return array<string,mixed>
+     */
+    public static function risolviNelLuogo(string $data, string $ora, string $zona, float $lon): array
+    {
+        $r = self::risolvi($data, $ora, $zona);
+
+        $abbr = (string) ($r['abbreviazione'] ?? '');
+        $locale = $abbr === 'LMT'
+            || ($abbr === 'RMT' && in_array($zona, self::ZONE_ITALIANE, true));
+
+        if (($r['ok'] ?? false) !== true || !$locale) {
+            return $r;
+        }
+
+        return ['zona' => $zona] + self::oraLocaleMedia($data, $ora, $lon);
+    }
+
+    /** Zone che nel tzdata seguono l'Italia (Roma, e i due stati che ci stanno dentro). */
+    private const ZONE_ITALIANE = ['Europe/Rome', 'Europe/Vatican', 'Europe/San_Marino'];
+
+    /**
      * Ora locale media, ricavata dalla sola longitudine.
      *
      * Serve per le nascite anteriori all'adozione dei fusi — in Italia il 1°

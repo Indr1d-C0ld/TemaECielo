@@ -21,7 +21,7 @@ final class Configurazioni
      */
     public static function trova(array $aspetti, array $punti): array
     {
-        $mappa = self::mappa($aspetti);
+        $mappa = self::conQuinconci(self::mappa($aspetti), $punti);
         $fuori = [];
 
         foreach (self::stellium($punti) as $s)            { $fuori[] = $s; }
@@ -48,6 +48,42 @@ final class Configurazioni
         }
 
         return $m;
+    }
+
+    /**
+     * Aggiunge all'indice le quinconce che mancano, calcolandole dalle posizioni.
+     *
+     * Lo Yod e' fatto di due quinconce e un sestile, e la quinconce e' un
+     * aspetto «minore»: nessuna pagina chiede gli aspetti minori, quindi le
+     * quinconce non arrivavano mai qui, e lo Yod — che il codice sapeva
+     * riconoscere — non veniva trovato mai. Qui si cercano direttamente, con
+     * l'orbe stretto che la tradizione usa proprio per lo Yod. Nessun'altra
+     * figura contiene quinconce, quindi aggiungerle non cambia le altre.
+     *
+     * @param array<string,array<string,array<string,mixed>>> $mappa
+     * @param array<string,array{lon:float,nome:string}> $punti
+     * @return array<string,array<string,array<string,mixed>>>
+     */
+    private static function conQuinconci(array $mappa, array $punti): array
+    {
+        $orbe = 3.0;
+        $chiavi = array_keys($punti);
+        for ($i = 0; $i < count($chiavi); $i++) {
+            for ($j = $i + 1; $j < count($chiavi); $j++) {
+                $a = $chiavi[$i]; $b = $chiavi[$j];
+                if (isset($mappa[$a][$b])) {
+                    continue;
+                }
+                $scarto = abs(Corpi::distanza((float) $punti[$a]['lon'], (float) $punti[$b]['lon']) - 150.0);
+                if ($scarto <= $orbe) {
+                    $voce = ['a' => $a, 'b' => $b, 'aspetto' => 'quinconce', 'forza' => round(1.0 - $scarto / $orbe, 3)];
+                    $mappa[$a][$b] = $voce;
+                    $mappa[$b][$a] = $voce;
+                }
+            }
+        }
+
+        return $mappa;
     }
 
     /**

@@ -66,7 +66,7 @@ final class CalcolaController
             default          => [$dati['ora'], 'esatta'],
         };
 
-        $tempo = Tempo::risolvi($dati['data'], $ora, $dati['fuso']);
+        $tempo = Tempo::risolviNelLuogo($dati['data'], $ora, $dati['fuso'], (float) $dati['lon']);
 
         // L'ora ambigua non si sceglie di nascosto: si chiede.
         if (($tempo['stato'] ?? '') === Tempo::AMBIGUO && ($dati['ambigua'] ?? '') === '') {
@@ -114,12 +114,17 @@ final class CalcolaController
                 // l'unico sistema che non finge una precisione che non c'e'.
                 'sistema_case' => $precisione === 'ignota' ? 'segni_interi' : $dati['sistema'],
                 'ora_ignota'   => $precisione === 'ignota',
+                // Lo scarto civile serve al worker per sapere quale sia il
+                // giorno di nascita sull'orologio a muro (alba, tramonto).
+                'offset_secondi' => $offset,
             ]);
         } catch (\Throwable $e) {
             registro('calcolo fallito: ' . $e->getMessage(), 'error');
             Telemetria::evento('calcolo_fallito', '', mb_substr($e->getMessage(), 0, 200));
             Session::set('__modulo', $dati);
-            Session::set('__errori', ['motore' => 'Il motore di calcolo non ha risposto. Riprova fra poco.']);
+            Session::set('__errori', ['motore' => $e instanceof \App\Support\TroppeRichieste
+                ? 'Troppe richieste di calcolo da questo indirizzo. Riprova fra un minuto.'
+                : 'Il motore di calcolo non ha risposto. Riprova fra poco.']);
 
             return Response::redirect(url('/calcola'));
         }
@@ -135,6 +140,70 @@ final class CalcolaController
         return Response::redirect(url('/carta/' . $gettone));
     }
 
+    /**
+     * POST /carta/{gettone}/elimina
+     *
+     * La home e il modulo promettevano che chi conserva l'indirizzo puo'
+     * cancellare la propria carta, e non c'era modo di farlo. L'indirizzo e'
+     * l'unica chiave — non c'e' account — quindi chi lo possiede puo'
+     * cancellare: e' lo stesso principio per cui puo' leggerla.
+     *
+     * Si cancellano la carta e i dati di nascita della persona. Il guestbook
+     * perde soltanto il riferimento (la chiave esterna mette NULL): un messaggio
+     * pubblicato resta del suo autore.
+     */
+    public function elimina(Request $r, array $argomenti): Response
+    {
+        $gettone = preg_replace('/[^a-f0-9]/', '', (string) ($argomenti['gettone'] ?? '')) ?? '';
+
+        if (!Csrf::verifica($r->post('_csrf'))) {
+            Session::lampo('male', 'La sessione e\' scaduta. Riprova.');
+            return Response::redirect(url('/carta/' . $gettone));
+        }
+        if ($r->post('conferma') !== 'si') {
+            Session::lampo('male', 'Per cancellare la carta spunta la conferma: non si torna indietro.');
+            return Response::redirect(url('/carta/' . $gettone));
+        }
+
+        $id = Database::valore('SELECT id FROM calcoli WHERE gettone = ? LIMIT 1', [$gettone]);
+        if ($id === null) {
+            return Response::html(Vista::pagina('errors/generico', [
+                'titolo' => 'Carta non trovata', 'stato' => 404,
+                'messaggio' => 'Questa carta non esiste, o e\' gia\' stata cancellata.',
+            ]), 404);
+        }
+
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            $soggetti = array_map('intval', array_column(
+                Database::righe('SELECT soggetto_id FROM calcoli_soggetti WHERE calcolo_id = ?', [(int) $id]),
+                'soggetto_id',
+            ));
+            Database::esegui('DELETE FROM calcoli WHERE id = ?', [(int) $id]);
+            foreach ($soggetti as $s) {
+                // Solo se la persona non compare in nessun'altra carta.
+                Database::esegui(
+                    'DELETE FROM soggetti WHERE id = ? AND NOT EXISTS
+                       (SELECT 1 FROM calcoli_soggetti WHERE soggetto_id = ?)',
+                    [$s, $s],
+                );
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+
+        if (Session::get('__ultima_carta') === $gettone) {
+            Session::togli('__ultima_carta');
+        }
+        Telemetria::evento('carta_cancellata');
+        Session::lampo('bene', 'La carta e i dati di nascita sono stati cancellati. L\'indirizzo non porta piu\' a nulla.');
+
+        return Response::redirect(url('/'));
+    }
+
     /** GET /carta/{gettone} */
     public function carta(Request $r, array $argomenti): Response
     {
@@ -146,7 +215,9 @@ final class CalcolaController
                FROM calcoli c
                JOIN calcoli_soggetti cs ON cs.calcolo_id = c.id AND cs.ruolo = \'primo\'
                JOIN soggetti s ON s.id = cs.soggetto_id
-              WHERE c.gettone = ? LIMIT 1',
+              WHERE c.gettone = ?
+              ORDER BY cs.soggetto_id
+              LIMIT 1',
             [$gettone],
         );
 
@@ -276,6 +347,35 @@ final class CalcolaController
         $lat = $r->post('lat');
         $lon = $r->post('lon');
 
+        // Senza JavaScript arriva solo cio' che si e' scritto nel campo di
+        // ricerca: niente identificativo, niente coordinate, niente fuso. Il
+        // server fa allora quello che avrebbe fatto il completamento automatico,
+        // e prende il primo luogo che la ricerca restituisce. Il modulo
+        // prometteva di funzionare senza script, e prima non partiva.
+        $testo = trim((string) $r->post('luogo_testo', ''));
+        if ($luogo === null && (!is_numeric($lat) || !is_numeric($lon)) && mb_strlen($testo) >= 3) {
+            $trovato = Gazetteer::cerca(mb_substr($testo, 0, 120), null, 1)[0] ?? null;
+            if ($trovato !== null) {
+                $luogo   = $trovato;
+                $luogoId = (int) $trovato['id'];
+                $lat     = (string) $trovato['lat'];
+                $lon     = (string) $trovato['lon'];
+            }
+        }
+
+        // Il fuso, se lo script non l'ha messo, si ricava dalle coordinate con
+        // la stessa funzione che usa la mappa.
+        $fuso = (string) ($r->post('fuso') ?: ($luogo['fuso'] ?? ''));
+        if ($fuso === '' && is_numeric($lat) && is_numeric($lon)
+            && abs((float) $lat) <= 90 && abs((float) $lon) <= 180) {
+            $fuso = (string) (Gazetteer::fusoDi((float) $lat, (float) $lon)['fuso'] ?? '');
+        }
+
+        $nomeLuogo = mb_substr(trim((string) $r->post('luogo_nome', '')), 0, 190);
+        if ($nomeLuogo === '' && $luogo !== null) {
+            $nomeLuogo = (string) $luogo['nome'] . (($luogo['contesto'] ?? '') !== '' ? ', ' . $luogo['contesto'] : '');
+        }
+
         return [
             'nome'        => mb_substr(trim((string) $r->post('nome', '')), 0, 120),
             'data'        => trim((string) $r->post('data', '')),
@@ -283,11 +383,11 @@ final class CalcolaController
             'precisione'  => in_array($r->post('precisione'), ['esatta', 'approssimativa', 'ignota'], true)
                 ? (string) $r->post('precisione') : 'esatta',
             'luogo_id'    => $luogoId,
-            'luogo_nome'  => mb_substr(trim((string) $r->post('luogo_nome', '')), 0, 190),
+            'luogo_nome'  => $nomeLuogo,
             'lat'         => is_numeric($lat) ? round((float) $lat, 6) : null,
             'lon'         => is_numeric($lon) ? round((float) $lon, 6) : null,
-            'altitudine'  => (int) ($r->post('altitudine') ?? ($luogo['altitudine'] ?? 0)),
-            'fuso'        => (string) ($r->post('fuso') ?: ($luogo['fuso'] ?? '')),
+            'altitudine'  => (int) ($r->post('altitudine') ?: ($luogo['altitudine'] ?? 0)),
+            'fuso'        => $fuso,
             'sistema'     => array_key_exists((string) $r->post('sistema'), \App\Astro\Corpi::sistemiCase())
                 ? (string) $r->post('sistema') : 'placido',
             'ambigua'     => (string) ($r->post('ambigua') ?? ''),
@@ -372,32 +472,48 @@ final class CalcolaController
 
             $impronta = (string) ($tema['meta']['impronta'] ?? '');
 
-            // Il calcolo puo' esistere gia': la cache e' per impronta, e la
-            // stessa carta chiesta da due persone e' una riga sola. Il gettone,
-            // pero', deve restare quello della prima volta, altrimenti il
-            // permalink gia' consegnato smetterebbe di funzionare.
+            // Ogni persona riceve un permalink SUO, anche quando il calcolo e'
+            // identico a quello di qualcun altro.
+            //
+            // Prima non era cosi': la cache e' per impronta, e se due persone
+            // inserivano gli stessi dati di nascita la seconda veniva mandata al
+            // permalink della prima — e ne vedeva il NOME, perche' la pagina
+            // della carta mostra il soggetto legato a quel calcolo. Valeva anche
+            // all'indietro: con due soggetti sullo stesso calcolo, la carta
+            // della prima persona poteva cominciare a mostrare il nome della
+            // seconda. Il calcolo si puo' condividere; l'identita' no.
+            //
+            // Quindi: una riga di sola cache (senza gettone) si promuove a
+            // permalink, come prima; una riga che ha GIA' un gettone appartiene a
+            // qualcuno, e per la nuova persona si scrive una riga nuova. La sua
+            // impronta viene derivata da quella vera e dal gettone, cosi' resta
+            // unica e il motore non la scambia per la propria cache.
+            $gettone = bin2hex(random_bytes(16));
             $esistente = Database::riga('SELECT id, gettone FROM calcoli WHERE impronta = ? LIMIT 1', [$impronta]);
 
-            if ($esistente !== null && $esistente['gettone'] !== null) {
+            $promossa = $esistente !== null && $esistente['gettone'] === null
+                // `AND gettone IS NULL`: se due richieste promuovono la stessa
+                // riga nello stesso istante, una sola vince e l'altra lo sa.
+                && Database::esegui(
+                    'UPDATE calcoli SET gettone = ? WHERE id = ? AND gettone IS NULL',
+                    [$gettone, (int) $esistente['id']],
+                )->rowCount() === 1;
+
+            if ($promossa) {
                 $calcoloId = (int) $esistente['id'];
-                $gettone   = (string) $esistente['gettone'];
             } else {
-                $gettone = bin2hex(random_bytes(16));
-                if ($esistente !== null) {
-                    Database::esegui('UPDATE calcoli SET gettone = ? WHERE id = ?', [$gettone, (int) $esistente['id']]);
-                    $calcoloId = (int) $esistente['id'];
-                } else {
-                    Database::esegui(
-                        'INSERT INTO calcoli (gettone, impronta, tipo, esito, richieste, durata_ms, creato, ultima_richiesta)
-                         VALUES (?,?,?,?,1,?,NOW(),NOW())',
-                        [
-                            $gettone, $impronta, 'natale',
-                            (string) json_encode($tema, JSON_UNESCAPED_UNICODE),
-                            (int) round((float) ($tema['meta']['durata_ms'] ?? 0)),
-                        ],
-                    );
-                    $calcoloId = Database::ultimoId();
-                }
+                Database::esegui(
+                    'INSERT INTO calcoli (gettone, impronta, tipo, esito, richieste, durata_ms, creato, ultima_richiesta)
+                     VALUES (?,?,?,?,1,?,NOW(),NOW())',
+                    [
+                        $gettone,
+                        $esistente === null ? $impronta : hash('sha256', $impronta . ':' . $gettone),
+                        'natale',
+                        (string) json_encode($tema, JSON_UNESCAPED_UNICODE),
+                        (int) round((float) ($tema['meta']['durata_ms'] ?? 0)),
+                    ],
+                );
+                $calcoloId = Database::ultimoId();
             }
 
             Database::esegui(

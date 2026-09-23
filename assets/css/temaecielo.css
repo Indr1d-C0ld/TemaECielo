@@ -92,6 +92,13 @@ body::before {
 
 /* --- elementi di base ---------------------------------------------------- */
 
+/* L'attributo `hidden` deve nascondere SEMPRE. Il browser lo applica con il
+   proprio foglio di stile, che perde contro qualunque regola dell'autore con un
+   `display`: il pulsante del menu, nascosto nel documento e scoperto dal
+   JavaScript, compariva comunque sugli schermi stretti — e senza JavaScript
+   era un pulsante che non faceva niente. */
+[hidden] { display: none !important; }
+
 a { color: var(--oro-chiaro); text-decoration-color: var(--filo); text-underline-offset: .18em; }
 a:hover { color: var(--oro); }
 
@@ -205,6 +212,9 @@ blockquote { margin: 1.4rem 0; padding-left: 1.2rem; border-left: 2px solid var(
 /* --- i tre riquadri ------------------------------------------------------- */
 
 .tre { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 52px; }
+/* Due blocchi affiancati. Era usata in sei pagine e non era mai stata definita:
+   i blocchi finivano uno sotto l'altro anche su un monitor largo. */
+.due { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.4rem; align-items: start; }
 .riquadro { background: var(--pannello); border: 1px solid var(--filo-tenue); padding: 22px 24px; border-radius: 3px; }
 .riquadro h2 { margin-top: 0; font-size: 1.02rem; letter-spacing: .2em; text-transform: uppercase; }
 .riquadro p { color: var(--attenuato); font-size: .93rem; margin: 0; }
@@ -469,8 +479,11 @@ blockquote { margin: 1.4rem 0; padding-left: 1.2rem; border-left: 2px solid var(
 .barra .traccia { height: 7px; background: var(--velo); border-radius: 1px; overflow: hidden; }
 .barra .riemp { display: block; height: 100%; background: var(--oro); width: 0; }
 .barra-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--attenuato); }
-.riemp-fuoco { background: var(--el-fuoco); } .riemp-terra { background: var(--el-terra); }
-.riemp-aria  { background: var(--el-aria); }  .riemp-acqua { background: var(--el-acqua); }
+/* Col prefisso .barra, come la regola del riempimento oro: con la sola classe
+   perdevano per specificita' (0,1,0 contro 0,2,0) e le barre degli elementi
+   uscivano tutte oro. */
+.barra .riemp-fuoco { background: var(--el-fuoco); } .barra .riemp-terra { background: var(--el-terra); }
+.barra .riemp-aria  { background: var(--el-aria); }  .barra .riemp-acqua { background: var(--el-acqua); }
 
 .figura-nome { font-size: 1.4rem; color: var(--oro-chiaro); font-variant: small-caps;
                letter-spacing: .04em; margin-bottom: .3rem; }
@@ -673,7 +686,10 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
    =========================================================================== */
 
 .volta-riquadro { margin: 1.8rem 0 2.4rem; text-align: center; }
-.volta-tela { position: relative; width: 100%; max-width: 44rem; margin-inline: auto;
+/* Larga al massimo quanto l'altezza dello schermo: la volta e' un quadrato, e su
+   un telefono in orizzontale un limite d'ALTEZZA con overflow nascosto la
+   tagliava a meta'. Limitarne la larghezza la tiene intera. */
+.volta-tela { position: relative; width: 100%; max-width: min(44rem, 86vh); margin-inline: auto;
               border-radius: 4px; overflow: hidden; }
 .volta { display: block; width: 100%; height: auto; margin: 0 auto;
          filter: drop-shadow(0 22px 46px rgba(0, 0, 0, .5)); }
@@ -1008,7 +1024,6 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
   /* La mappa e la volta non devono riempire tutto lo schermo: intorno deve
      restare pagina da scorrere, perche' dentro il dito serve ad altro. */
   .mappa, .mappa-piega .mappa { height: 17rem; }
-  .volta-tela { max-height: 78vh; }
 
   /* La griglia degli aspetti e' una matrice di dieci per dieci: su un telefono
      l'orbe scritto dentro la cella scende a otto pixel, cioe' a un disegno. Si
@@ -1050,4 +1065,12 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { animation: none !important; transition: none !important; }
+}
+
+/* Lo sprite dei glifi, incorporato in cima a ogni pagina: esiste per essere
+   richiamato con <use>, non per essere visto. Fuori dal flusso, dimensione zero. */
+.sprite-glifi { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+@media (max-width: 720px) {
+  .due { grid-template-columns: 1fr; }
 }

@@ -10,7 +10,7 @@
   Uso:  <svg class="glifo"><use href="glifi.svg#gl-sole"></use></svg>
   Il colore segue currentColor. Ogni simbolo vive in una gabbia 24x24.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="0" height="0" class="sprite-glifi">
 
 <!-- ─────────────  pianeti  ───────────── -->
 
@@ -92,6 +92,31 @@
 <symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-fortuna" viewBox="0 0 24 24">
   <circle cx="12" cy="12" r="8"/>
   <path d="M 6.3 6.3 L 17.7 17.7 M 17.7 6.3 L 6.3 17.7"/>
+</symbol>
+
+<!-- Gli asteroidi maggiori. Prima usavano tutti e quattro il glifo della Parte
+     di Fortuna, e sulla ruota comparivano cinque ⊗ identici. Questi sono i
+     simboli tradizionali: la falce di Cerere, la lancia a losanga di Pallade,
+     lo scettro stellato di Giunone, il focolare di Vesta. -->
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-cerere" viewBox="0 0 24 24">
+  <path d="M 16 4.8 A 4.6 4.6 0 1 0 12 12.4"/>
+  <path d="M 12 12.4 L 12 21.5 M 8 17.5 L 16 17.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-pallade" viewBox="0 0 24 24">
+  <path d="M 12 2.5 L 16.2 7.5 L 12 12.5 L 7.8 7.5 Z"/>
+  <path d="M 12 12.5 L 12 21.5 M 8.3 17.5 L 15.7 17.5"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-giunone" viewBox="0 0 24 24">
+  <path d="M 12 2.8 L 12 11.2 M 7.8 7 L 16.2 7 M 9 4 L 15 10 M 15 4 L 9 10"/>
+  <path d="M 12 11.2 L 12 21.5 M 8.3 17.2 L 15.7 17.2"/>
+</symbol>
+
+<symbol fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" id="gl-vesta" viewBox="0 0 24 24">
+  <path d="M 5.5 10 L 12 21 L 18.5 10"/>
+  <path d="M 12 3 C 9.2 6.2 9.8 9 12 11 C 14.2 9 14.8 6.2 12 3 Z"/>
 </symbol>
 
 <!-- ─────────────  segni  ───────────── -->

@@ -195,6 +195,27 @@ final class Rete
     }
 
     /** Se l'indirizzo e' in un blocco attivo. */
+    /**
+     * L'indirizzo con cui si conta un cliente nei freni e nei tentativi.
+     *
+     * Per IPv4 e' l'indirizzo. Per IPv6 e' la rete /64: una sola connessione
+     * domestica ne riceve di solito una intera — diciotto miliardi di miliardi
+     * di indirizzi — e contare per indirizzo vorrebbe dire che basta cambiarlo
+     * a ogni richiesta per non essere mai contati.
+     */
+    public static function chiaveCliente(string $ip): string
+    {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) === false) {
+            return $ip;
+        }
+        $b = inet_pton($ip);
+        if ($b === false || str_starts_with($b, str_repeat("\0", 10) . "\xff\xff")) {
+            return $ip;   // IPv4 scritto in forma IPv6: resta com'e'
+        }
+
+        return (string) inet_ntop(substr($b, 0, 8) . str_repeat("\0", 8)) . '/64';
+    }
+
     public static function bloccato(string $ip): bool
     {
         try {

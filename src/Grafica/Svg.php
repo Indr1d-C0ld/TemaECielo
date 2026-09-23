@@ -55,13 +55,25 @@ final class Svg
     public static function settore(float $cx, float $cy, float $rInt, float $rEst, float $da, float $a): string
     {
         [$x1, $y1] = self::punto($cx, $cy, $rInt, $da);
+        [$x2, $y2] = self::punto($cx, $cy, $rInt, $a);
+        [$x3, $y3] = self::punto($cx, $cy, $rEst, $a);
         [$x4, $y4] = self::punto($cx, $cy, $rEst, $da);
 
+        $ampiezza = fmod($a - $da + 360.0, 360.0);
+        $grande   = $ampiezza > 180.0 ? 1 : 0;
+
+        // Andata sull'arco interno in senso antiorario (spazzata 0), ritorno
+        // sull'arco esterno in senso ORARIO (spazzata 1), con la stessa ampiezza.
+        //
+        // Prima il ritorno riusava `arco()` con gli estremi scambiati: per lui
+        // l'ampiezza diventava 360 meno quella vera, cioe' 330 gradi, e l'arco
+        // faceva il giro lungo. Ogni «settore» dello zodiaco colorava allora
+        // tutto il disco TRANNE il proprio spicchio, e i dodici sovrapposti
+        // davano una velatura olivastra uniforme su tutta la ruota.
         return "M {$x1} {$y1} "
-            . self::arco($cx, $cy, $rInt, $da, $a, false) . ' '
-            . 'L ' . implode(' ', self::punto($cx, $cy, $rEst, $a)) . ' '
-            . self::arco($cx, $cy, $rEst, $a, $da, false) . ' '
-            . "L {$x4} {$y4} Z";
+            . "A {$rInt} {$rInt} 0 {$grande} 0 {$x2} {$y2} "
+            . "L {$x3} {$y3} "
+            . "A {$rEst} {$rEst} 0 {$grande} 1 {$x4} {$y4} Z";
     }
 
     /** Segmento radiale fra due raggi allo stesso angolo. */
@@ -88,7 +100,10 @@ final class Svg
 
     public static function testo(float $x, float $y, string $contenuto, array $attributi = []): string
     {
-        $attributi = ['x' => $x, 'y' => $y, 'text-anchor' => 'middle'] + $attributi;
+        // Posizione fissata, ancora al centro se il chiamante non ne chiede
+        // un'altra. Con l'ancora nel primo addendo, il `+` degli array — che da'
+        // la precedenza a sinistra — ignorava quella del chiamante.
+        $attributi = ['x' => $x, 'y' => $y] + $attributi + ['text-anchor' => 'middle'];
 
         return '<text ' . self::attributi($attributi) . '>'
             . htmlspecialchars($contenuto, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')

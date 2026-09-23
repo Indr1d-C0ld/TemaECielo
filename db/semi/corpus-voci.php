@@ -84,11 +84,11 @@ return [
 // ═══════════════════════════════════════════════════════════════════════════
 
 ['dignita', 'domicilio', 'tradizionale', '%s in domicilio',
- '%s si trova nel segno di cui e\' signore: e\' a casa propria. Agisce con pieno possesso dei '
+ '%s si trova nel segno di cui e\' {signore|signora}: e\' a casa propria. Agisce con pieno possesso dei '
  . 'propri mezzi, senza dover chiedere permesso a nessuno, e cio\' che significa lo porta a '
  . 'compimento.', 8, 'dignita domicilio forza'],
 ['dignita', 'domicilio', 'moderno', '%s nel proprio segno',
- '%s si esprime nella forma che gli e\' piu\' naturale: nessuna traduzione, nessun compromesso. '
+ '%s si esprime nella forma che {gli|le} e\' piu\' naturale: nessuna traduzione, nessun compromesso. '
  . 'E\' una forza — con l\'unico rischio di non essere mai messa in discussione.',
  8, 'dignita domicilio forza'],
 
@@ -96,58 +96,58 @@ return [
  '%s e\' ospite d\'onore in un segno non suo. Agisce con grande efficacia, forse piu\' che in '
  . 'domicilio, ma con una certa sproporzione: l\'esaltato tende a eccedere.',
  7, 'dignita esaltazione'],
-['dignita', 'esaltazione', 'moderno', '%s esaltato',
- '%s trova un contesto che lo valorizza piu\' del dovuto. Rende bene, e tende a prendersi piu\' '
- . 'spazio di quanto gli spetti.', 7, 'dignita esaltazione'],
+['dignita', 'esaltazione', 'moderno', '%s esaltat{o|a}',
+ '%s trova un contesto che {lo|la} valorizza piu\' del dovuto. Rende bene, e tende a prendersi piu\' '
+ . 'spazio di quanto {gli|le} spetti.', 7, 'dignita esaltazione'],
 
 ['dignita', 'esilio', 'tradizionale', '%s in esilio',
  '%s si trova nel segno opposto al proprio domicilio: e\' in terra straniera, e deve agire con '
- . 'mezzi che non sono i suoi. Non e\' impotente, ma tutto gli costa di piu\'.',
+ . 'mezzi che non sono i suoi. Non e\' impotente, ma tutto {gli|le} costa di piu\'.',
  8, 'dignita esilio debolezza'],
 ['dignita', 'esilio', 'moderno', '%s in detrimento',
- '%s deve esprimersi nella forma che gli e\' meno congeniale. Non e\' un difetto: e\' un lavoro '
+ '%s deve esprimersi nella forma che {gli|le} e\' meno congeniale. Non e\' un difetto: e\' un lavoro '
  . 'in piu\'. Quello che altri fanno per istinto, qui si impara.', 8, 'dignita esilio lavoro'],
 
 ['dignita', 'caduta', 'tradizionale', '%s in caduta',
- '%s si trova nel segno opposto alla propria esaltazione: e\' avvilito, non ascoltato, '
- . 'sottovalutato. Cio\' che significa fatica a essere riconosciuto, anche da chi lo porta.',
+ '%s si trova nel segno opposto alla propria esaltazione: e\' avvilit{o|a}, non ascoltat{o|a}, '
+ . 'sottovalutat{o|a}. Cio\' che significa fatica a essere riconosciuto, anche da chi {lo|la} porta.',
  8, 'dignita caduta debolezza'],
 ['dignita', 'caduta', 'moderno', '%s in caduta',
- '%s e\' fuori posto e tende a essere svalutato — spesso per primo da chi lo porta. '
- . 'Riconoscerlo e\' meta\' del lavoro.', 8, 'dignita caduta'],
+ '%s e\' fuori posto e tende a essere svalutat{o|a} — spesso per prim{o|a} da chi {lo|la} porta. '
+ . 'Riconoscer{lo|la} e\' meta\' del lavoro.', 8, 'dignita caduta'],
 
-['dignita', 'peregrino', 'tradizionale', '%s peregrino',
+['dignita', 'peregrino', 'tradizionale', '%s peregrin{o|a}',
  '%s non ha alcuna dignita\' essenziale nel grado in cui si trova: ne\' domicilio, ne\' '
  . 'esaltazione, ne\' triplicita\', ne\' termine, ne\' faccia. E\' senza appoggi, come un forestiero '
  . 'senza lettere di presentazione.', 6, 'dignita peregrino'],
 ['dignita', 'peregrino', 'moderno', '%s senza appoggi',
- '%s non trova nel segno nessun sostegno particolare. Non e\' danneggiato: e\' solo, e dipende '
- . 'interamente da come viene usato.', 6, 'dignita peregrino'],
+ '%s non trova nel segno nessun sostegno particolare. Non e\' danneggiat{o|a}: e\' sol{o|a}, e dipende '
+ . 'interamente da come viene usat{o|a}.', 6, 'dignita peregrino'],
 
-['dignita', 'combusto', 'tradizionale', '%s combusto',
- '%s dista meno di otto gradi e mezzo dal Sole ed e\' bruciato dai suoi raggi: non si vede piu\' '
+['dignita', 'combusto', 'tradizionale', '%s combust{o|a}',
+ '%s dista meno di otto gradi e mezzo dal Sole ed e\' bruciat{o|a} dai suoi raggi: non si vede piu\' '
  . 'in cielo, e nella carta agisce senza potersi manifestare. Fra le afflizioni e\' una delle '
  . 'piu\' gravi.', 7, 'combustione sole'],
-['dignita', 'combusto', 'moderno', '%s troppo vicino al Sole',
- '%s e\' talmente assorbito nell\'identita\' da non riuscire a distinguersene. E\' difficile '
- . 'accorgersi di averlo, perche\' sembra semplicemente «come sono io».',
+['dignita', 'combusto', 'moderno', '%s troppo vicin{o|a} al Sole',
+ '%s e\' talmente assorbit{o|a} nell\'identita\' da non riuscire a distinguersene. E\' difficile '
+ . 'accorgersi di aver{lo|la}, perche\' sembra semplicemente «come sono io».',
  7, 'combustione sole'],
 
 ['dignita', 'cazimi', 'tradizionale', '%s cazimi',
- '%s e\' entro diciassette primi dal centro del Sole: non bruciato, ma «nel cuore» del re. E\' '
+ '%s e\' entro diciassette primi dal centro del Sole: non bruciat{o|a}, ma «nel cuore» del re. E\' '
  . 'la condizione piu\' fortunata che esista, l\'esatto rovescio della combustione, e capita di '
  . 'rado.', 9, 'cazimi sole fortuna'],
 ['dignita', 'cazimi', 'moderno', '%s nel cuore del Sole',
- 'Condizione rarissima: %s coincide col centro stesso della persona. Non e\' assorbito come '
+ 'Condizione rarissima: %s coincide col centro stesso della persona. Non e\' assorbit{o|a} come '
  . 'nella combustione — e\' proprio il nucleo.', 9, 'cazimi sole'],
 
-['dignita', 'retrogrado', 'tradizionale', '%s retrogrado',
- '%s appare tornare indietro nello zodiaco. La tradizione lo considera debilitato: agisce in '
+['dignita', 'retrogrado', 'tradizionale', '%s retrograd{o|a}',
+ '%s appare tornare indietro nello zodiaco. La tradizione {lo|la} considera debilitat{o|a}: agisce in '
  . 'modo contrario, indiretto, tardivo. Le cose che significa si ottengono, ma per vie storte e '
  . 'con ritardo.', 7, 'retrogrado debolezza'],
-['dignita', 'retrogrado', 'moderno', '%s retrogrado',
+['dignita', 'retrogrado', 'moderno', '%s retrograd{o|a}',
  '%s si rivolge all\'interno prima che all\'esterno. Matura piu\' lentamente e spesso fuori '
- . 'tempo rispetto agli altri, ma quando emerge e\' stato digerito davvero.',
+ . 'tempo rispetto agli altri, ma quando emerge e\' stat{o|a} digerit{o|a} davvero.',
  7, 'retrogrado interiorizzazione'],
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -141,7 +141,7 @@ return [
 
 ['segno_modo', 'toro', 'tradizionale', 'in Toro, domicilio di Venere',
  'si trova in Toro, segno fisso di terra e domicilio di Venere: natura fredda e secca, che '
- . 'tiene e non lascia. Lento a muoversi, lentissimo a cambiare.', 5, 'toro terra fisso'],
+ . 'tiene e non lascia. Lent{o|a} a muoversi, lentissim{o|a} a cambiare.', 5, 'toro terra fisso'],
 
 ['segno_modo', 'toro', 'moderno', 'in Toro',
  'prende la forma del Toro: ha bisogno di toccare per credere, e una volta che ha deciso non '
@@ -157,7 +157,7 @@ return [
 
 ['segno_modo', 'cancro', 'tradizionale', 'in Cancro, domicilio della Luna',
  'si trova in Cancro, segno cardinale d\'acqua e domicilio della Luna: natura fredda e umida, '
- . 'che ritira e conserva. Difende cio\' che gli e\' caro, e ricorda.', 5, 'cancro acqua cardinale'],
+ . 'che ritira e conserva. Difende cio\' che {gli|le} e\' caro, e ricorda.', 5, 'cancro acqua cardinale'],
 
 ['segno_modo', 'cancro', 'moderno', 'in Cancro',
  'prende la forma del Cancro: si avvicina di lato, protegge cio\' che ha scelto, e chiede '
@@ -165,11 +165,11 @@ return [
 
 ['segno_modo', 'leone', 'tradizionale', 'in Leone, domicilio del Sole',
  'si trova in Leone, segno fisso di fuoco e domicilio del Sole: natura calda e secca, regale e '
- . 'ferma. Vuole essere riconosciuto e non sopporta di essere ignorato.', 5, 'leone fuoco fisso'],
+ . 'ferma. Vuole essere riconosciut{o|a} e non sopporta di essere ignorat{o|a}.', 5, 'leone fuoco fisso'],
 
 ['segno_modo', 'leone', 'moderno', 'in Leone',
- 'prende la forma del Leone: ha bisogno che qualcuno veda. Generoso quando e\' riconosciuto, '
- . 'rigido quando non lo e\'.', 5, 'leone fuoco fisso'],
+ 'prende la forma del Leone: ha bisogno che qualcuno veda. Generos{o|a} quando e\' riconosciut{o|a}, '
+ . 'rigid{o|a} quando non lo e\'.', 5, 'leone fuoco fisso'],
 
 ['segno_modo', 'vergine', 'tradizionale', 'in Vergine, domicilio ed esaltazione di Mercurio',
  'si trova in Vergine, segno mobile di terra, domicilio ed esaltazione di Mercurio: natura '
@@ -201,7 +201,7 @@ return [
 
 ['segno_modo', 'sagittario', 'moderno', 'in Sagittario',
  'prende la forma del Sagittario: ha bisogno di orizzonte, di un perche\' piu\' grande. '
- . 'Generoso di visione, distratto sui particolari.', 5, 'sagittario fuoco mobile'],
+ . 'Generos{o|a} di visione, distratt{o|a} sui particolari.', 5, 'sagittario fuoco mobile'],
 
 ['segno_modo', 'capricorno', 'tradizionale', 'in Capricorno, domicilio di Saturno',
  'si trova in Capricorno, segno cardinale di terra e domicilio di Saturno: natura fredda e '

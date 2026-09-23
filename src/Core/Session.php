@@ -18,6 +18,11 @@ final class Session
         $sicuro = (($_SERVER['HTTPS'] ?? '') !== '')
             || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
+        // Modalita' stretta: un identificativo di sessione che il server non ha
+        // emesso viene rifiutato e sostituito, invece di essere adottato. Senza,
+        // chi riesce a piazzare un cookie nel browser di qualcun altro sceglie
+        // lui l'identificativo — e lo conosce.
+        ini_set('session.use_strict_mode', '1');
         session_name((string) Config::get('sicurezza.nome_sessione', 'temaecielo_sess'));
         session_set_cookie_params([
             'lifetime' => 0,

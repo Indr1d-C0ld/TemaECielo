@@ -97,7 +97,13 @@ final class ApiController
             return Response::json(['errore' => 'Data od ora non valide.'], 400);
         }
 
-        return Response::json(Tempo::risolvi($data, $ora, $zona));
+        // Con la longitudine, l'anteprima dice la stessa cosa che fara' il calcolo:
+        // prima dei fusi, l'ora locale media del luogo e non quella della capitale.
+        $lon = $this->coordinata($r->query('lon'), 180.0);
+
+        return Response::json($lon === null
+            ? Tempo::risolvi($data, $ora, $zona)
+            : Tempo::risolviNelLuogo($data, $ora, $zona, $lon));
     }
 
     private function coordinata(?string $v, float $massimo): ?float
@@ -119,24 +125,9 @@ final class ApiController
      */
     private function consentito(): bool
     {
-        $ora     = time();
-        $finestra = (int) floor($ora / 60);
-        $chiave  = '__api_' . $finestra;
-
-        $n = (int) \App\Core\Session::get($chiave, 0);
-        if ($n >= self::TETTO_MINUTO) {
-            return false;
-        }
-
-        \App\Core\Session::set($chiave, $n + 1);
-
-        // Le finestre vecchie non servono piu' e non devono gonfiare la sessione.
-        foreach (array_keys($_SESSION) as $k) {
-            if (is_string($k) && str_starts_with($k, '__api_') && $k !== $chiave) {
-                \App\Core\Session::togli($k);
-            }
-        }
-
-        return true;
+        // Per indirizzo, non per sessione. Il contatore stava nella sessione, e
+        // un client che non manda il cookie riceve una sessione nuova a ogni
+        // richiesta: il limite non lo incontrava mai.
+        return \App\Support\Freno::consenti('api', self::TETTO_MINUTO);
     }
 }

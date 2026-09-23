@@ -84,6 +84,24 @@ final class Montatore
                 if ($this->giaDetto($v, $etichetteViste)) {
                     continue;
                 }
+                // Un rimando («vale quanto detto per Saturno») resta solo se la voce
+                // a cui rimanda e' rimasta: il tetto per pianeta puo' averla tolta.
+                foreach ($v->etichette as $e) {
+                    if (!str_starts_with($e, 'rimando:')) {
+                        continue;
+                    }
+                    [, $chiaveRimando, $pianetaRimando] = explode(':', $e, 3);
+                    $presente = false;
+                    foreach ($tenute as $t) {
+                        if ($t->ambito === 'dignita' && $t->chiave === $chiaveRimando
+                            && ($t->soggetti[0] ?? '') === $pianetaRimando) {
+                            $presente = true;
+                        }
+                    }
+                    if (!$presente) {
+                        continue 2;
+                    }
+                }
 
                 foreach ($v->soggetti as $c) {
                     $usatePerCorpo[$c] = ($usatePerCorpo[$c] ?? 0) + 1;
@@ -172,6 +190,8 @@ final class Montatore
      */
     private function facolta(array $tema): array
     {
+        /** @var array<string,string> condizione di dignita' → primo pianeta che l'ha avuta */
+        $dignitaViste = [];
         $voci = [];
         $ignota = ($tema['carta']['ora_ignota'] ?? false) === true;
         $signore = $this->signoreAscendente($tema);
@@ -226,9 +246,27 @@ final class Montatore
             // --- dignita' e condizione ---
             foreach ($this->condizioni($c, $corpo) as [$chiave, $moltiplicatore, $perche]) {
                 $v = $this->corpus->scritta('dignita', $chiave, [$c], $c);
-                if ($v !== null) {
-                    $voci[] = $v->con($v->rilevanza * $moltiplicatore, $perche);
+                if ($v === null) {
+                    continue;
                 }
+                // La stessa condizione su un secondo pianeta non ripete il
+                // paragrafo: e' lo stesso testo con un altro nome, e letto due
+                // volte di fila — «Urano retrogrado», «Nettuno retrogrado» —
+                // sembrava un errore di stampa. Il secondo rimanda al primo.
+                if (isset($dignitaViste[$chiave])) {
+                    $v = \App\Corpus\Voce::nuova(
+                        $v->ambito, $v->chiave, $v->titolo,
+                        sprintf(
+                            'Vale per %s quanto detto per %s: stessa condizione, stessa lettura.',
+                            Corpus::conArticolo($c),
+                            Corpus::conArticolo($dignitaViste[$chiave]),
+                        ),
+                        $v->rilevanza * 0.5, $v->fonte, ['rimando:' . $chiave . ':' . $dignitaViste[$chiave]], $v->soggetti,
+                    );
+                } else {
+                    $dignitaViste[$chiave] = $c;
+                }
+                $voci[] = $v->con($v->rilevanza * $moltiplicatore, $perche);
             }
         }
 

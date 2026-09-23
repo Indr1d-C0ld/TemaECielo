@@ -28,6 +28,47 @@ use App\Support\Impostazioni;
 final class StatisticheController
 {
     /** GET /statistiche */
+    /**
+     * Quali righe di `calcoli` sono carte di qualcuno.
+     *
+     * La tabella tiene anche la cache del motore, e il motore scrive ogni sua
+     * riga con tipo «natale» — anche il cielo di adesso, i transiti, le
+     * derivate. Contando per tipo, le statistiche mescolavano le carte dei
+     * visitatori con ogni cielo guardato: dicevano 62 carte quando ce n'erano
+     * 4, e la «distribuzione dei segni solari dei visitatori» era in realta'
+     * quella dei giorni in cui qualcuno aveva guardato il cielo. Una carta e'
+     * una riga con un permalink, e nient'altro.
+     */
+    private const CARTE_VERE = "tipo = 'natale' AND gettone IS NOT NULL";
+
+    /** @var list<array<string,mixed>>|null gli esiti decodificati, letti una volta sola */
+    private ?array $carte = null;
+
+    /**
+     * Gli esiti delle carte, decodificati.
+     *
+     * Prima si leggevano e decodificavano tre volte, una per grafico, ogni
+     * esito pesa una trentina di kilobyte, e la pagina e' pubblica e senza
+     * cache: con la cache del motore dentro, ogni visita costava tempo e
+     * memoria proporzionali a TUTTA la tabella.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function carte(): array
+    {
+        if ($this->carte === null) {
+            $this->carte = [];
+            foreach (Database::righe('SELECT esito FROM calcoli WHERE ' . self::CARTE_VERE . ' AND esito IS NOT NULL') as $r) {
+                $t = json_decode((string) $r['esito'], true);
+                if (is_array($t)) {
+                    $this->carte[] = ['esito' => $t];
+                }
+            }
+        }
+
+        return $this->carte;
+    }
+
     public function pagina(Request $r): Response
     {
         if (!Impostazioni::attiva('statistiche_pubbliche')) {
@@ -55,8 +96,8 @@ final class StatisticheController
     private function generale(): array
     {
         return [
-            'carte'      => (int) Database::valore('SELECT COUNT(*) FROM calcoli WHERE tipo = ?', ['natale']),
-            'richieste'  => (int) Database::valore('SELECT COALESCE(SUM(richieste),0) FROM calcoli'),
+            'carte'      => (int) Database::valore('SELECT COUNT(*) FROM calcoli WHERE ' . self::CARTE_VERE),
+            'richieste'  => (int) Database::valore('SELECT COALESCE(SUM(richieste),0) FROM calcoli WHERE ' . self::CARTE_VERE),
             'soggetti'   => (int) Database::valore('SELECT COUNT(*) FROM soggetti'),
             'luoghi'     => (int) Database::valore('SELECT COUNT(DISTINCT luogo_nome) FROM soggetti'),
             'senza_ora'  => (int) Database::valore('SELECT COUNT(*) FROM soggetti WHERE precisione_ora = ?', ['ignota']),
@@ -78,8 +119,8 @@ final class StatisticheController
         $conta = ['sole' => array_fill(0, 12, 0), 'luna' => array_fill(0, 12, 0), 'asc' => array_fill(0, 12, 0)];
         $totali = ['sole' => 0, 'luna' => 0, 'asc' => 0];
 
-        foreach (Database::righe('SELECT esito FROM calcoli WHERE tipo = ? AND esito IS NOT NULL', ['natale']) as $r) {
-            $t = json_decode((string) $r['esito'], true);
+        foreach ($this->carte() as $r) {
+            $t = $r['esito'];
             if (!is_array($t)) {
                 continue;
             }
@@ -127,8 +168,8 @@ final class StatisticheController
         $mo = ['cardinale' => 0.0, 'fisso' => 0.0, 'mobile' => 0.0];
         $n = 0;
 
-        foreach (Database::righe('SELECT esito FROM calcoli WHERE tipo = ? AND esito IS NOT NULL', ['natale']) as $r) {
-            $t = json_decode((string) $r['esito'], true);
+        foreach ($this->carte() as $r) {
+            $t = $r['esito'];
             if (!isset($t['bilanci']['segni']['elementi'])) {
                 continue;
             }
@@ -234,8 +275,8 @@ final class StatisticheController
     {
         $conta = [];
 
-        foreach (Database::righe('SELECT esito FROM calcoli WHERE tipo = ? AND esito IS NOT NULL', ['natale']) as $r) {
-            $t = json_decode((string) $r['esito'], true);
+        foreach ($this->carte() as $r) {
+            $t = $r['esito'];
             foreach ($t['aspetti']['elenco'] ?? [] as $a) {
                 $conta[(string) $a['aspetto_nome']] = ($conta[(string) $a['aspetto_nome']] ?? 0) + 1;
             }

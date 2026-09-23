@@ -67,9 +67,18 @@ final class Worker
         $mese   = (int) $d['mese'];
         $giorno = (int) $d['giorno'];
         $oraUt  = (float) $d['ora_ut'];
-        $lat    = (float) $d['lat'];
+        // Esattamente al polo le case non esistono: ogni meridiano e' il
+        // meridiano, piu' cuspidi coincidono, e una casa di ampiezza zero faceva
+        // cadere tutti i pianeti in prima. Un centesimo di grado dal polo — poco
+        // piu' di un chilometro — basta a ridare un senso alla geometria, e non
+        // cambia nulla di cio' che si vede in cielo.
+        $lat    = max(-89.99, min(89.99, (float) $d['lat']));
         $lon    = (float) $d['lon'];
         $alt    = (float) ($d['alt'] ?? 0.0);
+
+        $this->scartoCivile = isset($d['offset_secondi']) && is_numeric($d['offset_secondi'])
+            ? (float) $d['offset_secondi'] / 86400.0
+            : null;
 
         $sistema = (string) ($d['sistema_case'] ?? 'placido');
         $sistemi = Corpi::sistemiCase();
@@ -78,9 +87,9 @@ final class Worker
         }
 
         $topocentrico = (bool) ($d['topocentrico'] ?? false);
-        if ($topocentrico) {
-            $this->swe->impostaTopocentrico($lon, $lat, $alt);
-        }
+        // Il luogo dell'osservatore si imposta sempre: serve anche quando la
+        // carta e' geocentrica, per mettere la Luna nel cielo vero (vedi sotto).
+        $this->swe->impostaTopocentrico($lon, $lat, $alt);
 
         $jd     = $this->swe->giornoGiuliano($anno, $mese, $giorno, $oraUt);
         $deltaT = $this->swe->deltaT($jd);
@@ -100,7 +109,17 @@ final class Worker
             try {
                 $p = $this->swe->posizione($jd, $ipl, $this->swe->bandieraBase() | ($topocentrico ? Sweph::TOPOCTR : 0));
                 $q = $this->swe->posizioneEquatoriale($jd, $ipl);
-                $o = $this->swe->orizzonte($jd, $p['lon'], $p['lat'], $p['dist'], $lat, $lon, $alt);
+                // Dove si VEDE il corpo: per la Luna conta la parallasse, che arriva
+                // a quasi un grado — a quella distanza, spostarsi dal centro della
+                // Terra alla sua superficie cambia la direzione in cui la si vede.
+                // Le longitudini della carta restano geocentriche, come vuole la
+                // convenzione; altezza e azimut sulla volta devono essere quelli
+                // veri, altrimenti vicino all'orizzonte la Luna era disegnata un
+                // grado piu' in alto di dove stava.
+                $v = ($ipl === Corpi::LUNA && !$topocentrico)
+                    ? $this->swe->posizione($jd, $ipl, $this->swe->bandieraBase() | Sweph::TOPOCTR)
+                    : $p;
+                $o = $this->swe->orizzonte($jd, $v['lon'], $v['lat'], $v['dist'], $lat, $lon, $alt);
             } catch (\Throwable $e) {
                 $errori[$chiave] = $e->getMessage();
                 continue;
@@ -123,6 +142,9 @@ final class Worker
                 'stazionario' => abs($p['vel_lon']) < 0.001,
                 'azimut'      => $o['azimut'],
                 'altezza'     => $o['altezza_apparente'],
+                // Quella vera, senza rifrazione: e' questa che decide se il Sole
+                // e' sopra l'orizzonte astronomico. L'apparente serve a disegnare.
+                'altezza_vera' => $o['altezza_vera'],
             ];
         }
 
@@ -152,7 +174,12 @@ final class Worker
         $eclNut = $this->swe->posizione($jd, self::ECL_NUT, $this->swe->bandieraBase());
 
         // --- punti calcolati -------------------------------------------------
-        $diurna = isset($corpi['sole']) && $corpi['sole']['altezza'] > 0.0;
+        // Carta diurna se il Sole sta sopra l'orizzonte VERO. Con l'altezza
+        // apparente, che la rifrazione alza di mezzo grado, per qualche minuto
+        // prima dell'alba — molto di piu' alle alte latitudini — la carta
+        // risultava diurna col Sole ancora sotto l'Ascendente, e la Parte di
+        // Fortuna saltava di cento gradi.
+        $diurna = isset($corpi['sole']) && $corpi['sole']['altezza_vera'] > 0.0;
         $punti  = $this->punti($corpi, $case, $diurna);
 
         // --- tempo siderale --------------------------------------------------
@@ -186,7 +213,10 @@ final class Worker
                 // volta sola qui perche' chi disegna e chi scrive non debbano
                 // ricordarselo a memoria.
                 'inattendibili'   => $oraIgnota
-                    ? ['asc', 'mc', 'dsc', 'ic', 'vertex', 'fortuna', 'spirito', 'case']
+                    // «setta»: diurna o notturna non si sa. A mezzogiorno
+                    // convenzionale la carta risulta sempre diurna, e da questo
+                    // dipendono i signori di triplicita' e la Parte di Fortuna.
+                    ? ['asc', 'mc', 'dsc', 'ic', 'vertex', 'fortuna', 'spirito', 'case', 'setta']
                     : [],
             ],
             'corpi' => $corpi,
@@ -205,6 +235,19 @@ final class Worker
 
         if ($errori !== []) {
             $fuori['errori_corpi'] = $errori;
+        }
+
+        // Se per qualche corpo la libreria ha dovuto rinunciare ai file e usare
+        // il modello analitico, la carta lo dice. Capita ai margini dell'arco
+        // coperto dai file, e agli asteroidi fuori dal loro intervallo.
+        if ($this->swe->ripieghi() !== []) {
+            $nomi = [];
+            foreach (Corpi::elenco() as $k => $info) {
+                if (in_array($info['ipl'], $this->swe->ripieghi(), true)) {
+                    $nomi[] = $info['nome'];
+                }
+            }
+            $fuori['carta']['effemeride_ripiego'] = $nomi;
         }
 
         if ((bool) ($d['stelle'] ?? true)) {
@@ -387,11 +430,31 @@ final class Worker
      *
      * @return array<string,mixed>
      */
+    /**
+     * Il giorno giuliano della mezzanotte locale che precede l'istante.
+     *
+     * Se il chiamante ha passato lo scarto civile (`offset_secondi`), e' la
+     * mezzanotte dell'orologio a muro; altrimenti quella del tempo medio della
+     * longitudine, che ne differisce di rado di piu' di un'ora.
+     */
+    private function mezzanotteLocale(float $jd, float $lon): float
+    {
+        $scarto = $this->scartoCivile ?? $lon / 360.0;
+
+        return floor($jd + $scarto - 0.5) + 0.5 - $scarto;
+    }
+
+    /** Scarto civile dal Tempo Universale, in frazioni di giorno; null se ignoto. */
+    private ?float $scartoCivile = null;
+
     private function effemeridiGiorno(float $jd, float $lat, float $lon, float $alt): array
     {
-        // Si parte da mezzanotte UT del giorno in questione, non dall'istante di
-        // nascita: altrimenti chi nasce alle 23 si vedrebbe l'alba del giorno dopo.
-        $mezzanotte = floor($jd - 0.5) + 0.5;
+        // Si parte dalla mezzanotte del giorno CIVILE del luogo, non dall'istante
+        // di nascita: altrimenti chi nasce alle 23 si vedrebbe l'alba del giorno
+        // dopo. E non dalla mezzanotte di Greenwich, come si faceva: a Tokyo alle
+        // 8 del mattino l'alba risultava del giorno giusto e il tramonto di
+        // quello prima, per una giornata lunga meno dodici ore.
+        $mezzanotte = $this->mezzanotteLocale($jd, $lon);
 
         $fuori = ['sole' => [], 'corpi' => []];
 
@@ -488,7 +551,7 @@ final class Worker
      */
     private function arcoGiornaliero(float $jd, float $lat, float $lon): array
     {
-        $mezzanotte = floor($jd - 0.5) + 0.5;
+        $mezzanotte = $this->mezzanotteLocale($jd, $lon);
         $fuori = [];
 
         foreach (Corpi::dieci() as $chiave) {

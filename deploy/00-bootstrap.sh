@@ -148,10 +148,18 @@ ok "database e utente pronti"
 
 # --- 5. config.php -----------------------------------------------------------
 say "5/6  ${CONFIG_FILE}"
+# Se la configurazione esiste gia', NON si riscrive.
+#
+# Prima si riscriveva sempre, riusando soltanto password e chiave di sessione:
+# tutto il resto tornava ai valori predefiniti. Rilanciare il bootstrap — che
+# serve anche solo per aggiornare la conf Apache — rimetteva l'indirizzo
+# pubblico a «http://localhost», e con lui le scelte sulla privacy
+# (conservazione degli accessi, anonimizzazione degli indirizzi) fatte a mano.
+# Il codice legge ogni chiave con un valore predefinito, quindi un file scritto
+# da una versione precedente resta valido cosi' com'e'.
 if [[ -f "${CONFIG_FILE}" ]]; then
-  cp -a "${CONFIG_FILE}" "${CONFIG_FILE}.bak-${STAMP}"
-  ok "backup  ${CONFIG_FILE}.bak-${STAMP}"
-fi
+  ok "gia' presente: la lascio com'e' (per rigenerarla, spostala altrove e rilancia)"
+else
 cat > "${CONFIG_FILE}" <<PHPEOF
 <?php
 
@@ -202,6 +210,7 @@ PHPEOF
 chown "${OWNER_USER}:${OWNER_GROUP}" "${CONFIG_FILE}"
 chmod 0640 "${CONFIG_FILE}"
 ok "$(stat -c '%U:%G %a' "${CONFIG_FILE}")  scritto"
+fi
 
 # --- 6. Apache ---------------------------------------------------------------
 say "6/6  Apache"

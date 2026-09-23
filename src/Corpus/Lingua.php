@@ -102,6 +102,36 @@ final class Lingua
         return [null, $gruppo];
     }
 
+    /**
+     * Sceglie fra le forme scritte come «{maschile|femminile}».
+     *
+     * Serve alle frasi composte, dove il soggetto cambia e gli aggettivi no:
+     * «La Luna e' congiunto a Venere», «la struttura [...] Generoso quando e'
+     * riconosciuto». I frammenti ora scrivono «congiunt{o|a}», «gl{i|e}» (che
+     * da' «gli» o «le»), e qui si sceglie la forma giusta.
+     */
+    public static function accorda(string $testo, bool $femminile): string
+    {
+        return (string) preg_replace_callback(
+            '/\{([^{}|]*)\|([^{}|]*)\}/u',
+            static fn (array $m): string => $femminile ? $m[2] : $m[1],
+            $testo,
+        );
+    }
+
+    /**
+     * Il genere di un gruppo nominale, letto dall'articolo: vero se femminile,
+     * falso se maschile, null se l'articolo non lo dice («l'», o nessuno).
+     */
+    public static function femminile(string $gruppo): ?bool
+    {
+        return match (self::scomponi($gruppo)[0]) {
+            'la', 'le'             => true,
+            'il', 'lo', 'i', 'gli' => false,
+            default                => null,
+        };
+    }
+
     /** Maiuscola iniziale, anche sulle lettere accentate. */
     public static function maiuscola(string $s): string
     {

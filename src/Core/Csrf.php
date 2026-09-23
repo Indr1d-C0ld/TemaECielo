@@ -29,6 +29,18 @@ final class Csrf
             && hash_equals($atteso, $inviato);
     }
 
+    /**
+     * Un gettone nuovo, buttando il vecchio.
+     *
+     * Si chiama quando cambia chi c'e' dietro la sessione — all'accesso
+     * dell'amministratore. Un gettone letto prima dell'accesso, da una pagina
+     * pubblica, non deve valere per le azioni della regia.
+     */
+    public static function rinnova(): void
+    {
+        Session::togli(self::CHIAVE);
+    }
+
     public static function campo(): string
     {
         return '<input type="hidden" name="_csrf" value="' . htmlspecialchars(self::gettone(), ENT_QUOTES) . '">';

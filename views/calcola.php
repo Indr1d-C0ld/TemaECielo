@@ -56,7 +56,7 @@ $err = static fn (string $k): string => isset($errori[$k])
           <?php
           $precisioni = [
               'esatta'         => ['La so con precisione', 'Dall\'atto di nascita o dal ricordo di chi c\'era.'],
-              'approssimativa' => ['La so all\'incirca',   'Verso sera, di mattina presto: si calcola sul centro dell\'intervallo.'],
+              'approssimativa' => ['La so all\'incirca',   'Verso sera, di mattina presto: scrivi l\'ora piu\' probabile. Ascendente e case andranno presi con cautela.'],
               'ignota'         => ['Non la so',            'Si calcola la carta solare. Case e Ascendente non saranno attendibili, e verra\' detto.'],
           ];
           $scelta = $v('precisione', 'esatta');
@@ -92,7 +92,7 @@ $err = static fn (string $k): string => isset($errori[$k])
       <div class="campo">
         <label for="cerca-luogo">Luogo di nascita</label>
         <div class="cerca">
-          <input type="text" id="cerca-luogo" autocomplete="off" role="combobox"
+          <input type="text" id="cerca-luogo" name="luogo_testo" autocomplete="off" role="combobox"
                  aria-expanded="false" aria-controls="risultati-luogo" aria-autocomplete="list"
                  placeholder="Comune, citt&agrave;, paese&hellip;" value="<?= e($v('luogo_nome')) ?>">
           <ul class="risultati" id="risultati-luogo" role="listbox" hidden></ul>
@@ -120,12 +120,12 @@ $err = static fn (string $k): string => isset($errori[$k])
         <div class="campo">
           <label for="lat">Latitudine</label>
           <input type="number" id="lat" name="lat" step="0.000001" min="-90" max="90"
-                 value="<?= e($v('lat')) ?>" required>
+                 value="<?= e($v('lat')) ?>">
         </div>
         <div class="campo">
           <label for="lon">Longitudine</label>
           <input type="number" id="lon" name="lon" step="0.000001" min="-180" max="180"
-                 value="<?= e($v('lon')) ?>" required>
+                 value="<?= e($v('lon')) ?>">
         </div>
         <div class="campo">
           <label for="altitudine">Altitudine <span class="facoltativo">(m)</span></label>

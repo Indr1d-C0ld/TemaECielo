@@ -924,3 +924,80 @@ Le regole adattive erano state messe accanto alle altre, a metà del foglio di s
 di stile si legge dall'alto in basso e a parità di peso vince l'ultima regola scritta: tutto
 ciò che veniva definito più sotto le annullava. Non c'è nessun errore, nessun avviso, e la
 pagina sembra semplicemente non adattarsi. Ora stanno in fondo, e c'è scritto perché.
+
+---
+
+## 21. Poscritto alla seconda revisione
+
+Una revisione completa, fatta leggendo il codice riga per riga su tre fronti — sicurezza,
+correttezza del calcolo, pagine e testi — e collaudando ogni flusso in funzione. Ha trovato
+una quarantina di difetti. Qui restano solo le lezioni che valgono oltre il caso singolo.
+
+### 21.1 Un collaudo deve mandare i campi che la pagina contiene
+
+Il modulo dell'ora ambigua non arrivava mai a una carta: `Vista::rendi` faceva `extract()`
+accanto a una propria variabile `$dati`, e la chiave omonima veniva scartata in silenzio. Il
+primo collaudo non l'aveva visto perché spediva a mano tutti i campi. Un browser spedisce solo
+quelli scritti nella pagina: il collaudo giusto legge la pagina, ne estrae i campi, e manda
+quelli.
+
+### 21.2 Un calcolo si condivide, un'identità no
+
+La cache per impronta faceva di due persone con gli stessi dati di nascita una riga sola, e
+quindi un permalink solo: la seconda vedeva il nome della prima. Il calcolo può essere
+comune; l'indirizzo, che qui è l'unica identità, deve essere di ciascuno.
+
+### 21.3 Si conta ciò che una riga è, non il suo tipo
+
+Il motore scriveva ogni riga di cache con tipo «natale», e le statistiche contavano per tipo:
+62 «carte» dove ce n'erano 4, e la distribuzione dei segni solari «dei visitatori» era quella
+dei giorni in cui qualcuno aveva guardato il cielo. Una carta è una riga con un permalink.
+
+### 21.4 Un blocco che si può far fallire non blocca
+
+Il blocco dei tentativi di accesso contava i fallimenti dopo averli verificati. Un nome
+utente lungo, con spazi invisibili che la collation del database ignora e che `substr`
+tagliava a metà di un carattere, faceva fallire la registrazione: il tentativo non esisteva, e
+i tentativi erano illimitati. Il tentativo ora si conta prima, con testo sempre valido, e il
+nome deve coincidere byte per byte.
+
+### 21.5 `LAST_INSERT_ID` non si azzera da solo
+
+Il primo freno scritto in questa revisione leggeva il contatore con `LAST_INSERT_ID(n + 1)`.
+Sul duplicato funziona; su una riga nuova, senza chiave automatica, restituisce l'ultimo
+identificativo inserito dalla connessione — quello della cache del motore. Una pagina che
+scriveva in cache e poi lanciava un calcolo si sentiva dire «troppe richieste». L'ha trovato
+una prova scritta per il freno stesso, venti minuti dopo averlo messo in esercizio e prima che
+lo incontrasse un visitatore. Le prove si scrivono anche per il codice appena scritto.
+
+### 21.6 Un segnaposto non è un dato
+
+Nelle carte a ora ignota il worker mette un Ascendente fittizio all'inizio del segno del Sole,
+per poter disegnare la carta solare. La lettura lo filtrava; aspetti, bilanci, emisferi,
+dignità accidentali e composita no, e lo trattavano come vero. Ciò che esiste per disegnare
+va tenuto fuori da ciò che serve a leggere, dappertutto e non in un punto solo.
+
+### 21.7 Prima dei fusi, l'ora è del luogo
+
+Il database dei fusi attribuisce all'Italia l'ora di Roma dal 1866: era quella delle ferrovie.
+Negli atti di nascita ogni comune segnava la propria. La funzione giusta esisteva già e nessuno
+la chiamava.
+
+### 21.8 L'italiano composto ha un genere
+
+«La Luna è congiunto a Venere»: i frammenti avevano aggettivi al maschile fisso, e il soggetto
+della frase cambia. Ora si scrivono con le due forme — `congiunt{o|a}` — e il compositore sceglie
+in base al soggetto grammaticale, che non è sempre il pianeta: «la struttura», il titolo moderno
+di Saturno, è femminile.
+
+### 21.9 Rilanciare un'installazione non deve disfare le scelte fatte
+
+Il bootstrap riscriveva la configurazione a ogni esecuzione, riusando solo password e chiave: è
+bastato rilanciarlo per aggiornare la conf Apache perché l'indirizzo pubblico tornasse a
+`localhost`. Uno script da lanciare più volte deve toccare solo ciò che manca.
+
+### 21.10 Le prove non devono scrivere nei contatori dei visitatori
+
+Il montatore registra quante volte ogni voce del corpus viene letta, e con quel conteggio la
+regia decide quali voci scrivere per prime. Le prove montano letture a decine: ogni esecuzione
+della suite spostava la classifica. Da riga di comando ora l'uso non si conta.

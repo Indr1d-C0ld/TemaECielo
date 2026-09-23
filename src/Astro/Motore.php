@@ -34,11 +34,24 @@ final class Motore
      * successo davvero: le cuspidi grezze sono state aggiunte alla carta, ma
      * dalla cache continuava ad arrivare la versione senza, e l'anello delle
      * case non veniva disegnato senza che nulla segnalasse il perche'.
+     *
+     * Va alzata anche quando cambia il CONTENUTO a parita' di forma, se il
+     * cambiamento corregge un errore: la 3 e' arrivata con l'audit che ha
+     * corretto il sistema «Equale dal MC», la giornata di nascita sulla
+     * mezzanotte locale, il giorno e la notte sull'altezza vera del Sole, gli
+     * applicativi vicino all'esatto, il secchio e lo Yod, i punteggi di Lilly,
+     * e ha tolto gli assi fittizi dalle carte a ora ignota.
+     *
+     * Le carte con permalink NON vengono ricalcolate: l'esito salvato e' quello
+     * consegnato, e resta tale. La nuova versione vale per ogni calcolo nuovo.
      */
-    private const VERSIONE = 2;
+    private const VERSIONE = 3;
 
     /** Quanti giorni si tiene una riga di cache che nessuno richiede piu'. */
     private const CACHE_GIORNI = 30;
+
+    /** Quanti processi di calcolo puo' far partire un cliente in un minuto. */
+    private const PROCESSI_AL_MINUTO = 40;
 
     /** Ogni quante scritture si controlla se c'e' cache vecchia da buttare. */
     private const SFOLTIMENTO_UNA_SU = 200;
@@ -128,6 +141,13 @@ final class Motore
 
         // Ambiente ridotto all'osso: il lavoratore non ha bisogno di sapere
         // niente del processo che l'ha chiamato.
+        // Il freno sta qui, subito prima di lanciare il processo, e non all'ingresso
+        // delle pagine: cosi' conta solo il lavoro vero. Una carta gia' in cache
+        // non passa di qui e non consuma niente. Quaranta processi al minuto per
+        // cliente sono molti per una persona — che guarda un cielo alla volta —
+        // e pochi per chi volesse far girare il server a vuoto.
+        \App\Support\Freno::esigi('motore', self::PROCESSI_AL_MINUTO);
+
         $processo = @proc_open($comando, $canali, $tubi, $this->radice, ['PATH' => '/usr/bin:/bin']);
 
         if (!is_resource($processo)) {

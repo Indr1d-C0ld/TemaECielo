@@ -141,6 +141,22 @@ final class RuotaTema
     }
 
     /** Lo stile va dentro il file autonomo, altrimenti si scarica una ruota incolore. */
+    /**
+     * Il colore di un elemento come variabile CSS, con il valore di ripiego.
+     *
+     * La pagina ridefinisce le variabili per la veste pergamena, quindi la
+     * variabile serve. Ma il file scaricato si apre anche fuori dal browser —
+     * librsvg, gli editor vettoriali — e molti non risolvono `var()` negli
+     * attributi: senza ripiego i settori dello zodiaco e i glifi dei segni vi
+     * uscivano senza colore.
+     */
+    private static function coloreElemento(string $elemento): string
+    {
+        $ripiego = ['fuoco' => '#c05a2e', 'terra' => '#6b7f4a', 'aria' => '#c9a227', 'acqua' => '#41739c'][$elemento] ?? '#c9a227';
+
+        return 'var(--el-' . $elemento . ', ' . $ripiego . ')';
+    }
+
     private function stileIncorporato(): string
     {
         return <<<'CSS'
@@ -222,7 +238,7 @@ final class RuotaTema
             $a  = $ruota($i * 30.0 + 30.0);
 
             $settore = Svg::settore(self::CX, self::CY, $this->r['zod_int'], $this->r['zod_est'], $da, $a);
-            $colore  = 'var(--el-' . $segno['elemento'] . ')';
+            $colore  = self::coloreElemento((string) $segno['elemento']);
 
             $fuori[] = '<path d="' . $settore . '" fill="' . $colore . '" opacity=".14"'
                 . ' stroke="var(--filo, rgba(201,162,39,.32))" stroke-width=".8"/>';
@@ -380,7 +396,7 @@ final class RuotaTema
             $vero    = $veri[$i];
             $mostra  = $sciolti[$i];
             $elemento = Corpi::segni()[(int) $c['segno']]['elemento'];
-            $colore  = 'var(--el-' . $elemento . ')';
+            $colore  = self::coloreElemento((string) $elemento);
 
             // La linea guida dal glifo spostato alla sua tacca di grado esatta:
             // il simbolo puo' essersi spostato per far posto ai vicini, ma la

@@ -64,7 +64,7 @@ $err = static fn (string $k): string => isset($errori[$k])
       <div class="campo">
         <label for="cerca-luogo">Luogo di nascita</label>
         <div class="cerca">
-          <input type="text" id="cerca-luogo" autocomplete="off" role="combobox" aria-expanded="false"
+          <input type="text" id="cerca-luogo" name="luogo_testo" autocomplete="off" role="combobox" aria-expanded="false"
                  aria-controls="risultati-luogo" placeholder="Comune, citt&agrave;, paese&hellip;"
                  value="<?= e($v('luogo_nome')) ?>">
           <ul class="risultati" id="risultati-luogo" role="listbox" hidden></ul>
@@ -83,9 +83,9 @@ $err = static fn (string $k): string => isset($errori[$k])
       </div>
       <div class="coordinate">
         <div class="campo"><label for="lat">Latitudine</label>
-          <input type="number" id="lat" name="lat" step="0.000001" min="-90" max="90" value="<?= e($v('lat')) ?>" required></div>
+          <input type="number" id="lat" name="lat" step="0.000001" min="-90" max="90" value="<?= e($v('lat')) ?>"></div>
         <div class="campo"><label for="lon">Longitudine</label>
-          <input type="number" id="lon" name="lon" step="0.000001" min="-180" max="180" value="<?= e($v('lon')) ?>" required></div>
+          <input type="number" id="lon" name="lon" step="0.000001" min="-180" max="180" value="<?= e($v('lon')) ?>"></div>
         <div class="campo"><label for="altitudine">Altitudine</label>
           <input type="number" id="altitudine" name="altitudine" step="1" value="<?= e($v('altitudine', '0')) ?>"></div>
       </div>

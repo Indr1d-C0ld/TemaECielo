@@ -62,6 +62,10 @@ final class Config
 
     public static function load(string $radiceProgetto): void
     {
+        // Un percorso relativo («.») farebbe cercare la configurazione due livelli
+        // sopra la cartella corrente e non al progetto: si risolve prima.
+        $radiceProgetto = realpath($radiceProgetto) ?: $radiceProgetto;
+
         foreach (self::percorsi($radiceProgetto) as $percorso) {
             if (!is_file($percorso)) {
                 continue;

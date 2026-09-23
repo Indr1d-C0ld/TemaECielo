@@ -56,6 +56,9 @@ Vista::percorso($radice . '/views');
 $basePath = Config::get('app.base_path');
 $richiesta = new Request(is_string($basePath) && $basePath !== '' ? $basePath : null);
 $GLOBALS['__base_path'] = $richiesta->basePath();
+// L'indirizzo del cliente, per i freni: chi lo calcola e' la richiesta, che sa
+// quali intermediari considerare fidati.
+$GLOBALS['__ip_cliente'] = $richiesta->ip();
 
 Session::avvia();
 
@@ -91,6 +94,15 @@ require $radice . '/src/routes.php';
 
 try {
     $risposta = $router->smista($richiesta);
+} catch (\App\Support\TroppeRichieste $e) {
+    // Non e' un guasto e non va nel diario come tale: e' il freno che lavora.
+    \App\Support\Telemetria::evento('freno', $richiesta->percorso());
+    $risposta = Response::html(Vista::pagina('errors/generico', [
+        'titolo'    => 'Troppe richieste',
+        'stato'     => 429,
+        'messaggio' => 'Da questo indirizzo sono arrivate troppe richieste di calcolo in poco tempo. '
+            . 'Riprova fra un minuto.',
+    ]), 429)->conIntestazione('Retry-After', (string) max(1, $e->attesa));
 } catch (\Throwable $e) {
     registro(sprintf('%s: %s @ %s:%d', $e::class, $e->getMessage(), $e->getFile(), $e->getLine()), 'error');
 
@@ -107,8 +119,23 @@ try {
     ]), $eDb ? 503 : 500);
 }
 
+// Un'immagine SVG servita da sola non e' una pagina: la politica della pagina,
+// con i suoi nonce, bloccherebbe lo <style> che il file porta dentro. Per le
+// immagini vale una politica da immagine — nessuno script, niente di esterno.
+$eSvg = str_starts_with((string) ($risposta->intestazione('Content-Type') ?? ''), 'image/svg+xml');
 foreach (Csp::intestazioni() as $nome => $valore) {
+    if ($eSvg && $nome === 'Content-Security-Policy') {
+        $valore = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; frame-ancestors 'none'";
+    }
     $risposta = $risposta->conIntestazione($nome, $valore);
+}
+
+// Una risposta che una cache condivisa puo' conservare non deve portare il
+// cookie di sessione: la cache lo conserverebbe insieme al resto, e lo
+// consegnerebbe a chiunque chieda lo stesso indirizzo — cioe' la stessa
+// sessione a persone diverse. Qui la sessione non serve a nulla: si toglie.
+if (str_contains((string) ($risposta->intestazione('Cache-Control') ?? ''), 'public')) {
+    header_remove('Set-Cookie');
 }
 
 $risposta->invia();

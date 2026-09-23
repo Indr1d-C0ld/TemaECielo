@@ -155,6 +155,15 @@ final class Sweph
      * @return array{lon:float,lat:float,dist:float,vel_lon:float,vel_lat:float,vel_dist:float}
      * @throws RuntimeException se la libreria non sa calcolare quel corpo
      */
+    /** @var array<int,bool> i corpi per cui la libreria ha ripiegato su Moshier */
+    private array $ripieghi = [];
+
+    /** @return list<int> */
+    public function ripieghi(): array
+    {
+        return array_keys($this->ripieghi);
+    }
+
     public function posizione(float $jdUt, int $ipl, ?int $bandiere = null): array
     {
         $xx   = FFI::new('double[6]');
@@ -170,6 +179,16 @@ final class Sweph
 
         if ($r < 0) {
             throw new RuntimeException('swe_calc_ut(' . $ipl . '): ' . FFI::string($serr));
+        }
+
+        // La libreria restituisce le bandiere che ha USATO davvero. Se le si
+        // erano chieste le effemeridi compresse e manca il file per quella data,
+        // ripiega in silenzio sul modello analitico di Moshier, meno preciso. Il
+        // ripiego si annota, cosi' la carta puo' dirlo invece di dichiarare
+        // «swieph» per un calcolo che non lo e'.
+        $chieste = $bandiere ?? $this->bandieraBase();
+        if (($chieste & self::SWIEPH) !== 0 && ($r & self::SWIEPH) === 0) {
+            $this->ripieghi[$ipl] = true;
         }
 
         return [

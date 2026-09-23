@@ -31,7 +31,9 @@ final class PannelloController
 
     public function accessi(Request $r): Response
     {
-        $pagina = max(1, (int) ($r->query('p') ?? '1'));
+        // Un tetto: senza, un numero di pagina enorme fa traboccare l'offset in
+        // virgola mobile e l'SQL si rompe con un 500.
+        $pagina = min(1_000_000, max(1, (int) ($r->query('p') ?? '1')));
         $per    = 100;
 
         return Response::html(Vista::pagina('admin/accessi', [

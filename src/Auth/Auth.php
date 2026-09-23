@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth;
 
+use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Session;
 
@@ -46,10 +47,32 @@ final class Auth
             return ['esito' => false, 'motivo' => 'bloccato', 'attesa' => $attesa];
         }
 
+        // Il tentativo si conta PRIMA di verificarlo, come fallito; se va bene,
+        // registraTentativo(..., true) toglie i fallimenti di questo indirizzo.
+        //
+        // Contarlo dopo lasciava due varchi. Il primo: fra il controllo del
+        // blocco e la registrazione passava un Argon2id intero, e una raffica
+        // di richieste parallele superava il tetto di parecchio. Il secondo, piu'
+        // grave: se la registrazione falliva — e falliva, con un nome utente
+        // costruito apposta per essere troncato a meta' di un carattere — il
+        // tentativo semplicemente non esisteva, e il blocco non scattava mai.
+        // Qui la registrazione non puo' fallire (vedi `registraTentativo`), e
+        // se fallisse lo stesso l'eccezione ferma tutto PRIMA di verificare.
+        self::registraTentativo($ip, $utente, false);
+
         $riga = Database::riga(
             'SELECT id, utente, password_hash, attivo FROM amministratori WHERE utente = ? LIMIT 1',
             [$utente],
         );
+
+        // Il database confronta i nomi con una collation che ignora le
+        // maiuscole, gli accenti e i caratteri invisibili: per lui «admin»
+        // seguito da venti spazi a larghezza zero e' «admin». Per chi entra
+        // no. Il nome deve coincidere byte per byte, altrimenti e' un nome che
+        // non esiste — e segue la stessa strada, allo stesso costo.
+        if (is_array($riga) && !hash_equals((string) $riga['utente'], $utente)) {
+            $riga = null;
+        }
 
         // Si calcola comunque un hash finto quando l'utente non esiste: altrimenti
         // il tempo di risposta direbbe a un estraneo quali nomi utente sono validi.
@@ -57,7 +80,6 @@ final class Auth
         $ok   = password_verify($password, $hash);
 
         if (!is_array($riga) || (int) $riga['attivo'] !== 1 || !$ok) {
-            self::registraTentativo($ip, $utente, false);
             return ['esito' => false, 'motivo' => 'credenziali', 'attesa' => 0];
         }
 
@@ -68,18 +90,21 @@ final class Auth
             );
         }
 
-        Session::rigenera();
-        Session::set(self::CHIAVE, [
-            'id'     => (int) $riga['id'],
-            'utente' => (string) $riga['utente'],
-            'da'     => time(),
-        ]);
-
+        // Prima le scritture di registro, POI la sessione: se una scrittura
+        // fallisse, l'eccezione non deve trovare un amministratore gia' dentro.
         Database::esegui(
             'UPDATE amministratori SET ultimo_accesso = NOW(), ultimo_ip = ? WHERE id = ?',
             [$ip, (int) $riga['id']],
         );
         self::registraTentativo($ip, $utente, true);
+
+        Session::rigenera();
+        Csrf::rinnova();
+        Session::set(self::CHIAVE, [
+            'id'     => (int) $riga['id'],
+            'utente' => (string) $riga['utente'],
+            'da'     => time(),
+        ]);
 
         return ['esito' => true, 'motivo' => '', 'attesa' => 0];
     }
@@ -111,6 +136,7 @@ final class Auth
     /** Secondi mancanti alla fine del blocco per questo IP, 0 se libero. */
     public static function bloccoResiduo(string $ip): int
     {
+        $ip = self::chiaveIp($ip);
         $falliti = (int) Database::valore(
             'SELECT COUNT(*) FROM accessi_admin
               WHERE ip = ? AND riuscito = 0 AND quando > (NOW() - INTERVAL ? SECOND)',
@@ -131,9 +157,14 @@ final class Auth
 
     private static function registraTentativo(string $ip, string $utente, bool $riuscito): void
     {
+        $ip = self::chiaveIp($ip);
+
         Database::esegui(
             'INSERT INTO accessi_admin (quando, ip, utente, riuscito) VALUES (NOW(), ?, ?, ?)',
-            [$ip, substr($utente, 0, 64), $riuscito ? 1 : 0],
+            // `mb_scrub` e `mb_strcut`, non `substr`: tagliare a 64 BYTE un nome
+            // lungo spezzava l'ultimo carattere a meta', il database in
+            // modalita' stretta rifiutava la riga, e il tentativo spariva.
+            [$ip, mb_strcut(mb_scrub($utente, 'UTF-8'), 0, 64, 'UTF-8'), $riuscito ? 1 : 0],
         );
 
         if ($riuscito) {
@@ -141,12 +172,35 @@ final class Auth
         }
     }
 
-    /** Hash di comodo con lo stesso costo del vero, per non rivelare i nomi utente. */
+    /** Vedi `Rete::chiaveCliente`: per IPv6 si conta la rete /64. */
+    private static function chiaveIp(string $ip): string
+    {
+        return \App\Support\Rete::chiaveCliente($ip);
+    }
+
+    /**
+     * Impronta di comodo con lo stesso costo della vera, per non rivelare i nomi
+     * utente: a un nome inesistente si fa verificare questa, e il tempo di
+     * risposta e' lo stesso di un nome esistente con la password sbagliata.
+     *
+     * E' scritta qui come costante, e non calcolata al momento. Prima veniva
+     * generata alla prima richiesta con `password_hash` — ma sotto il web ogni
+     * richiesta e' un processo nuovo, quindi la «prima volta» era ogni volta:
+     * per un nome inesistente si pagavano DUE Argon2id (generare e verificare)
+     * contro uno solo per quello vero. Il cronometro diceva il contrario di
+     * quello che l'impronta finta doveva nascondere: 450 ms contro 180.
+     *
+     * Nessuno conosce la parola da cui viene, che era casuale ed e' stata
+     * buttata: verificarla contro qualunque password da' sempre falso. I
+     * parametri sono quelli di OPZIONI; se cambiano, va rigenerata con
+     *   php -r 'echo password_hash(bin2hex(random_bytes(24)), PASSWORD_ARGON2ID,
+     *           ["memory_cost"=>65536,"time_cost"=>4,"threads"=>2]);'
+     */
+    private const HASH_FINTO = '$argon2id$v=19$m=65536,t=4,p=2$cGdJZzdWSjJnNzhsNG13bg$UpcU03eHy6/v/fTtNJSh5CgqLAeQmmYd5rA/bO4wdbY';
+
     private static function hashFinto(): string
     {
-        static $finto = null;
-
-        return $finto ??= self::hash(bin2hex(random_bytes(16)));
+        return self::HASH_FINTO;
     }
 
     /** Scrive una riga nel registro delle azioni dell'admin. */

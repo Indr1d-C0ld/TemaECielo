@@ -61,12 +61,7 @@ final class AccessoController
         Telemetria::evento('accesso_riuscito', $utente);
         Session::lampo('bene', 'Accesso effettuato.');
 
-        $da = (string) $r->post('da', '/admin');
-        if (!str_starts_with($da, '/') || str_starts_with($da, '//')) {
-            $da = '/admin';
-        }
-
-        return Response::redirect(url($da));
+        return Response::redirect(url(self::destinazione((string) $r->post('da', '/admin'))));
     }
 
     public function esci(Request $r): Response
@@ -78,6 +73,24 @@ final class AccessoController
         }
 
         return Response::redirect(url('/'));
+    }
+
+    /**
+     * Dove andare dopo l'accesso: solo un percorso di questo portale.
+     *
+     * Il controllo di prima — comincia con «/» e non con «//» — lasciava
+     * passare «/\\altrove.com», che i browser trattano come «//altrove.com»,
+     * cioe' un altro sito. Oggi non era sfruttabile solo perche' `url()`
+     * antepone /temaecielo; installato nella radice del dominio, lo sarebbe
+     * diventato. Si ammettono quindi solo caratteri da percorso, e niente che
+     * un browser possa leggere come l'inizio di un indirizzo esterno.
+     */
+    private static function destinazione(string $da): string
+    {
+        return preg_match('#^/(?![/\\\\])[A-Za-z0-9/_\-.~%?=&]*$#', $da) === 1
+            && parse_url('http://x' . $da, PHP_URL_HOST) === 'x'
+            ? $da
+            : '/admin';
     }
 
     private function rifiuta(Request $r, string $errore, int $stato = 400): Response

@@ -12,7 +12,7 @@
   <div class="filetto"><i></i><span>&#10022;</span><i></i></div>
 
   <p class="condotto">
-    La notte fra il <?= e(date('j/n/Y', strtotime((string) $tempo['data_locale']))) ?> gli orologi
+    Nella notte del <?= e(date('j/n/Y', strtotime((string) $tempo['data_locale']))) ?> gli orologi
     sono tornati indietro di un'ora, e le <strong><?= e(substr((string) $tempo['ora_locale'], 0, 5)) ?></strong>
     sono esistite <strong>due volte</strong>: una prima del cambio, ancora in ora legale, e una dopo.
   </p>

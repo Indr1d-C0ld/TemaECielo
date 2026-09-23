@@ -37,7 +37,9 @@ final class CorpusController
                 ? (string) $r->query('registro') : '',
             'cerca'    => mb_substr(trim((string) ($r->query('cerca') ?? '')), 0, 80),
         ];
-        $pagina = max(1, (int) ($r->query('p') ?? '1'));
+        // Un tetto: senza, un numero di pagina enorme fa traboccare l'offset in
+        // virgola mobile e l'SQL si rompe con un 500.
+        $pagina = min(1_000_000, max(1, (int) ($r->query('p') ?? '1')));
 
         // Le colonne si qualificano sempre con «t.»: l'elenco unisce `testi` a
         // `testi_uso`, che hanno entrambe `ambito` e `chiave`, e senza prefisso

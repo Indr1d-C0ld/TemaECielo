@@ -50,7 +50,7 @@ $q = static function (array $sopra) use ($filtri, $pagina): string {
           <td class="num tenue"><?= e((string) $t['ambito']) ?></td>
           <td class="num"><?= e((string) $t['chiave']) ?></td>
           <td class="tenue"><?= e(mb_substr((string) $t['registro'], 0, 4)) ?></td>
-          <td><?= e(mb_strimwidth((string) $t['titolo'], 0, 46, '&hellip;')) ?></td>
+          <td><?= e(mb_strimwidth((string) $t['titolo'], 0, 46, '…')) ?></td>
           <td class="num destra"><?= e((string) $t['peso']) ?></td>
           <td class="num destra"><?= e(number_format((float) $t['usi'], 0, ',', '.')) ?></td>
           <td><?= $t['stato'] === 'pubblicato' ? '' : '<span class="bollino">bozza</span>' ?></td>

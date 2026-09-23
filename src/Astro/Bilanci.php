@@ -154,18 +154,33 @@ final class Bilanci
 
         // Un «manico» e' un corpo isolato fra due vuoti grandi: e' quello che
         // distingue il secchio dalla ciotola e la fionda dal fascio.
+        //
+        // Il manico sta fra i due vuoti piu' grandi, in uno dei due versi: prima
+        // si guardava solo quello in cui il manico segue il vuoto maggiore, e la
+        // carta allo specchio non ne aveva mai uno.
+        //
+        // E il gruppo si misura SENZA il manico: altrimenti l'ampiezza lo
+        // comprende, supera sempre la mezza circonferenza, e il secchio e la
+        // fionda non venivano riconosciuti mai — cadevano tutti in «locomotiva».
         $manico = null;
-        if (count($vuoti) > 1 && $vuoti[0]['ampiezza'] >= 60.0 && $vuoti[1]['ampiezza'] >= 60.0
-            && $vuoti[0]['prima'] === $vuoti[1]['dopo']) {
-            $manico = $vuoti[0]['prima'];
+        $ampiezzaGruppo = $ampiezza;
+        if (count($vuoti) > 1 && $vuoti[0]['ampiezza'] >= 60.0 && $vuoti[1]['ampiezza'] >= 60.0) {
+            if ($vuoti[0]['prima'] === $vuoti[1]['dopo']) {
+                $manico = $vuoti[0]['prima'];
+            } elseif ($vuoti[1]['prima'] === $vuoti[0]['dopo']) {
+                $manico = $vuoti[1]['prima'];
+            }
+            if ($manico !== null) {
+                $ampiezzaGruppo = 360.0 - $vuoti[0]['ampiezza'] - $vuoti[1]['ampiezza'];
+            }
         }
 
         [$tipo, $nome, $desc] = match (true) {
-            $ampiezza <= 120.0 && $manico !== null =>
+            $manico !== null && $ampiezzaGruppo <= 120.0 =>
                 ['fionda', 'Fionda', 'Tutti i corpi in un quarto di cielo, meno uno che tira dall\'altra parte.'],
             $ampiezza <= 120.0 =>
                 ['fascio', 'Fascio', 'Tutti i corpi raccolti in un quarto di cielo: energia concentrata su pochi fronti.'],
-            $ampiezza <= 186.0 && $manico !== null =>
+            $manico !== null && $ampiezzaGruppo <= 186.0 =>
                 ['secchio', 'Secchio', 'I corpi in meta' . "'" . ' cielo, con uno isolato che fa da manico: tutto passa di li' . "'" . '.'],
             $ampiezza <= 186.0 =>
                 ['ciotola', 'Ciotola', 'I corpi in una meta' . "'" . ' di cielo: un emisfero pieno e uno vuoto.'],

@@ -306,8 +306,13 @@ final class Sinastria
             ];
         }
 
+        // Gli assi della composita esistono solo se esistono in entrambe le
+        // carte: il punto medio fra un Ascendente vero e il segnaposto di una
+        // carta a ora ignota non e' niente, e prima veniva calcolato lo stesso
+        // e messo in aspetto coi pianeti.
+        $ignota = static fn (array $t): bool => (bool) ($t['carta']['ora_ignota'] ?? false);
         $punti = [];
-        foreach (['asc', 'mc'] as $p) {
+        foreach ($ignota($a) || $ignota($b) ? [] : ['asc', 'mc'] as $p) {
             if (!isset($a['punti'][$p], $b['punti'][$p])) {
                 continue;
             }

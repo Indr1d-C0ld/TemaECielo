@@ -102,9 +102,10 @@ final class Corpus
             $corpo  = Lingua::inserisci($corpo, $nome);
         }
 
-        return new Voce(
+        return Voce::nuova(
             $ambito, $chiave, $titolo, $corpo,
             (float) $t['peso'], 'scritto', $t['etichette'], $soggetti,
+            $nominato !== null && self::eFemminile($nominato),
         );
     }
 
@@ -127,7 +128,7 @@ final class Corpus
             return null;
         }
 
-        return new Voce(
+        return Voce::nuova(
             'pianeta_segno', $chiave,
             Corpi::elenco()[$pianeta]['nome'] . ' ' . $s['titolo'],
             Lingua::maiuscola($p['titolo']) . ' ' . $s['corpo'],
@@ -135,6 +136,7 @@ final class Corpus
             'composto',
             array_merge($p['etichette'], $s['etichette'], ['frammento:segno_modo.' . $nomeSegno]),
             [$pianeta],
+            self::soggettoFemminile($p['titolo'], $pianeta),
         );
     }
 
@@ -154,7 +156,7 @@ final class Corpus
             return null;
         }
 
-        return new Voce(
+        return Voce::nuova(
             'pianeta_casa', $chiave,
             Corpi::elenco()[$pianeta]['nome'] . ' ' . $c['titolo'],
             Lingua::maiuscola($p['titolo']) . ' ' . $c['corpo'],
@@ -162,6 +164,7 @@ final class Corpus
             'composto',
             array_merge($p['etichette'], $c['etichette'], ['frammento:casa_campo.' . $casa]),
             [$pianeta],
+            self::soggettoFemminile($p['titolo'], $pianeta),
         );
     }
 
@@ -194,17 +197,23 @@ final class Corpus
             return null;
         }
 
-        $nomeA = self::nomeDi($primo);
-        $nomeB = self::nomeDi($secondo);
+        // Il titolo con gli articoli e le contrazioni giuste — «Mercurio unito al
+        // Sole», «La Luna congiunta a Venere» — e non per semplice accostamento,
+        // che dava «Mercurio unito a Sole» e «Luna congiunto a Venere».
+        $titolo = Lingua::maiuscola(Lingua::accorda(
+            Lingua::inserisci(self::conArticolo($primo) . ' ' . $rel['titolo'] . ' %s', self::conArticolo($secondo)),
+            self::eFemminile($primo),
+        ));
 
-        return new Voce(
+        return Voce::nuova(
             'aspetto', $chiave,
-            $nomeA . ' ' . $rel['titolo'] . ' ' . $nomeB,
+            $titolo,
             Lingua::maiuscola($pa['titolo']) . ' ' . Lingua::inserisci($rel['corpo'], $pb['titolo']),
             (float) $rel['peso'],
             'composto',
             array_merge($pa['etichette'], $pb['etichette'], $rel['etichette']),
             [$primo, $secondo],
+            self::soggettoFemminile($pa['titolo'], $primo),
         );
     }
 
@@ -282,6 +291,39 @@ final class Corpus
         return ($ordine[$a] ?? 99) <= ($ordine[$b] ?? 99) ? [$a, $b] : [$b, $a];
     }
 
+    /**
+     * Se un corpo e' grammaticalmente femminile: la Luna, Venere, Lilith e le
+     * quattro dee degli asteroidi. Serve quando il soggetto della frase e' il
+     * nome proprio, senza articolo che lo dica.
+     */
+    public static function eFemminile(string $chiave): bool
+    {
+        return in_array($chiave, ['luna', 'venere', 'lilith', 'cerere', 'pallade', 'giunone', 'vesta'], true);
+    }
+
+    /**
+     * Il genere del soggetto di una frase composta: quello del titolo del
+     * frammento, se il suo articolo lo dice («la struttura», «il bisogno di
+     * senso»), altrimenti quello del corpo.
+     */
+    private static function soggettoFemminile(string $titolo, string $chiave): bool
+    {
+        return Lingua::femminile($titolo) ?? self::eFemminile($chiave);
+    }
+
+    /** Il nome con l'articolo che vuole in una frase: «il Sole», «la Luna», «Marte». */
+    public static function conArticolo(string $chiave): string
+    {
+        return match ($chiave) {
+            'sole'  => 'il Sole',
+            'luna'  => 'la Luna',
+            'asc'   => "l'Ascendente",
+            'mc'    => 'il Medio Cielo',
+            'nodo'  => 'il Nodo Nord',
+            default => self::nomeDi($chiave),
+        };
+    }
+
     public static function nomeDi(string $chiave): string
     {
         return match ($chiave) {
@@ -308,6 +350,14 @@ final class Corpus
     /** Segna che una voce e' stata usata: serve a sapere cosa scrivere per primo. */
     public function segnaUso(string $ambito, string $chiave): void
     {
+        // Solo le letture vere contano. Da riga di comando girano le prove, e
+        // le prove montano letture a decine: ogni esecuzione della suite
+        // gonfiava i contatori, cioe' proprio la lista con cui la regia decide
+        // quali voci scrivere per prime.
+        if (PHP_SAPI === 'cli') {
+            return;
+        }
+
         try {
             Database::esegui(
                 'INSERT INTO testi_uso (ambito, chiave, usi, ultimo) VALUES (?,?,1,NOW())

@@ -71,7 +71,8 @@ $sposta = static function (int $secondi) use ($quando, $indirizzo): string {
       </div>
     </div>
     <p class="volta-aiuto" id="volta-aiuto" hidden>
-      Trascina per spostarti, rotella o due dita per ingrandire.
+      Trascina per spostarti; per ingrandire, due dita, doppio clic, o la rotella con <kbd>Ctrl</kbd> premuto
+      &mdash; una volta ingrandita basta la rotella.
       Con la tastiera: frecce per spostare, <kbd>+</kbd> e <kbd>&minus;</kbd> per la scala, <kbd>0</kbd> per tornare indietro.
     </p>
     <figcaption>
@@ -95,7 +96,7 @@ $sposta = static function (int $secondi) use ($quando, $indirizzo): string {
       <div class="campo campo-largo">
         <label for="cerca-cielo">Luogo di osservazione</label>
         <div class="cerca">
-          <input type="text" id="cerca-cielo" autocomplete="off" role="combobox"
+          <input type="text" id="cerca-cielo" name="luogo_testo" autocomplete="off" role="combobox"
                  aria-expanded="false" aria-controls="risultati-cielo" aria-autocomplete="list"
                  placeholder="Comune, citt&agrave;, paese&hellip;"
                  value="<?= e((string) $luogo['nome']) ?>">
@@ -122,13 +123,13 @@ $sposta = static function (int $secondi) use ($quando, $indirizzo): string {
       <div class="campo">
         <label for="cielo-lat">Latitudine</label>
         <input type="number" id="cielo-lat" name="lat" step="0.000001" min="-90" max="90"
-               value="<?= e(number_format((float) $luogo['lat'], 6, '.', '')) ?>" required>
+               value="<?= e(number_format((float) $luogo['lat'], 6, '.', '')) ?>">
       </div>
 
       <div class="campo">
         <label for="cielo-lon">Longitudine</label>
         <input type="number" id="cielo-lon" name="lon" step="0.000001" min="-180" max="180"
-               value="<?= e(number_format((float) $luogo['lon'], 6, '.', '')) ?>" required>
+               value="<?= e(number_format((float) $luogo['lon'], 6, '.', '')) ?>">
       </div>
     </div>
 
@@ -201,7 +202,7 @@ $sposta = static function (int $secondi) use ($quando, $indirizzo): string {
     <dl class="anagrafe">
       <div><dt>Fase</dt><dd><?= e((string) $fl['fase_nome']) ?></dd></div>
       <div><dt>Illuminazione</dt><dd class="num"><?= e(number_format((float) $fl['illuminazione'] * 100, 0, ',', '')) ?>%</dd></div>
-      <div><dt>Luna sopra l'orizzonte</dt><dd><?= ((float) ($tema['corpi']['luna']['altezza'] ?? -1) >= 0) ? 'si' : 'no' ?></dd></div>
+      <div><dt>Luna sopra l'orizzonte</dt><dd><?= ((float) ($tema['corpi']['luna']['altezza'] ?? -1) >= 0) ? 's&igrave;' : 'no' ?></dd></div>
       <div><dt>Sole</dt><dd class="num"><?= e(number_format($altSole, 1, ',', '')) ?>&deg;</dd></div>
     </dl>
   <?php endif; ?>

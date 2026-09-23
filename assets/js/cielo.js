@@ -92,6 +92,11 @@
 
     /* --- rotella ---------------------------------------------------------- */
     tela.addEventListener('wheel', function (ev) {
+      // A volta intera la rotella e' della pagina: la volta e' alta quanto lo
+      // schermo, e catturarla voleva dire non poter piu' scorrere oltre. Si
+      // ingrandisce allora con Ctrl (o Cmd) premuto, come nelle mappe
+      // incorporate; una volta ingrandita, la rotella basta da sola.
+      if (scala <= 1.001 && !ev.ctrlKey && !ev.metaKey) { return; }
       ev.preventDefault();
       var p = puntoSvg(ev.clientX, ev.clientY);
       // `deltaMode` 1 vuol dire righe, non pixel: senza normalizzarlo, su
@@ -166,6 +171,9 @@
 
     /* --- doppio tocco / doppio clic --------------------------------------- */
     tela.addEventListener('dblclick', function (ev) {
+      // Un doppio clic sui pulsanti e' un «ingrandisci due volte», non un
+      // «torna alla vista intera».
+      if (ev.target.closest('.volta-attrezzi')) { return; }
       ev.preventDefault();
       ingrandisci(scala > 1.001 ? 1 : 3, puntoSvg(ev.clientX, ev.clientY));
     });
@@ -244,7 +252,9 @@
       strati.cartina.addTo(mappa);
 
       if (haPunto) { posa(lat, lon, false); }
-      mappa.on('click', function (ev) { posa(ev.latlng.lat, ev.latlng.lng, true); });
+      // `wrap()`: oltre l'antimeridiano Leaflet restituisce longitudini fuori
+      // scala (200, 540...), che il modulo e il server rifiutano.
+      mappa.on('click', function (ev) { var p = ev.latlng.wrap(); posa(p.lat, p.lng, true); });
 
       modulo.querySelectorAll('.mappa-vest').forEach(function (b) {
         b.addEventListener('click', function () {
@@ -266,7 +276,7 @@
       } else {
         segnaposto = L.marker([lat, lon], { draggable: true }).addTo(mappa);
         segnaposto.on('dragend', function () {
-          var p = segnaposto.getLatLng();
+          var p = segnaposto.getLatLng().wrap();
           posa(p.lat, p.lng, true);
         });
       }

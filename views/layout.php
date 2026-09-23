@@ -34,6 +34,7 @@ $voci[] = Auth::amministratore()
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(($titolo ?? '') === 'Tema e Cielo' || ($titolo ?? '') === '' ? 'Tema e Cielo' : $titolo . ' — Tema e Cielo') ?></title>
 <meta name="description" content="Il tema natale calcolato con la Swiss Ephemeris e la volta celeste reale dell'istante di nascita.">
+<script src="<?= e(risorsa('js/veste.js')) ?>" nonce="<?= e(nonce()) ?>"></script>
 <link rel="stylesheet" href="<?= e(risorsa('css/temaecielo.css')) ?>">
 <?php if (($mappa ?? false) === true): ?>
   <link rel="stylesheet" href="<?= e(risorsa('leaflet/leaflet.css')) ?>">
@@ -114,6 +115,10 @@ $voci[] = Auth::amministratore()
       <?php endif; ?>
       <span class="sep">&middot;</span>
       <a href="<?= e(url('/pagina/informativa')) ?>">Informativa</a>
+      <?php foreach (pagine_in_menu() as $pag): if ($pag['slug'] === 'informativa') { continue; } ?>
+        <span class="sep">&middot;</span>
+        <a href="<?= e(url('/pagina/' . $pag['slug'])) ?>"><?= e($pag['titolo']) ?></a>
+      <?php endforeach; ?>
       <span class="sep">&middot;</span>
       <span><?= e((string) Config::get('app.nome', 'Tema e Cielo')) ?></span>
     </p>

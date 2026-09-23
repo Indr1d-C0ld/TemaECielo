@@ -17,7 +17,7 @@
           <td class="num"><?= e((string) $p['slug']) ?></td>
           <td><a href="<?= e(url('/admin/pagine/' . (int) $p['id'])) ?>"><?= e((string) $p['titolo']) ?></a></td>
           <td><?= e((string) $p['stato']) ?></td>
-          <td><?= ((int) $p['in_menu'] === 1) ? 'si' : '—' ?></td>
+          <td><?= ((int) $p['in_menu'] === 1) ? 's&igrave;' : '—' ?></td>
           <td class="num destra"><?= e((string) $p['ordine']) ?></td>
           <td class="num tenue"><?= e(date('d/m/y H:i', strtotime((string) $p['aggiornata']))) ?></td>
         </tr>

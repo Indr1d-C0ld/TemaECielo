@@ -109,15 +109,15 @@ return [
 // GLI ASPETTI — che rapporto  (%s = il secondo corpo)
 // ═══════════════════════════════════════════════════════════════════════════
 
-['aspetto_relazione', 'congiunzione', 'tradizionale', 'congiunto a',
- 'e\' congiunto a %s: i due si trovano nello stesso grado e non si distinguono piu\'. Il piu\' '
+['aspetto_relazione', 'congiunzione', 'tradizionale', 'congiunt{o|a} a',
+ 'e\' congiunt{o|a} a %s: i due si trovano nello stesso grado e non si distinguono piu\'. Il piu\' '
  . 'forte assorbe il piu\' debole, e cio\' che ne esce agisce come un corpo solo.',
  8, 'congiunzione fusione'],
-['aspetto_relazione', 'congiunzione', 'moderno', 'unito a',
+['aspetto_relazione', 'congiunzione', 'moderno', 'unit{o|a} a',
  'e\' tutt\'uno con %s: le due funzioni non si distinguono, e quando si muove una si muove '
  . 'anche l\'altra. E\' una forza sola, e non si puo\' usarne meta\'.', 8, 'congiunzione fusione'],
 
-['aspetto_relazione', 'opposizione', 'tradizionale', 'opposto a',
+['aspetto_relazione', 'opposizione', 'tradizionale', 'oppost{o|a} a',
  'sta in opposizione a %s, a centottanta gradi: si guardano da due parti opposte del cielo. '
  . 'E\' aspetto di inimicizia, che divide, ma i due si vedono chiaramente.',
  8, 'opposizione tensione asse'],

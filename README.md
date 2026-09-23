@@ -24,12 +24,12 @@ NASA. Niente è approssimato e niente è inventato.
 | **La volta celeste** | Il cielo *vero* di quell'istante: 8.900 stelle fino alla sesta magnitudine e mezzo, 88 costellazioni, eclittica, pianeti, la Luna nella fase e nell'inclinazione giuste, e il colore del cielo che segue l'altezza del Sole. |
 | **Il cielo, da dove e quando vuoi** | La volta si ingrandisce fino a dodici volte e si sposta — rotella, trascinamento, pizzico, tastiera — agendo sul `viewBox` dell'SVG: nessuna richiesta al server, e ingrandire mostra davvero piu' dettaglio invece di sgranare. Luogo a scelta fra 287.039, dalla ricerca per nome o dalla mappa; data e ora dal 1800 al 2399, con salti di dieci minuti, un'ora, un giorno. Ogni cielo ha un indirizzo proprio, che si salva e si manda. |
 | **La lettura** | Due registri affiancati — tradizionale (dignità, signorie, Lilly) e moderno (archetipi, Rudhyar) — montati per rilevanza, non concatenati. |
-| **Sinastria** | Rapida segno-contro-segno, o completa carta-contro-carta: aspetti incrociati, sovrapposizione delle case, composita, quattro punteggi per area. |
+| **Sinastria** | Rapida segno-contro-segno, o completa carta-contro-carta: aspetti incrociati, sovrapposizione delle case, composita di punti medi, **carta di Davison** — il cielo vero dell'istante a metà fra le due nascite, visto dal punto a metà fra i due luoghi — e quattro punteggi per area. |
 | **Carte del tempo** | Transiti su data scelta, rivoluzione solare, progressioni secondarie, direzioni di arco solare, profezioni annuali. |
 | **Comunità** | Guestbook con due voti distinti (gradimento e attinenza), moderazione, statistiche pubbliche aggregate. |
 | **Regia** | Pannello per corpus, pagine redazionali, impostazioni, blocchi, registro accessi geolocalizzato offline. |
 
-**330 prove di regressione**, che non confrontano i risultati con altri programmi di
+**358 prove di regressione**, che non confrontano i risultati con altri programmi di
 astrologia — potrebbero sbagliare insieme — ma con fatti verificabili: agli equinozi il Sole
 risulta a 0° entro un centesimo di grado, la Stella Polare sta a un'altezza pari alla
 latitudine, a Longyearbyen il Sole non tramonta a giugno.
@@ -37,6 +37,15 @@ latitudine, a Longyearbyen il Sole non tramonta a giugno.
 Funziona su telefono e su tablet quanto su un monitor: la barra delle sezioni si richiude,
 le tabelle larghe scorrono dentro il proprio riquadro invece di sfondare la pagina, e dove
 si tocca invece di puntare i bersagli si allargano senza che cambi il disegno.
+
+E funziona **senza JavaScript**: i moduli di nascita, di sinastria e del cielo accettano il solo
+nome del luogo, e il server fa da sé ciò che altrimenti farebbero il completamento automatico e
+la mappa — cerca il luogo, ne ricava le coordinate e il fuso. Si perde la comodità, non la funzione.
+
+Prima dei fusi orari conta l'**ora locale media del luogo**: per l'Italia prima del novembre
+1893 un atto di nascita di Milano segnava l'ora di Milano, non quella di Roma che il database
+dei fusi attribuisce a tutta la penisola — tredici minuti di differenza, qualche grado di
+Ascendente. Per la Francia no: dal 1891 l'ora di Parigi era davvero l'ora legale di tutto il paese.
 
 ---
 
@@ -177,7 +186,7 @@ db/migrazioni/       SQL numerato, applicato una volta sola
 db/semi/             il corpus interpretativo
 deploy/              bootstrap, installazione, conf Apache
 docs/                DESIGN.md (il progetto per esteso), FONTI.md
-tests/               330 prove di regressione
+tests/               358 prove di regressione
 ```
 
 ---
@@ -277,8 +286,11 @@ Il portale tratta insieme **data-ora-luogo di nascita** e **indirizzi IP**. Chi 
 è il titolare del trattamento. Il software offre, già pronti:
 
 - **informativa** come pagina redazionale, richiamata sotto il modulo e sotto il guestbook;
-- **cancellazione autonoma** del proprio calcolo tramite il permalink, senza account;
-- **esportazione** del proprio calcolo;
+- **cancellazione autonoma** della propria carta dal permalink, senza account: si cancellano
+  carta e dati di nascita, e l'indirizzo smette di funzionare per chiunque;
+- **un permalink per persona**: due persone con gli stessi dati di nascita condividono il
+  calcolo, ma non l'indirizzo né il nome;
+- **download** della ruota e della volta celeste come file SVG autonomi;
 - **purga programmata** del registro accessi (`privacy.purga_accessi_giorni`);
 - **anonimizzazione** dell'IP (`privacy.anonimizza_ip`).
 
@@ -296,14 +308,24 @@ confronto non ha scelto di essere nel portale.
 
 - **CSP con nonce** dal primo giorno: nessuno stile inline, nessun `onclick`, nessuno script
   incorporato.
-- **Argon2id** per la password dell'amministratore, con blocco dopo cinque tentativi falliti.
+- **Argon2id** per la password dell'amministratore, con blocco dopo cinque tentativi falliti
+  per indirizzo (per IPv6, per rete /64). Il tentativo si conta *prima* di verificarlo, il nome
+  utente deve coincidere byte per byte (non solo per la collation del database), e un nome che
+  non esiste costa esattamente quanto uno che esiste: il cronometro non dice quali nomi sono validi.
+- **Freni per indirizzo** sul motore di calcolo (40 processi al minuto) e sull'API dei luoghi
+  (120 richieste al minuto), contati nel database e non nella sessione — che il cliente può
+  semplicemente non mandare.
+- Le risposte che una cache condivisa può conservare **non portano il cookie di sessione**, e gli
+  SVG serviti da soli ricevono una CSP da immagine, senza script.
 - **CSRF** su ogni modulo, **prepared statement** su ogni query.
 - Il Markdown delle pagine redazionali **scappa il testo prima di qualunque trasformazione**:
   l'HTML non passa, e i collegamenti `javascript:` vengono neutralizzati.
-- Il guestbook si difende con campo esca, cronometro minimo, tetto orario per indirizzo,
-  parole vietate e blocchi — **senza captcha di terzi**.
+- Il guestbook si difende con campo esca, cronometro minimo (un modulo mai aperto non passa),
+  tetto orario per indirizzo, parole vietate e blocchi — **senza captcha di terzi**.
 - `src/`, `db/`, `bin/`, `config/`, `deploy/`, `views/`, `storage/`, `docs/` e `fonti/` sono
-  negati dal web dalla conf Apache.
+  negati dal web dalla conf Apache, e nella radice del portale l'unico `.php` eseguibile è
+  `index.php`. Le regole valgono **solo** per il portale: una conf che porta il nome di
+  un'applicazione non deve decidere per le altre ospitate sullo stesso server.
 
 ---
 

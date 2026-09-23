@@ -42,7 +42,7 @@ final class Telemetria
     {
         try {
             $ip  = $richiesta->ip();
-            $ua  = $richiesta->userAgent();
+            $ua  = self::taglia($richiesta->userAgent(), 500);
             $sc  = Agente::leggi($ua);
             $ses = self::sessione();
             $ms  = (int) round((microtime(true) - $inizio) * 1000);
@@ -73,13 +73,13 @@ final class Telemetria
                     $dove['asn'],
                     $dove['operatore'],
                     $richiesta->metodo(),
-                    substr($richiesta->percorso(), 0, 255),
-                    substr($parametri, 0, 255),
+                    self::taglia($richiesta->percorso(), 255),
+                    self::taglia($parametri, 255),
                     $risposta->stato(),
                     $risposta->lunghezza(),
                     $ms,
-                    substr($richiesta->referente(), 0, 255),
-                    substr($richiesta->lingua(), 0, 100),
+                    self::taglia($richiesta->referente(), 255),
+                    self::taglia($richiesta->lingua(), 100),
                     $ua,
                     $sc['famiglia'],
                     $sc['so'],
@@ -111,8 +111,8 @@ final class Telemetria
                 $sc['so'],
                 $sc['dispositivo'],
                 $sc['bot'] ? 1 : 0,
-                substr($r->percorso(), 0, 255),
-                substr($r->referente(), 0, 255),
+                self::taglia($r->percorso(), 255),
+                self::taglia($r->referente(), 255),
             ],
         );
     }
@@ -161,11 +161,27 @@ final class Telemetria
             Database::esegui(
                 'INSERT INTO eventi (quando, sessione, tipo, oggetto, valore, durata_ms)
                  VALUES (NOW(), ?, ?, ?, ?, ?)',
-                [self::sessione(), substr($tipo, 0, 48), substr($oggetto, 0, 128), substr($valore, 0, 255), $durataMs],
+                [self::sessione(), self::taglia($tipo, 48), self::taglia($oggetto, 128), self::taglia($valore, 255), $durataMs],
             );
         } catch (\Throwable $e) {
             registro('evento: ' . $e->getMessage(), 'warn');
         }
+    }
+
+    /**
+     * Taglia una stringa per una colonna del database, senza romperla.
+     *
+     * `substr` taglia a BYTE: su un testo in UTF-8 puo' spezzare un carattere a
+     * meta', e un User-Agent o un Referer con byte non validi basta da solo.
+     * Col database in modalita' stretta l'inserimento viene rifiutato, l'errore
+     * finisce solo nel diario, e la richiesta sparisce dal registro degli
+     * accessi — cioe' chi vuole passare inosservato ha un modo semplice per
+     * farlo. Qui prima si ripuliscono i byte non validi, poi si taglia sul
+     * confine di un carattere.
+     */
+    private static function taglia(string $s, int $byte): string
+    {
+        return mb_strcut(mb_scrub($s, 'UTF-8'), 0, $byte, 'UTF-8');
     }
 
     /** IPv4 al /24, IPv6 al /48. Disattivata per impostazione. */

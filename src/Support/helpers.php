@@ -84,3 +84,34 @@ function debug(): bool
 {
     return Config::caricata() && (bool) Config::get('app.debug', false);
 }
+
+/**
+ * Le pagine redazionali da mostrare nel pie' di pagina: quelle pubblicate e
+ * segnate «nel menu» dalla regia.
+ *
+ * Il campo esisteva, la regia lo faceva spuntare, e nessuna pagina lo leggeva:
+ * spuntarlo non cambiava niente. Qui si legge una volta per richiesta; se
+ * l'archivio non risponde, il pie' di pagina resta senza, e la pagina esce lo
+ * stesso.
+ *
+ * @return list<array{slug:string,titolo:string}>
+ */
+function pagine_in_menu(): array
+{
+    static $pagine = null;
+    if ($pagine !== null) {
+        return $pagine;
+    }
+    try {
+        $pagine = array_map(
+            static fn (array $r): array => ['slug' => (string) $r['slug'], 'titolo' => (string) $r['titolo']],
+            \App\Core\Database::righe(
+                "SELECT slug, titolo FROM pagine WHERE stato = 'pubblicata' AND in_menu = 1 ORDER BY ordine, titolo"
+            ),
+        );
+    } catch (\Throwable) {
+        $pagine = [];
+    }
+
+    return $pagine;
+}

@@ -35,7 +35,9 @@ final class GuestbookController
     /** GET /guestbook */
     public function elenco(Request $r): Response
     {
-        $pagina = max(1, (int) ($r->query('p') ?? '1'));
+        // Un tetto: senza, un numero di pagina enorme fa traboccare l'offset in
+        // virgola mobile e l'SQL si rompe con un 500.
+        $pagina = min(1_000_000, max(1, (int) ($r->query('p') ?? '1')));
         $per = 20;
 
         $totale = (int) Database::valore('SELECT COUNT(*) FROM guestbook WHERE stato = ?', ['approvato']);
@@ -173,8 +175,12 @@ final class GuestbookController
         // 2. Il tempo. Un modulo compilato in meno di quattro secondi non e'
         //    stato letto. Il momento di apertura sta in sessione, non in un
         //    campo nascosto, altrimenti basterebbe falsificarlo.
+        //    Se il momento di apertura manca del tutto, il modulo non e' mai
+        //    stato aperto: chi scrive ha preso un gettone da un'altra pagina e
+        //    ha mandato la firma direttamente. Prima questo caso passava, perche'
+        //    «zero» veniva letto come «non so» e non come «mai».
         $aperto = (int) Session::get('__gb_aperto', 0);
-        if ($aperto > 0 && (time() - $aperto) < self::ATTESA_MINIMA) {
+        if ($aperto === 0 || (time() - $aperto) < self::ATTESA_MINIMA) {
             $e['fretta'] = 'Hai compilato troppo in fretta. Riprova fra qualche secondo.';
         }
 

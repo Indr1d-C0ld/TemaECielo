@@ -65,7 +65,15 @@ $stelle = static function (?int $n): string {
   </p>
 
   <?php if ($messaggi === []): ?>
-    <p class="condotto tenue">Nessun messaggio ancora. Puoi essere il primo.</p>
+    <?php if ($totale > 0): ?>
+      <p class="condotto tenue">
+        Questa pagina non c'&egrave;: i messaggi finiscono a pagina <?= e((string) $pagine) ?>.
+        <a href="<?= e(url('/guestbook?p=' . $pagine)) ?>">Vai all'ultima</a>
+        o <a href="<?= e(url('/guestbook')) ?>">torna ai pi&ugrave; recenti</a>.
+      </p>
+    <?php else: ?>
+      <p class="condotto tenue">Nessun messaggio ancora. Puoi essere il primo.</p>
+    <?php endif; ?>
   <?php else: ?>
     <div class="messaggi">
       <?php foreach ($messaggi as $m): ?>

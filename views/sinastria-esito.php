@@ -2,6 +2,7 @@
 /**
  * @var array<string,mixed> $primo @var array<string,mixed> $temaA @var array<string,mixed> $temaB
  * @var array<string,mixed> $sinastria @var string $nomeB
+ * @var array<string,mixed>|null $davison
  */
 $rom = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 $nomeA = $sinastria['nomi']['a'];
@@ -10,6 +11,9 @@ $nomeA = $sinastria['nomi']['a'];
   <p class="occhiello">Sinastria completa</p>
   <h1><?= e($nomeA) ?> e <?= e($nomeB) ?></h1>
   <div class="filetto"><i></i><span>&#10022;</span><i></i></div>
+  <?php if (($avvisoOra ?? null) !== null): ?>
+    <p class="lampo lampo-attento" role="status"><?= e($avvisoOra) ?></p>
+  <?php endif; ?>
 
   <div class="numeri">
     <?php foreach ($sinastria['punteggi'] as $p): ?>
@@ -28,8 +32,8 @@ $nomeA = $sinastria['nomi']['a'];
     <?= (new \App\Grafica\RuotaTema($temaA, false, null, $temaB, $sinastria['aspetti'],
           mb_strtoupper($nomeB, 'UTF-8'))) ->disegna() ?>
     <figcaption>
-      Al centro la carta di <?= e($nomeA) ?>; nella corona esterna, pi&ugrave; leggera,
-      i pianeti di <?= e($nomeB) ?>. Le corde che attraversano sono gli aspetti fra le due.
+      Al centro la carta <?= e(\App\Corpus\Lingua::inserisci('di %s', $nomeA)) ?>; nella corona esterna, pi&ugrave; leggera,
+      i pianeti <?= e(\App\Corpus\Lingua::inserisci('di %s', $nomeB)) ?>. Le corde che attraversano sono gli aspetti fra le due.
     </figcaption>
   </figure>
 
@@ -88,10 +92,10 @@ $nomeA = $sinastria['nomi']['a'];
   <div class="due">
     <?php foreach ([['a_in_b', $nomeA, $nomeB], ['b_in_a', $nomeB, $nomeA]] as [$k, $chi, $dove]): ?>
       <div>
-        <h3>I pianeti di <?= e($chi) ?> nelle case di <?= e($dove) ?></h3>
+        <h3>I pianeti <?= e(\App\Corpus\Lingua::inserisci('di %s', $chi)) ?> nelle case <?= e(\App\Corpus\Lingua::inserisci('di %s', $dove)) ?></h3>
         <?php if ($sinastria['sovrapposizioni'][$k] === null): ?>
           <p class="tenue">
-            L'ora di nascita di <?= e($dove) ?> non &egrave; nota: le cuspidi non esistono, e
+            L'ora di nascita <?= e(\App\Corpus\Lingua::inserisci('di %s', $dove)) ?> non &egrave; nota: le cuspidi non esistono, e
             dire in quale casa cade un pianeta sarebbe inventare.
           </p>
         <?php else: ?>
@@ -135,9 +139,45 @@ $nomeA = $sinastria['nomi']['a'];
     il rapporto ha tensioni proprie, che non sono la somma di quelle dei due.
   </p>
 
+  <?php if (($davison ?? null) !== null): ?>
+    <h2>La carta di Davison</h2>
+    <p class="condotto">
+      Il cielo del momento a met&agrave; strada fra le due nascite, visto dal punto a met&agrave;
+      strada fra i due luoghi. A differenza della composita non &egrave; una costruzione: quel cielo
+      c'&egrave; stato davvero, il <?= e(date('j/n/Y', strtotime($davison['utc'] . ' UTC'))) ?>
+      alle <?= e(substr((string) $davison['utc'], 11)) ?> UT, sopra
+      <?= e($davison['luogo'] ?? sprintf('%.2f, %.2f', $davison['lat'], $davison['lon'])) ?>.
+    </p>
+    <?php if ($davison['ignota']): ?>
+      <p class="lampo lampo-attento">
+        L'ora di una delle due nascite non &egrave; nota, quindi l'istante di mezzo &egrave; incerto di
+        qualche ora: Ascendente e case della Davison non sono attendibili, i pianeti s&igrave;.
+      </p>
+    <?php endif; ?>
+    <figure class="ruota-riquadro">
+      <?= (new \App\Grafica\RuotaTema($davison['tema']))->disegna() ?>
+    </figure>
+    <div class="tabella-scorre">
+      <table class="griglia fitta">
+        <thead><tr><th>Corpo</th><th>Posizione</th><th class="destra">Casa</th></tr></thead>
+        <tbody>
+        <?php foreach (\App\Astro\Corpi::dieci() as $k):
+          if (!isset($davison['tema']['corpi'][$k])) { continue; }
+          $c = $davison['tema']['corpi'][$k]; ?>
+          <tr>
+            <td><?= e((string) $c['nome']) ?><?= !empty($c['retrogrado']) ? ' <span class="retro">' . glifo('retrogrado') . '</span>' : '' ?></td>
+            <td class="num"><?= e((string) $c['posizione']) ?></td>
+            <td class="num destra"><?= $davison['ignota'] ? '&mdash;' : e((string) $c['casa']) ?></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+
   <p class="nota-piccola">
-    Questa pagina non viene conservata: per rivederla, rifai il confronto da
-    <a href="<?= e(url('/carta/' . $gettone)) ?>">la carta di <?= e($nomeA) ?></a>.
+    Questa pagina non viene conservata: per rivederla, rifai il confronto dalla
+    <a href="<?= e(url('/carta/' . $gettone)) ?>">carta <?= e(\App\Corpus\Lingua::inserisci('di %s', $nomeA)) ?></a>.
     I dati della seconda persona non sono stati archiviati.
   </p>
 </article>

@@ -14,7 +14,7 @@ $chi = $primo['nome'] !== '' ? $primo['nome'] : 'questa carta';
   <div class="filetto"><i></i><span>&#10022;</span><i></i></div>
 
   <p class="condotto">
-    Tre modi diversi di far avanzare la carta di <?= e($chi) ?>, e non si sostituiscono l'uno
+    Tre modi diversi di far avanzare la carta <?= e(\App\Corpus\Lingua::inserisci('di %s', $chi)) ?>, e non si sostituiscono l'uno
     all'altro. Riferiti al compleanno del <strong><?= e((string) $anno) ?></strong>, quando
     <?= e($chi) ?> compie <strong><?= e((string) $anniCompiuti) ?> anni</strong>.
   </p>
@@ -182,7 +182,8 @@ $chi = $primo['nome'] !== '' ? $primo['nome'] : 'questa carta';
     <p class="condotto">
       Il momento in cui il Sole ripassa esattamente sul grado che occupava alla nascita:
       <strong><?= e(sprintf('%d/%d/%d', $i['giorno'], $i['mese'], $i['anno'])) ?></strong>
-      alle <strong><?= e(sprintf('%02d:%02d UT', (int) $i['ora_ut'], (int) round(fmod($i['ora_ut'], 1) * 60))) ?></strong>.
+      <?php $minuti = (int) floor((float) $i['ora_ut'] * 60.0); /* troncati: «13:60» non esiste */ ?>
+      alle <strong><?= e(sprintf('%02d:%02d UT', intdiv($minuti, 60), $minuti % 60)) ?></strong>.
       Non &egrave; il compleanno: il Sole impiega 365 giorni e un quarto, quindi l'istante cade
       ogni anno quasi sei ore pi&ugrave; tardi e ogni tanto scivola al giorno prima.
     </p>

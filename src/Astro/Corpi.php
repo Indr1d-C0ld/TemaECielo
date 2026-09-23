@@ -59,10 +59,10 @@ final class Corpi
             'nodo'      => ['ipl' => self::NODO_VERO, 'nome' => 'Nodo Nord', 'glifo' => 'nodo-nord', 'tipo' => 'punto',     'base' => false],
             'lilith'    => ['ipl' => self::LILITH_MEDIA, 'nome' => 'Lilith', 'glifo' => 'lilith',    'tipo' => 'punto',     'base' => false],
             'chirone'   => ['ipl' => self::CHIRONE,   'nome' => 'Chirone',   'glifo' => 'chirone',   'tipo' => 'asteroide', 'base' => false],
-            'cerere'    => ['ipl' => self::CERERE,    'nome' => 'Cerere',    'glifo' => 'fortuna',   'tipo' => 'asteroide', 'base' => false],
-            'pallade'   => ['ipl' => self::PALLADE,   'nome' => 'Pallade',   'glifo' => 'fortuna',   'tipo' => 'asteroide', 'base' => false],
-            'giunone'   => ['ipl' => self::GIUNONE,   'nome' => 'Giunone',   'glifo' => 'fortuna',   'tipo' => 'asteroide', 'base' => false],
-            'vesta'     => ['ipl' => self::VESTA,     'nome' => 'Vesta',     'glifo' => 'fortuna',   'tipo' => 'asteroide', 'base' => false],
+            'cerere'    => ['ipl' => self::CERERE,    'nome' => 'Cerere',    'glifo' => 'cerere',   'tipo' => 'asteroide', 'base' => false],
+            'pallade'   => ['ipl' => self::PALLADE,   'nome' => 'Pallade',   'glifo' => 'pallade',   'tipo' => 'asteroide', 'base' => false],
+            'giunone'   => ['ipl' => self::GIUNONE,   'nome' => 'Giunone',   'glifo' => 'giunone',   'tipo' => 'asteroide', 'base' => false],
+            'vesta'     => ['ipl' => self::VESTA,     'nome' => 'Vesta',     'glifo' => 'vesta',   'tipo' => 'asteroide', 'base' => false],
         ];
     }
 
@@ -235,7 +235,9 @@ final class Corpi
             'campano'      => ['codice' => 'C', 'nome' => 'Campano',           'polare' => false],
             'porfirio'     => ['codice' => 'O', 'nome' => 'Porfirio',          'polare' => true],
             'equale'       => ['codice' => 'A', 'nome' => 'Equale',            'polare' => true],
-            'equale_mc'    => ['codice' => 'X', 'nome' => 'Equale dal MC',     'polare' => true],
+            // «D» e non «X»: nella Swiss Ephemeris «X» e' il sistema meridiano (a
+            // rotazione assiale), che produce case disuguali. Equale dal MC e' «D».
+            'equale_mc'    => ['codice' => 'D', 'nome' => 'Equale dal MC',     'polare' => true],
             'segni_interi' => ['codice' => 'W', 'nome' => 'Segni Interi',      'polare' => true],
             'alcabizio'    => ['codice' => 'B', 'nome' => 'Alcabizio',         'polare' => false],
             'topocentrico' => ['codice' => 'T', 'nome' => 'Topocentrico',      'polare' => false],
@@ -290,10 +292,13 @@ final class Corpi
         $grado = (int) floor($resto);
         $m     = ($resto - $grado) * 60.0;
         $primo = (int) floor($m);
-        $secondo = (int) round(($m - $primo) * 60.0);
-
-        if ($secondo === 60) { $secondo = 0; $primo++; }
-        if ($primo === 60)   { $primo = 0; $grado++; }
+        // Troncati, non arrotondati. Arrotondando, 29°59'59,96" diventava
+        // «30°00'00" Ariete», che non esiste — e riportarlo a «0° Toro»
+        // cambierebbe il segno rispetto a `segnoDi`, che giustamente tronca. Le
+        // effemeridi a stampa fanno lo stesso: il secondo si scrive quando e'
+        // compiuto.
+        $secondo = (int) floor(($m - $primo) * 60.0 + 1e-9);
+        if ($secondo >= 60) { $secondo = 59; }
 
         return ['segno' => $segno, 'grado' => $grado, 'primo' => $primo, 'secondo' => $secondo];
     }

@@ -124,9 +124,14 @@ final class Dignita
             } elseif ($casa === 3) {
                 $voci[] = ['tipo' => 'cadente', 'nome' => 'In terza casa', 'punti' => 1];
                 $punteggio += 1;
-            } elseif (in_array($casa, [6, 8, 12], true)) {
-                $voci[] = ['tipo' => 'cadente', 'nome' => 'In casa cadente debole', 'punti' => -4];
-                $punteggio -= 4;
+            } elseif ($casa === 12) {
+                // Lilly, Christian Astrology: la dodicesima e' la peggiore (-5),
+                // la sesta e l'ottava valgono -2. Prima erano tutte e tre -4.
+                $voci[] = ['tipo' => 'cadente', 'nome' => 'In dodicesima casa', 'punti' => -5];
+                $punteggio -= 5;
+            } elseif (in_array($casa, [6, 8], true)) {
+                $voci[] = ['tipo' => 'cadente', 'nome' => 'In casa cadente debole', 'punti' => -2];
+                $punteggio -= 2;
             }
         }
 

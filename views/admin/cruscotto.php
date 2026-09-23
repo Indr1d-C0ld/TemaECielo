@@ -36,7 +36,7 @@ $etichette = [
           <td class="num"><?= e(date('d/m H:i:s', strtotime((string) $r['quando']))) ?></td>
           <td class="num"><?= e((string) $r['ip']) ?></td>
           <td><?= e((string) $r['percorso']) ?></td>
-          <td class="num destra stato-<?= e((string) ((int) $r['stato'] / 100 | 0)) ?>"><?= e((string) $r['stato']) ?></td>
+          <td class="num destra stato-<?= e((string) intdiv((int) $r['stato'], 100)) ?>"><?= e((string) $r['stato']) ?></td>
           <td class="num destra"><?= e((string) $r['durata_ms']) ?></td>
           <td class="tenue"><?= e(trim((string) $r['ua_famiglia'] . ' / ' . (string) $r['ua_so'])) ?></td>
         </tr>

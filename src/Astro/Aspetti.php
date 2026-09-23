@@ -94,16 +94,28 @@ final class Aspetti
             return null; // fra due punti fissi non c'e' moto: la domanda non si pone
         }
 
-        $passo = 1.0 / 24.0; // un'ora
+        // Conta il verso in cui si muove lo scarto ADESSO, cioe' il segno della
+        // sua derivata. Prima si confrontava lo scarto di ora con quello fra
+        // un'ora: se l'aspetto diventava esatto dentro quell'ora, fra un'ora lo
+        // scarto era gia' ricresciuto, e un aspetto che si stava stringendo
+        // risultava separativo. Con la Luna capitava a ogni aspetto entro un
+        // quarto di grado dall'esatto.
+        //
+        // Il passo e' di circa un secondo: abbastanza piccolo da non scavalcare
+        // l'esatto, abbastanza grande da non perdersi negli arrotondamenti.
+        $passo = 1.0e-5;
 
-        $oraScarto = abs(Corpi::distanza($lonA, $lonB) - $angolo);
-        $poiScarto = abs(Corpi::distanza($lonA + $velA * $passo, $lonB + $velB * $passo) - $angolo);
+        $ora  = Corpi::distanza($lonA, $lonB);
+        $poi  = Corpi::distanza($lonA + $velA * $passo, $lonB + $velB * $passo);
+        $scarto = $ora - $angolo;   // con segno: > 0 oltre l'aspetto, < 0 prima
+        $moto   = $poi - $ora;      // come cambia la distanza
 
-        if (abs($poiScarto - $oraScarto) < 1e-9) {
-            return null; // stazionario rispetto all'aspetto
+        if (abs($moto) < 1e-12 || abs($scarto) < 1e-9) {
+            return null; // stazionario rispetto all'aspetto, o esatto adesso
         }
 
-        return $poiScarto < $oraScarto;
+        // Applicativo se la distanza va verso l'angolo dell'aspetto.
+        return $scarto * $moto < 0.0;
     }
 
     /**

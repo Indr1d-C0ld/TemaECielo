@@ -25,6 +25,13 @@ final class Tema
         $cuspidi = $grezzo['case']['cuspidi'];
         $diurna  = (bool) $grezzo['carta']['diurna'];
 
+        // Con l'ora ignota l'Ascendente e il Medio Cielo che il worker mette
+        // nella carta sono SEGNAPOSTI — l'inizio del segno del Sole, e novanta
+        // gradi prima — che servono a disegnare una carta solare, non a leggerla.
+        // Qui si tengono fuori da tutto cio' che li tratterebbe come veri:
+        // aspetti, bilanci, emisferi, la casa nelle dignita' accidentali.
+        $oraIgnota = (bool) ($grezzo['carta']['ora_ignota'] ?? false);
+
         // --- casa di ogni corpo e di ogni punto ------------------------------
         foreach ($corpi as $chiave => $c) {
             $corpi[$chiave]['casa']    = self::casaDi((float) $c['lon'], $cuspidi);
@@ -46,7 +53,9 @@ final class Tema
             $corpi[$chiave]['condizione'] = Dignita::accidentali(
                 $chiave,
                 $corpi[$chiave],
-                $corpi[$chiave]['casa'],
+                // Nella carta solare il Sole sta sempre in prima casa: senza
+                // questa riga prendeva +5 «angolare» su ogni carta a ora ignota.
+                $oraIgnota ? null : $corpi[$chiave]['casa'],
                 $corpi['sole'] ?? null,
                 Dignita::velocitaMedia($chiave),
             );
@@ -62,7 +71,7 @@ final class Tema
         foreach ($corpi as $chiave => $c) {
             $perAspetti[$chiave] = ['lon' => (float) $c['lon'], 'vel' => (float) $c['vel_lon'], 'nome' => (string) $c['nome']];
         }
-        foreach (['asc', 'mc'] as $asse) {
+        foreach ($oraIgnota ? [] : ['asc', 'mc'] as $asse) {
             if (isset($punti[$asse])) {
                 $perAspetti[$asse] = ['lon' => (float) $punti[$asse]['lon'], 'vel' => 0.0, 'nome' => (string) $punti[$asse]['nome']];
             }
@@ -86,8 +95,10 @@ final class Tema
         foreach ($corpi as $chiave => $c) {
             $perBilanci[$chiave] = ['lon' => (float) $c['lon']];
         }
-        $perBilanci['asc'] = ['lon' => (float) $punti['asc']['lon']];
-        $perBilanci['mc']  = ['lon' => (float) $punti['mc']['lon']];
+        if (!$oraIgnota) {
+            $perBilanci['asc'] = ['lon' => (float) $punti['asc']['lon']];
+            $perBilanci['mc']  = ['lon' => (float) $punti['mc']['lon']];
+        }
 
         $perConfig = [];
         foreach (Corpi::dieci() as $chiave) {
@@ -116,12 +127,17 @@ final class Tema
             ],
             'bilanci' => [
                 'segni'        => Bilanci::calcola($perBilanci),
-                'emisferi'     => Bilanci::emisferi($corpi),
+                // Gli emisferi si contano sulle case, e le case di una carta
+                // solare non dicono dove stava l'orizzonte.
+                'emisferi'     => $oraIgnota ? null : Bilanci::emisferi($corpi),
                 'figura'       => Bilanci::figura($corpi),
                 'dispositori'  => Bilanci::dispositori($corpi),
                 'dispositori_moderni' => Bilanci::dispositori($corpi, true),
             ],
             'configurazioni' => Configurazioni::trova($aspetti, $perConfig),
+            // I corpi che il motore non ha potuto calcolare per questa data (gli
+            // asteroidi fuori dal loro intervallo): la pagina lo deve dire.
+            'errori_corpi' => $grezzo['errori_corpi'] ?? [],
             'stelle'   => $grezzo['stelle']   ?? [],
             'fenomeni' => $grezzo['fenomeni'] ?? [],
             'giorno'   => $grezzo['giorno']   ?? [],

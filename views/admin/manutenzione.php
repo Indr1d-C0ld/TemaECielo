@@ -24,7 +24,7 @@
     <div><dt>Permalink</dt><dd class="num"><?= e(number_format((float) ($cache['permalink'] ?? 0), 0, ',', '.')) ?></dd></div>
     <div><dt>Righe di cache</dt><dd class="num"><?= e(number_format((float) ($cache['cache'] ?? 0), 0, ',', '.')) ?></dd></div>
     <div><dt>Peso complessivo</dt><dd class="num"><?= e(number_format((float) ($cache['mb'] ?? 0), 1, ',', '.')) ?> MB</dd></div>
-    <div><dt>Cache pi&ugrave; vecchia</dt><dd><?= e((string) ($cache['piu_vecchia'] ?? '&mdash;')) ?></dd></div>
+    <div><dt>Cache pi&ugrave; vecchia</dt><dd><?= e((string) ($cache['piu_vecchia'] ?? '—')) ?></dd></div>
   </dl>
   <p class="nota-piccola">
     Il portale sfoltisce da s&eacute; ci&ograve; che nessuno richiede da oltre trenta giorni, una

@@ -41,9 +41,86 @@ final class VoltaCeleste
     ) {
     }
 
+    /**
+     * Le aree gia' occupate da glifi e nomi, per non scriverci sopra.
+     *
+     * @var list<array{0:float,1:float,2:float,3:float}>
+     */
+    private array $occupati = [];
+
+    /** Se un rettangolo e' libero: dentro la cupola e senza toccare nulla di gia' posato. */
+    private function libero(array $b): bool
+    {
+        // Dentro il cerchio dell'orizzonte: fuori viene tagliato.
+        foreach ([[$b[0], $b[1]], [$b[2], $b[1]], [$b[0], $b[3]], [$b[2], $b[3]]] as [$x, $y]) {
+            if (hypot($x - self::CX, $y - self::CY) > self::R - 2.0) {
+                return false;
+            }
+        }
+        foreach ($this->occupati as $o) {
+            if ($b[0] < $o[2] && $b[2] > $o[0] && $b[1] < $o[3] && $b[3] > $o[1]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Il rettangolo di un testo, stimato dal numero di caratteri: per il carattere
+     * con grazie di questa pagina, poco piu' di mezzo corpo a lettera.
+     *
+     * @return array{0:float,1:float,2:float,3:float}
+     */
+    private static function scatola(float $x, float $y, string $testo, float $corpo, string $ancora): array
+    {
+        $w = mb_strlen($testo) * $corpo * 0.56;
+        $x0 = match ($ancora) { 'start' => $x, 'end' => $x - $w, default => $x - $w / 2.0 };
+
+        return [$x0 - 1.0, $y - $corpo * 0.82, $x0 + $w + 1.0, $y + $corpo * 0.28];
+    }
+
+    /**
+     * Sceglie la prima posizione libera fra quelle proposte, e la occupa.
+     *
+     * @param list<array{0:float,1:float,2:string}> $candidati [x, y, ancora]
+     * @return array{0:float,1:float,2:string}|null
+     */
+    private function posa(string $testo, float $corpo, array $candidati, bool $obbligato): ?array
+    {
+        foreach ($candidati as $c) {
+            $b = self::scatola($c[0], $c[1], $testo, $corpo, $c[2]);
+            if ($this->libero($b)) {
+                $this->occupati[] = $b;
+                return $c;
+            }
+        }
+        if (!$obbligato) {
+            return null;
+        }
+        // Un pianeta ha sempre il suo nome, anche se non c'e' un posto libero:
+        // meglio un nome accavallato che un glifo anonimo. Ma un nome tagliato
+        // dal bordo della cupola e' peggio di uno accavallato: si prende allora
+        // la prima posizione che almeno sta dentro, sopra quello che c'e'.
+        $salvati = $this->occupati;
+        $this->occupati = [];
+        $scelto = $candidati[0];
+        foreach ($candidati as $c) {
+            if ($this->libero(self::scatola($c[0], $c[1], $testo, $corpo, $c[2]))) {
+                $scelto = $c;
+                break;
+            }
+        }
+        $this->occupati = $salvati;
+        $this->occupati[] = self::scatola($scelto[0], $scelto[1], $testo, $corpo, $scelto[2]);
+
+        return $scelto;
+    }
+
     public function disegna(): string
     {
         $t = $this->tema;
+        $this->occupati = [];
 
         $jd  = (float) $t['tempo']['jd_ut'];
         $lat = (float) $t['luogo']['lat'];
@@ -359,18 +436,36 @@ final class VoltaCeleste
     {
         $fuori = ['<g class="pianeti-cielo">'];
 
+        // Prima si segnano i posti dei glifi, tutti: stanno dove sta il corpo e
+        // non si spostano. Solo dopo i nomi cercano un posto libero intorno.
+        // Nettuno e Saturno a pochi gradi l'uno dall'altro scrivevano i nomi
+        // uno sopra l'altro.
+        $visibili = [];
         foreach (Corpi::dieci() as $chiave) {
             if ($chiave === 'luna' || !isset($t['corpi'][$chiave])) {
                 continue;   // la Luna ha un trattamento suo
             }
             $c = $t['corpi'][$chiave];
-            $alt = (float) $c['altezza'];
-            if ($alt < 0.0) {
+            if ((float) $c['altezza'] < 0.0) {
                 continue;   // sotto l'orizzonte: non si vede, non si disegna
             }
+            [$x, $y] = $this->proietta((float) $c['altezza'], (float) $c['azimut']);
+            $visibili[$chiave] = [$x, $y];
+            $alto = $chiave === 'sole' ? 37.0 : 11.0;
+            $this->occupati[] = [$x - 12.0, $y - $alto, $x + 12.0, $y + 12.0];
+        }
 
-            [$x, $y] = $this->proietta($alt, (float) $c['azimut']);
+        foreach ($visibili as $chiave => [$x, $y]) {
+            $c = $t['corpi'][$chiave];
             $sole = $chiave === 'sole';
+            $nome = (string) $c['nome'];
+            [$nx, $ny, $ancora] = $this->posa($nome, 10.5, [
+                [$x, $y + ($sole ? 26.0 : 24.0), 'middle'],
+                [$x, $y - ($sole ? 42.0 : 16.0), 'middle'],
+                [$x + 15.0, $y + 4.0, 'start'],
+                [$x - 15.0, $y + 4.0, 'end'],
+                [$x, $y + ($sole ? 38.0 : 36.0), 'middle'],
+            ], true);
 
             if ($sole) {
                 $fuori[] = sprintf('<circle cx="%.1f" cy="%.1f" r="26" fill="#ffe9a8" opacity=".22"/>', $x, $y);
@@ -382,13 +477,13 @@ final class VoltaCeleste
             $fuori[] = sprintf(
                 '<g class="pianeta-cielo" data-corpo="%s"><use href="#gl-%s" x="%.1f" y="%.1f" '
                 . 'width="22" height="22" color="%s"/>'
-                . '<text x="%.1f" y="%.1f" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,.72)">%s</text></g>',
+                . '<text x="%.1f" y="%.1f" text-anchor="%s" font-size="10.5" fill="rgba(255,255,255,.72)">%s</text></g>',
                 htmlspecialchars($chiave, ENT_QUOTES),
                 Corpi::elenco()[$chiave]['glifo'] ?? 'stella',
                 $x - 11, $y - 11 - ($sole ? 26 : 0),
                 $sole ? '#2b2200' : 'var(--oro-chiaro, #e8d18a)',
-                $x, $y + ($sole ? 26 : 24),
-                htmlspecialchars((string) $c['nome'], ENT_QUOTES),
+                $nx, $ny, $ancora,
+                htmlspecialchars($nome, ENT_QUOTES),
             );
         }
 
@@ -460,14 +555,24 @@ final class VoltaCeleste
 
         $nome = (string) ($t['fenomeni']['luna']['fase_nome'] ?? 'Luna');
 
+        // Il disco occupa il suo posto; il nome cerca il proprio intorno, e le
+        // coordinate si riportano poi al gruppo traslato sul centro della Luna.
+        $this->occupati[] = [$x - $r * 1.8, $y - $r * 1.8, $x + $r * 1.8, $y + $r * 1.8];
+        [$nx, $ny, $ancora] = $this->posa($nome, 10.5, [
+            [$x, $y + $r + 16.0, 'middle'],
+            [$x, $y - $r * 1.8 - 5.0, 'middle'],
+            [$x + $r * 1.8 + 4.0, $y + 4.0, 'start'],
+            [$x - $r * 1.8 - 4.0, $y + 4.0, 'end'],
+        ], true);
+
         return sprintf(
             '<g class="luna-cielo" data-corpo="luna" transform="translate(%.1f,%.1f)">'
             . '<circle r="%.0f" fill="#e8d18a" opacity=".14"/>'
             . '<g transform="rotate(%.1f)">'
             . '<circle r="%.1f" fill="rgba(255,255,255,.07)" stroke="rgba(240,228,192,.35)" stroke-width=".8"/>'
             . '<path d="%s" fill="#f2e6c4"/></g>'
-            . '<text y="%.1f" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,.72)">%s</text></g>',
-            $x, $y, $r * 1.8, $rotazione, $r, $percorso, $r + 16.0,
+            . '<text x="%.1f" y="%.1f" text-anchor="%s" font-size="10.5" fill="rgba(255,255,255,.72)">%s</text></g>',
+            $x, $y, $r * 1.8, $rotazione, $r, $percorso, $nx - $x, $ny - $y, $ancora,
             htmlspecialchars($nome, ENT_QUOTES),
         );
     }
@@ -481,14 +586,34 @@ final class VoltaCeleste
         $opacita = max(0.25, (float) $cielo['stelleVisibili']);
         $fuori = ['<g class="nomi-stelle" font-size="10" fill="rgba(210,225,255,.8)" opacity="' . sprintf('%.2f', $opacita) . '">'];
 
-        foreach ($stelle as $s) {
-            if ($s['nome'] === null || $s['mag'] > self::MAG_ETICHETTA || $s['alt'] < self::ALT_ETICHETTA) {
+        // Dalla piu' brillante: se due nomi si contendono un posto, lo tiene la
+        // stella che si vede meglio. Un nome che non trova posto non si scrive —
+        // la stella resta disegnata, e un nome sopra un altro non si legge
+        // comunque.
+        $nominate = array_values(array_filter(
+            $stelle,
+            static fn (array $s): bool => $s['nome'] !== null
+                && $s['mag'] <= self::MAG_ETICHETTA && $s['alt'] >= self::ALT_ETICHETTA,
+        ));
+        usort($nominate, static fn (array $a, array $b): int => $a['mag'] <=> $b['mag']);
+
+        foreach ($nominate as $s) {
+            [$x, $y] = $this->proietta((float) $s['alt'], (float) $s['az']);
+            $nome = (string) $s['nome'];
+            $posto = $this->posa($nome, 10.0, [
+                [$x + 7.0, $y + 3.5, 'start'],
+                [$x - 7.0, $y + 3.5, 'end'],
+                [$x, $y - 6.0, 'middle'],
+                [$x, $y + 13.0, 'middle'],
+            ], false);
+            if ($posto === null) {
                 continue;
             }
-            [$x, $y] = $this->proietta((float) $s['alt'], (float) $s['az']);
             $fuori[] = sprintf(
-                '<text x="%.1f" y="%.1f">%s</text>',
-                $x + 7.0, $y + 3.5, htmlspecialchars((string) $s['nome'], ENT_QUOTES),
+                '<text x="%.1f" y="%.1f"%s>%s</text>',
+                $posto[0], $posto[1],
+                $posto[2] === 'start' ? '' : ' text-anchor="' . $posto[2] . '"',
+                htmlspecialchars($nome, ENT_QUOTES),
             );
         }
 
@@ -513,14 +638,19 @@ final class VoltaCeleste
         // Est a sinistra, ovest a destra: e' la convenzione dei planisferi, e
         // scritta sul disegno non si puo' sbagliare.
         foreach ([['N', 0.0], ['E', 90.0], ['S', 180.0], ['O', 270.0]] as [$sigla, $az]) {
-            [$x, $y] = $this->proietta(-5.0, $az);
+            // A -2,5 gradi e non a -5: a -5 la N toccava il bordo superiore e la
+            // E quello sinistro, e il riquadro le tagliava.
+            [$x, $y] = $this->proietta(-2.5, $az);
             $fuori[] = Svg::testo($x, $y + 5, $sigla, [
                 'font-size' => 15, 'fill' => 'var(--oro-chiaro, #e8d18a)', 'letter-spacing' => '.1em',
             ]);
         }
 
-        $fuori[] = Svg::testo(self::CX, 24.0, mb_strtoupper('zenit al centro · ' . $cielo['nome'], 'UTF-8'), [
+        // Nell'angolo in alto a sinistra, che il cerchio lascia vuoto: sopra la N
+        // le due scritte si sarebbero toccate.
+        $fuori[] = Svg::testo(14.0, 20.0, mb_strtoupper('zenit al centro · ' . $cielo['nome'], 'UTF-8'), [
             'font-size' => 10, 'fill' => 'var(--attenuato, #9aa3c4)', 'letter-spacing' => '.18em',
+            'text-anchor' => 'start',
         ]);
 
         return implode("\n", $fuori);

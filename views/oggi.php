@@ -5,19 +5,22 @@
  * @var array<string,mixed> $luogo
  * @var array<string,mixed> $tema
  * @var DateTimeImmutable $adesso
+ * @var array<string,mixed> $quando
  * @var list<string> $retrogradi
  */
 $fl = $tema['fenomeni']['luna'] ?? null;
 $g  = $tema['giorno']['sole'] ?? [];
 
 /** Da giorno giuliano a ora locale leggibile. */
-$oraDi = static function (?float $jd): string {
+$oraDi = static function (?float $jd) use ($quando): string {
     if ($jd === null) { return '—'; }
     // Il giorno giuliano parte da mezzogiorno: si sposta di mezza giornata
     // prima di trattarlo come un tempo Unix.
     $unix = (int) round(($jd - 2440587.5) * 86400.0);
+    // Nel fuso del LUOGO osservato, non in quello del server: da Tokyo l'alba
+    // si legge sull'orologio di Tokyo.
     return (new DateTimeImmutable('@' . $unix))
-        ->setTimezone(new DateTimeZone(date_default_timezone_get()))->format('H:i');
+        ->setTimezone(new DateTimeZone((string) $quando['zona']))->format('H:i');
 };
 ?>
 <article class="cartiglio">
@@ -57,8 +60,8 @@ $oraDi = static function (?float $jd): string {
     </table>
   </div>
   <p class="aiuto">
-    Levata, culmine e tramonto sono in ora locale italiana e si riferiscono alla giornata di
-    oggi da <?= e($luogo['nome']) ?>. Un trattino significa che l'evento non avviene &mdash;
+    Levata, culmine e tramonto sono nell'ora locale del luogo (<?= e((string) $quando['zona']) ?>)
+    e si riferiscono a quella giornata vista da <?= e($luogo['nome']) ?>. Un trattino significa che l'evento non avviene &mdash;
     capita alle alte latitudini, dove d'estate il Sole non tramonta affatto.
   </p>
 
