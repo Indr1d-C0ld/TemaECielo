@@ -53,7 +53,7 @@ rsync -a --delete \
 # appartengono a www-data, quindi un chgrp ricorsivo fallisce su di loro — e
 # non serve, perche' il bit setgid sulle cartelle fa ereditare il gruppo
 # giusto a tutto cio' che nasce li' dentro.
-mkdir -p "${DST_DIR}/storage/cache/svg" "${DST_DIR}/storage/log"
+mkdir -p "${DST_DIR}/storage/cache/svg" "${DST_DIR}/storage/cache/mondo" "${DST_DIR}/storage/log"
 find "${DST_DIR}/storage" -type d -exec chgrp www-data {} + 2>/dev/null || true
 find "${DST_DIR}/storage" -type d -exec chmod 2775 {} + 2>/dev/null || true
 
