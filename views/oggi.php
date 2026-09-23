@@ -25,11 +25,18 @@ $oraDi = static function (?float $jd) use ($quando): string {
 ?>
 <article class="cartiglio">
   <p class="occhiello"><?= e($adesso->format('j/n/Y')) ?> &middot; <?= e($adesso->format('H:i')) ?></p>
-  <h1>Il cielo di oggi</h1>
+  <?php
+  // Con una data esplicita non e' «oggi»: il titolo lo dice, e la volta si apre
+  // sullo stesso luogo e sullo stesso istante.
+  $ora = $quando['adesso'];
+  $volta = url('/cielo?' . http_build_query($ora ? ['lat' => $luogo['lat'], 'lon' => $luogo['lon']]
+      : ['lat' => $luogo['lat'], 'lon' => $luogo['lon'], 'data' => $quando['data'], 'ora' => $quando['ora']]));
+  ?>
+  <h1><?= $ora ? 'Il cielo di oggi' : 'Il cielo del ' . e($adesso->format('j/n/Y')) ?></h1>
   <div class="filetto"><i></i><span>&#10022;</span><i></i></div>
   <p class="condotto">
-    Dove stanno i corpi celesti in questo momento, calcolato per <?= e($luogo['nome']) ?>.
-    Per vederli disegnati: <a href="<?= e(url('/cielo')) ?>">la volta celeste</a>.
+    Dove stanno i corpi celesti <?= $ora ? 'in questo momento' : 'in quell\'istante' ?>, calcolato per <?= e($luogo['nome']) ?>.
+    Per vederli disegnati: <a href="<?= e($volta) ?>">la volta celeste</a>.
   </p>
 
   <h2>Posizioni</h2>

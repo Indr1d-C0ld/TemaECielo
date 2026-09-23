@@ -130,10 +130,15 @@ final class Motore
      * nella chiave come per le carte: alzarla rifa' tutto.
      *
      * @param 'anno'|'eclissi'|'cicli' $operazione
+     * Con `$conserva` falso il risultato si calcola e non si scrive: e' il caso
+     * dei luoghi scritti a mano, che sono centinaia di migliaia. Tenerne uno
+     * per file permetterebbe a chiunque di riempire il disco un luogo alla
+     * volta; si conservano solo le domande di numero finito.
+     *
      * @param array<string,mixed> $dati
      * @return array<string,mixed>
      */
-    public function mondo(string $operazione, array $dati): array
+    public function mondo(string $operazione, array $dati, bool $conserva = true): array
     {
         $domanda = ['operazione' => $operazione] + $dati;
         $cartella = $this->radice . '/storage/cache/mondo';
@@ -148,7 +153,7 @@ final class Motore
 
         $esito = $this->invoca($domanda);
 
-        if (is_dir($cartella) || @mkdir($cartella, 02775, true)) {
+        if ($conserva && (is_dir($cartella) || @mkdir($cartella, 02775, true))) {
             // Scrittura atomica: chi legge nello stesso istante trova il file
             // vecchio o quello nuovo, mai uno a meta'.
             $tmp = $file . '.' . bin2hex(random_bytes(4));

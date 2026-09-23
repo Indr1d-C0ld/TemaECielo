@@ -23,6 +23,16 @@ $segno = static function (?string $i, string $etichetta): string {
         . '<span class="tenue">' . e($etichetta) . '</span> ' . glifo((string) $s['glifo'], 'el-' . $s['elemento']) . '</span>';
 };
 $totTipo = static fn (string $t): int => array_sum($conteggi[$t] ?? []);
+// Le categorie dell'elenco a tendina: quelle del tipo scelto o, senza tipo, di
+// tutti i tipi con i conteggi sommati — «politica» esiste per persone ed eventi,
+// e comparire due volte con due numeri diversi non aiuta nessuno.
+$categorie = [];
+foreach ($filtri['tipo'] !== '' ? [$filtri['tipo'] => $conteggi[$filtri['tipo']] ?? []] : $conteggi as $perTipo) {
+    foreach ($perTipo as $c => $n) {
+        $categorie[$c] = ($categorie[$c] ?? 0) + $n;
+    }
+}
+ksort($categorie);
 ?>
 <article class="cartiglio">
   <p class="occhiello">Persone, eventi, nazioni</p>
@@ -36,9 +46,9 @@ $totTipo = static fn (string $t): int => array_sum($conteggi[$t] ?? []);
   </p>
 
   <nav class="linguette" aria-label="Tipo">
-    <a class="linguetta" href="<?= e($link(['tipo' => '', 'categoria' => '', 'p' => 1])) ?>" <?= $filtri['tipo'] === '' ? 'aria-selected="true"' : '' ?>>Tutto</a>
+    <a class="linguetta" href="<?= e($link(['tipo' => '', 'categoria' => '', 'p' => 1])) ?>" <?= $filtri['tipo'] === '' ? 'aria-current="page"' : '' ?>>Tutto</a>
     <?php foreach (Archivio::TIPI as $k => $n): ?>
-      <a class="linguetta" href="<?= e($link(['tipo' => $k, 'categoria' => '', 'p' => 1])) ?>" <?= $filtri['tipo'] === $k ? 'aria-selected="true"' : '' ?>>
+      <a class="linguetta" href="<?= e($link(['tipo' => $k, 'categoria' => '', 'p' => 1])) ?>" <?= $filtri['tipo'] === $k ? 'aria-current="page"' : '' ?>>
         <?= e($n) ?> <span class="conteggio tenue"><?= e((string) $totTipo($k)) ?></span></a>
     <?php endforeach; ?>
   </nav>
@@ -48,10 +58,8 @@ $totTipo = static fn (string $t): int => array_sum($conteggi[$t] ?? []);
     <input type="search" name="q" value="<?= e($filtri['q']) ?>" placeholder="Nome o luogo&hellip;" aria-label="Cerca nell'archivio">
     <select name="categoria" aria-label="Categoria">
       <option value="">ogni categoria</option>
-      <?php foreach ($filtri['tipo'] !== '' ? [$filtri['tipo'] => Archivio::CATEGORIE[$filtri['tipo']]] : Archivio::CATEGORIE as $t => $cats): ?>
-        <?php foreach ($cats as $c): if (($conteggi[$t][$c] ?? 0) === 0) { continue; } ?>
-          <option value="<?= e($c) ?>" <?= $filtri['categoria'] === $c ? 'selected' : '' ?>><?= e($c) ?> (<?= e((string) $conteggi[$t][$c]) ?>)</option>
-        <?php endforeach; ?>
+      <?php foreach ($categorie as $c => $n): ?>
+        <option value="<?= e($c) ?>" <?= $filtri['categoria'] === $c ? 'selected' : '' ?>><?= e($c) ?> (<?= e((string) $n) ?>)</option>
       <?php endforeach; ?>
     </select>
     <select name="secolo" aria-label="Secolo">
@@ -78,7 +86,8 @@ $totTipo = static fn (string $t): int => array_sum($conteggi[$t] ?? []);
           <span class="voce-dove tenue"><?= e(explode(',', (string) $v['luogo_nome'])[0]) ?></span>
           <span class="voce-segni">
             <?= $segno($v['segno_sole'], 'Sole') ?><?= $segno($v['segno_luna'], 'Luna') ?>
-            <?= $v['ora_nascita'] !== null && !in_array($v['rodden'], ['X'], true) ? $segno($v['segno_asc'], 'Asc') : '' ?>
+            <?php // L'Ascendente solo con un'ora affidabile, come nei «colpi» del mondo. ?>
+            <?= $v['ora_nascita'] !== null && in_array($v['rodden'], ['AA', 'A', 'B'], true) ? $segno($v['segno_asc'], 'Asc') : '' ?>
           </span>
           <span class="voce-meta">
             <span class="bollino"><?= e((string) $v['categoria']) ?></span>

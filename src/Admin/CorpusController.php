@@ -117,7 +117,7 @@ final class CorpusController
         if ($testo === null) {
             return Response::html(Vista::pagina('errors/generico', [
                 'titolo' => 'Voce non trovata', 'stato' => 404,
-                'messaggio' => 'Non c\'e\' nessuna voce con questo numero.',
+                'messaggio' => 'Non c\'è nessuna voce con questo numero.',
             ]), 404);
         }
 
@@ -138,7 +138,7 @@ final class CorpusController
         $id = (int) ($argomenti['id'] ?? 0);
 
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta. Riprova.');
+            Session::lampo('male', 'La sessione è scaduta. Riprova.');
 
             return Response::redirect(url('/admin/corpus/' . $id));
         }
@@ -150,7 +150,7 @@ final class CorpusController
 
         $corpo = trim((string) $r->post('corpo', ''));
         if ($corpo === '') {
-            Session::lampo('male', 'Il corpo non puo\' restare vuoto.');
+            Session::lampo('male', 'Il corpo non può restare vuoto.');
 
             return Response::redirect(url('/admin/corpus/' . $id));
         }

@@ -29,8 +29,8 @@ $link = static function (array $sopra) use ($q, $quali, $pagina): string {
   </div>
 
   <form method="get" action="<?= e(url('/admin/carte')) ?>" class="filtri">
-    <input type="search" name="q" value="<?= e($q) ?>" placeholder="Nome o luogo&hellip;">
-    <select name="quali">
+    <input type="search" name="q" value="<?= e($q) ?>" placeholder="Nome o luogo&hellip;" aria-label="Cerca per nome o luogo">
+    <select name="quali" aria-label="Quali carte">
       <option value="">tutte</option>
       <option value="visitatori" <?= $quali === 'visitatori' ? 'selected' : '' ?>>senza scheda</option>
       <option value="archivio"   <?= $quali === 'archivio' ? 'selected' : '' ?>>con una scheda</option>

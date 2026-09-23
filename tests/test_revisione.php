@@ -215,7 +215,7 @@ echo "\n\033[1;36m══ L'italiano composto ══\033[0m\n";
 
 prova('Gli aggettivi si accordano col soggetto', static function () {
     $v = (new Corpus('tradizionale'))->aspetto('luna', 'venere', 'congiunzione');
-    return ($v !== null && $v->titolo === 'La Luna congiunta a Venere' && str_contains($v->corpo, "e' congiunta a"))
+    return ($v !== null && $v->titolo === 'La Luna congiunta a Venere' && str_contains($v->corpo, 'è congiunta a'))
         ?: ($v?->titolo . ' / ' . mb_substr((string) $v?->corpo, 0, 40));
 });
 

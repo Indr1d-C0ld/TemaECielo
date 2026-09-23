@@ -111,7 +111,7 @@ final class Router
         return Response::html(Vista::pagina('errors/generico', [
             'titolo'   => 'Pagina non trovata',
             'stato'    => 404,
-            'messaggio'=> 'Non c\'e\' niente a questo indirizzo. Forse il collegamento e\' vecchio.',
+            'messaggio'=> 'Non c\'è niente a questo indirizzo. Forse il collegamento è vecchio.',
         ]), 404);
     }
 

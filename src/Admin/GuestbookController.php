@@ -59,7 +59,7 @@ final class GuestbookController
         $torna = url('/admin/guestbook?stato=' . (string) ($r->post('stato_attuale') ?? 'coda'));
 
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta.');
+            Session::lampo('male', 'La sessione è scaduta.');
 
             return Response::redirect($torna);
         }
@@ -88,7 +88,7 @@ final class GuestbookController
             case 'modifica':
                 $testo = trim((string) $r->post('messaggio', ''));
                 if ($testo === '') {
-                    Session::lampo('male', 'Il messaggio non puo\' restare vuoto.');
+                    Session::lampo('male', 'Il messaggio non può restare vuoto.');
                     break;
                 }
                 Database::esegui(
@@ -156,7 +156,7 @@ final class GuestbookController
     public function salvaBlocco(Request $r): Response
     {
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta.');
+            Session::lampo('male', 'La sessione è scaduta.');
 
             return Response::redirect(url('/admin/blocchi'));
         }
@@ -172,7 +172,14 @@ final class GuestbookController
         }
 
         $cidr = trim((string) $r->post('cidr', ''));
-        if ($cidr === '' || preg_match('#^[0-9a-fA-F:.]+(/\d{1,3})?$#', $cidr) !== 1) {
+        // Indirizzo valido, e maschera dentro la sua famiglia: con «/999» il
+        // blocco veniva salvato e poi non combaciava mai con niente.
+        [$indirizzo, $maschera] = array_pad(explode('/', $cidr, 2), 2, null);
+        $v4 = filter_var((string) $indirizzo, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
+        $v6 = filter_var((string) $indirizzo, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
+        $mascheraOk = $maschera === null
+            || (ctype_digit($maschera) && (int) $maschera <= ($v4 ? 32 : 128) && (int) $maschera >= ($v4 ? 8 : 16));
+        if ($cidr === '' || !($v4 || $v6) || !$mascheraOk) {
             Session::lampo('male', 'Indirizzo o rete non validi. Esempi: 203.0.113.9 oppure 203.0.113.0/24.');
 
             return Response::redirect(url('/admin/blocchi'));

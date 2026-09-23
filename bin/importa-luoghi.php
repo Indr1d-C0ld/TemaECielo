@@ -107,7 +107,7 @@ foreach ($necessari as $f) {
 $altIt = $fonti . '/alt-it/IT.txt';
 is_file($altIt)
     ? bene(sprintf('%-24s %s', 'alt-it/IT.txt', number_format(filesize($altIt) / 1048576, 1, ',', '.') . ' MB'))
-    : attento('alt-it/IT.txt assente: le citta\' italiane resteranno coi nomi inglesi di GeoNames.');
+    : attento('alt-it/IT.txt assente: le città italiane resteranno coi nomi inglesi di GeoNames.');
 
 Database::disponibile() || muori('Database non raggiungibile.');
 

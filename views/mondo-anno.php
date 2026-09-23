@@ -8,12 +8,15 @@
 use App\Mondo\Eclissi;
 use App\Mondo\Mondo;
 
-$stagioni = ['primavera', 'estate', 'autunno', 'inverno'];
+// Le stagioni sono quelle del luogo: a Brasilia l'ingresso in Ariete apre l'autunno.
+$stagioni = $luogo['lat'] < 0 ? ['autunno', 'inverno', 'primavera', 'estate'] : ['primavera', 'estate', 'autunno', 'inverno'];
 $segniCardinali = ['Ariete', 'Cancro', 'Bilancia', 'Capricorno'];
 $dove = $luogo['chiave'] !== '' ? ['luogo' => $luogo['chiave']] : ['altrove' => $luogo['nome']];
 $carta = static fn (array $q): string => url('/mondo/carta?' . http_build_query($q + $dove));
-$locale = static fn (float $jd): string => Mondo::locale($jd, $luogo['fuso'])->format('j/n H:i');
-$ut = static fn (float $jd): string => gmdate('j/n H:i', Mondo::unix($jd));
+// Con l'anno: una lunazione del 31/12 in Tempo Universale puo' cadere il 1/1
+// sull'orologio del luogo, e senza anno sembrerebbe fuori posto.
+$locale = static fn (float $jd): string => Mondo::locale($jd, $luogo['fuso'])->format('j/n/Y H:i');
+$ut = static fn (float $jd): string => gmdate('j/n/Y H:i', Mondo::unix($jd));
 ?>
 <article class="cartiglio">
   <p class="occhiello"><a href="<?= e(url('/mondo')) ?>">Astrologia mondiale</a></p>
@@ -21,7 +24,7 @@ $ut = static fn (float $jd): string => gmdate('j/n H:i', Mondo::unix($jd));
   <div class="filetto"><i></i><span>&#10022;</span><i></i></div>
 
   <nav class="mondo-scorri" aria-label="Anni">
-    <?php if ($anno > Mondo::ANNO_MIN): ?><a href="<?= e(url('/mondo/anno?' . http_build_query(['anno' => $anno - 1] + $dove))) ?>">&larr; <?= $anno - 1 ?></a><?php endif; ?>
+    <?php if ($anno > Mondo::ANNO_MIN): ?><a href="<?= e(url('/mondo/anno?' . http_build_query(['anno' => $anno - 1] + $dove))) ?>">&larr; <?= $anno - 1 ?></a><?php else: ?><span></span><?php endif; ?>
     <?php if ($anno < Mondo::ANNO_MAX): ?><a href="<?= e(url('/mondo/anno?' . http_build_query(['anno' => $anno + 1] + $dove))) ?>"><?= $anno + 1 ?> &rarr;</a><?php endif; ?>
   </nav>
 

@@ -40,7 +40,9 @@ final class ApiController
         $risultati = Gazetteer::cerca($q, $paese);
         $ms = (int) round((microtime(true) - $t0) * 1000);
 
-        Telemetria::evento('ricerca_luogo', mb_substr($q, 0, 60), (string) count($risultati), $ms);
+        // Il testo cercato e' quasi sempre un luogo di nascita: si contano le
+        // ricerche, non si conserva che cosa si cercava.
+        Telemetria::evento('ricerca_luogo', '', (string) count($risultati), $ms);
 
         return Response::json([
             'query'      => $q,
@@ -66,7 +68,7 @@ final class ApiController
         $luogo = Gazetteer::piuVicino($lat, $lon);
         $fuso  = Gazetteer::fusoDi($lat, $lon);
 
-        Telemetria::evento('click_mappa', sprintf('%.3f,%.3f', $lat, $lon), $luogo['nome'] ?? '—');
+        Telemetria::evento('click_mappa');
 
         return Response::json([
             'lat'   => $lat,

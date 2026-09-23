@@ -104,7 +104,7 @@ final class ArchivioController
     {
         $gettone = preg_replace('/[^a-f0-9]/', '', (string) ($argomenti['gettone'] ?? '')) ?? '';
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta. Riprova.');
+            Session::lampo('male', 'La sessione è scaduta. Riprova.');
             return Response::redirect(url('/admin/carte/' . $gettone));
         }
         $carta = $this->carta($gettone);
@@ -117,7 +117,7 @@ final class ArchivioController
         if ($r->post('azione') === 'ritira') {
             Archivio::ritira((int) $carta['id']);
             Auth::traccia('archivio:ritirata', $gettone);
-            Session::lampo('bene', 'La scheda e\' stata tolta dall\'archivio. La carta resta.');
+            Session::lampo('bene', 'La scheda è stata tolta dall\'archivio. La carta resta.');
             return Response::redirect(url('/admin/carte'));
         }
 
@@ -135,7 +135,7 @@ final class ArchivioController
         }
 
         Auth::traccia('archivio:scheda', $slug, (string) $dati['nome']);
-        Session::lampo('bene', 'Scheda salvata' . ($dati['pubblicata'] ? ': e\' nell\'archivio pubblico.' : ', non ancora pubblicata.'));
+        Session::lampo('bene', 'Scheda salvata' . ($dati['pubblicata'] ? ': è nell\'archivio pubblico.' : ', non ancora pubblicata.'));
 
         return Response::redirect(url('/admin/carte/' . $gettone));
     }

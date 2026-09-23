@@ -42,7 +42,7 @@
             <span class="scelta-spiega">
               <?= $a['ora_legale']
                   ? 'Gli orologi non erano ancora stati spostati: era ancora in vigore l\'ora legale.'
-                  : 'Gli orologi erano gia\' stati riportati indietro all\'ora solare.' ?>
+                  : 'Gli orologi erano già stati riportati indietro all\'ora solare.' ?>
               &mdash; Tempo Universale <?= e(str_replace(['T', 'Z'], [' ', ''], (string) $a['utc'])) ?>
             </span>
           </span>

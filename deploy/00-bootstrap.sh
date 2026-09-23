@@ -17,7 +17,7 @@
 #   6. installa e abilita la conf Apache
 #
 # NON imposta la password dell'admin: quella si sceglie dopo, con
-#   php bin/console.php installa
+#   bash deploy/01-installa.sh   (o php bin/console.php admin:password)
 # che la chiede in modo interattivo e ne conserva solo l'hash Argon2id.
 #
 set -euo pipefail

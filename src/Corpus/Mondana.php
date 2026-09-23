@@ -136,6 +136,13 @@ final class Mondana
             . 'per le totali, sui paesi da cui è visibile e sulle carte in cui il suo grado cade su un '
             . 'pianeta o su un angolo.',
         ],
+        'istante' => [
+            'Il paese, in quell\'istante,',
+            'Chi governa, in quell\'istante, agisce',
+            'Una carta eretta per un istante qualunque, senza un evento che lo segni. Si legge con le chiavi '
+            . 'dell\'astrologia mondiale — il Sole è chi governa, la Luna il popolo — ma senza il peso che la '
+            . 'tradizione dà agli ingressi, alle lunazioni e alle eclissi.',
+        ],
         'congiunzione' => [
             'Il paese, nel ciclo che si apre,',
             'Chi governa, nel ciclo che si apre, agisce',

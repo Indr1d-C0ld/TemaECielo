@@ -71,7 +71,7 @@ final class CieloController
         Telemetria::evento('oggi_visto', $luogo['nome']);
 
         return Response::html(Vista::pagina('oggi', [
-            'titolo'      => 'Il cielo di oggi',
+            'titolo'      => $quando['adesso'] ? 'Il cielo di oggi' : 'Il cielo del ' . implode('/', array_map('intval', array_reverse(explode('-', $quando['data'])))),
             'sezione'     => 'oggi',
             'luogo'       => $luogo,
             'quando'      => $quando,
@@ -179,12 +179,12 @@ final class CieloController
 
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $data) !== 1
             || preg_match('/^\d{1,2}:\d{2}$/', $ora) !== 1) {
-            return $this->quando(time(), $tz, true, 'Data od ora non valide: mostro il cielo di adesso.');
+            return $this->quando(intdiv(time(), 60) * 60, $tz, true, 'Data od ora non valide: mostro il cielo di adesso.');
         }
 
         $anno = (int) substr($data, 0, 4);
         if ($anno < self::ANNO_MIN || $anno > self::ANNO_MAX) {
-            return $this->quando(time(), $tz, true, sprintf(
+            return $this->quando(intdiv(time(), 60) * 60, $tz, true, sprintf(
                 'Le effemeridi installate coprono dal %d al %d: mostro il cielo di adesso.',
                 self::ANNO_MIN,
                 self::ANNO_MAX,
@@ -198,13 +198,13 @@ final class CieloController
         // un'interpretazione e la si dichiara — a differenza del modulo di
         // nascita, che si ferma e chiede.
         $avviso = match ($esito['stato'] ?? '') {
-            Tempo::AMBIGUO     => 'Quell\'ora e\' esistita due volte quella notte, alla fine dell\'ora legale: mostro la prima.',
-            Tempo::INESISTENTE => (string) ($esito['avviso'] ?? 'Quell\'ora non e\' mai esistita li\'.'),
+            Tempo::AMBIGUO     => 'Quell\'ora è esistita due volte quella notte, alla fine dell\'ora legale: mostro la prima.',
+            Tempo::INESISTENTE => (string) ($esito['avviso'] ?? 'Quell\'ora non è mai esistita lì.'),
             default            => null,
         };
 
         if (!isset($esito['istante'])) {
-            return $this->quando(time(), $tz, true, (string) ($esito['errore'] ?? 'Istante non risolvibile.'));
+            return $this->quando(intdiv(time(), 60) * 60, $tz, true, (string) ($esito['errore'] ?? 'Istante non risolvibile.'));
         }
 
         return $this->quando((int) $esito['istante'], $tz, false, $avviso);
@@ -237,6 +237,24 @@ final class CieloController
      */
     private function luogoDa(Request $r): array
     {
+        // Il modulo manda sempre le coordinate del luogo in uso, e con loro il
+        // nome che il campo di ricerca mostrava (`luogo_era`). Se il nome
+        // scritto e' diverso, il visitatore ha scritto un luogo nuovo: vince
+        // lui. Prima vincevano sempre le coordinate, e scrivere «Tokyo» senza
+        // sceglierlo dall'elenco — o senza JavaScript — lasciava il cielo di Roma.
+        $testo = trim((string) ($r->query('luogo_testo') ?? ''));
+        $era = $r->query('luogo_era');
+        if ($era !== null && $testo !== '' && $testo !== trim($era) && mb_strlen($testo) >= 3) {
+            $trovato = Gazetteer::cerca(mb_substr($testo, 0, 120), null, 1)[0] ?? null;
+            if ($trovato !== null) {
+                return [
+                    'nome' => $trovato['nome'] . ($trovato['contesto'] !== '' ? ', ' . $trovato['contesto'] : ''),
+                    'lat'  => $trovato['lat'], 'lon' => $trovato['lon'],
+                    'alt'  => $trovato['altitudine'], 'id' => $trovato['id'],
+                ];
+            }
+        }
+
         // Le coordinate esplicite vincono sull'identificativo: se il visitatore
         // ha trascinato il segnaposto, vuole QUEL punto, non il paese vicino
         // che era stato scelto prima.
@@ -254,7 +272,6 @@ final class CieloController
 
         // Senza JavaScript il quadro manda solo il nome scritto nel campo di
         // ricerca: lo si cerca qui, come avrebbe fatto il completamento.
-        $testo = trim((string) ($r->query('luogo_testo') ?? ''));
         if (mb_strlen($testo) >= 3) {
             $trovato = Gazetteer::cerca(mb_substr($testo, 0, 120), null, 1)[0] ?? null;
             if ($trovato !== null) {

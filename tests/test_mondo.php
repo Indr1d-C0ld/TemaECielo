@@ -159,13 +159,16 @@ prova('Giove-Saturno: 30 congiunzioni in sei secoli, la tripla del 1940-41 conta
     return (count($p) >= 29 && count($p) <= 31 && $tripla !== null && count($tripla['passaggi']) === 3) ?: count($p) . ' ' . json_encode($tripla);
 });
 
-prova('Le mutazioni: 1842 in terra, 1980-81 in aria, 2020 di nuovo in aria', static function () use ($cicli) {
+prova('Le mutazioni come le intende la tradizione: 2020 in aria; 1980 e 2000 isolate; 1842 no', static function () use ($cicli) {
     $m = [];
     foreach (Cicli::passaggi($cicli['congiunzioni'] ?? [], 'giove-saturno') as $p) {
-        $m[gmdate('Y', Mondo::unix($p['jd']))] = [$p['elemento'], $p['mutazione']];
+        $m[gmdate('Y', Mondo::unix($p['jd']))] = [$p['elemento'], $p['mutazione'], $p['fuori_serie']];
     }
-    return (($m['1842'] ?? null) === ['terra', true] && ($m['1980'] ?? null) === ['aria', true]
-        && ($m['2000'] ?? null) === ['terra', true] && ($m['2020'] ?? null) === ['aria', true]) ?: json_encode($m);
+    // Il 1980-81 in Bilancia anticipa l'aria, il 2000 in Toro torna alla
+    // terra: nessuno dei due apre una serie. La serie d'aria comincia nel 2020.
+    return (($m['2020'] ?? null) === ['aria', true, false] && ($m['1980'] ?? null) === ['aria', false, true]
+        && ($m['2000'] ?? null) === ['terra', false, true] && ($m['1842'] ?? null) === ['terra', false, false]
+        && ($m['1802'] ?? null) === ['terra', false, false]) ?: json_encode($m);
 });
 
 prova('Saturno-Plutone il 12/1/2020, Nettuno-Plutone nel 1891-92', static function () use ($cicli) {

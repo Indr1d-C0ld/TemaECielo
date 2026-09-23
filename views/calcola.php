@@ -56,8 +56,8 @@ $err = static fn (string $k): string => isset($errori[$k])
           <?php
           $precisioni = [
               'esatta'         => ['La so con precisione', 'Dall\'atto di nascita o dal ricordo di chi c\'era.'],
-              'approssimativa' => ['La so all\'incirca',   'Verso sera, di mattina presto: scrivi l\'ora piu\' probabile. Ascendente e case andranno presi con cautela.'],
-              'ignota'         => ['Non la so',            'Si calcola la carta solare. Case e Ascendente non saranno attendibili, e verra\' detto.'],
+              'approssimativa' => ['La so all\'incirca',   'Verso sera, di mattina presto: scrivi l\'ora più probabile. Ascendente e case andranno presi con cautela.'],
+              'ignota'         => ['Non la so',            'Si calcola la carta solare. Case e Ascendente non saranno attendibili, e verrà detto.'],
           ];
           $scelta = $v('precisione', 'esatta');
           foreach ($precisioni as $chiave => [$etichetta, $spiega]): ?>
@@ -95,6 +95,7 @@ $err = static fn (string $k): string => isset($errori[$k])
           <input type="text" id="cerca-luogo" name="luogo_testo" autocomplete="off" role="combobox"
                  aria-expanded="false" aria-controls="risultati-luogo" aria-autocomplete="list"
                  placeholder="Comune, citt&agrave;, paese&hellip;" value="<?= e($v('luogo_nome')) ?>">
+          <input type="hidden" id="luogo_era" name="luogo_era" value="<?= e($v('luogo_nome')) ?>">
           <ul class="risultati" id="risultati-luogo" role="listbox" hidden></ul>
         </div>
         <p class="aiuto">
@@ -177,7 +178,7 @@ $err = static fn (string $k): string => isset($errori[$k])
     <?php endif; ?>
 
     <?php if (\App\Auth\Auth::amministratore()): ?>
-      <!-- Solo per la regia: la carta puo' andare subito nell'archivio pubblico. -->
+      <!-- Solo per la regia: la carta può andare subito nell'archivio pubblico. -->
       <fieldset class="avanzate-regia">
         <legend>Archivio (regia)</legend>
         <label class="scelta">

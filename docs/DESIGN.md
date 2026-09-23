@@ -224,7 +224,7 @@ sue uscite con carte di controllo note prima di ogni pubblicazione.
   pagina "Oggi" e ai transiti, che ricalcolano continuamente le stesse posizioni.
 - **Carta**: per `impronta = sha256(data|ora|lat|lon|altitudine|sistema case|zodiaco|opzioni)`.
   Il risultato completo in JSON più l'SVG già reso. È la cache che conta.
-- **Disegno**: l'SVG su disco in `storage/`, servito con `ETag` e `Cache-Control` lunghi,
+- **Disegno** *(non realizzato così, vedi §23.1)*: l'SVG su disco in `storage/`, servito con `ETag` e `Cache-Control` lunghi,
   perché è immutabile per costruzione.
 
 ---
@@ -625,7 +625,7 @@ risultato, dove si fermano), errori, tempi di risposta, elenco dei blocchi.
 
 **Manutenzione** — svuotamento selettivo delle cache, ricalcolo forzato di una carta, stato
 di libswe e dei file di effemeridi, verifica dei test di regressione, esecuzione degli
-import (gazetteer, stelle, GeoIP), backup del database, esportazione completa.
+import (gazetteer, stelle, GeoIP), backup del database, esportazione completa *(backup ed esportazione: vedi §23.1)*.
 
 ---
 
@@ -657,7 +657,7 @@ categoria, nota, fonte, classe Rodden, pubblicata o no. Punta al calcolo e se ne
 
 **Telemetria**
 `accessi` (partizionata per mese, perché a conservazione illimitata cresce senza fine),
-`sessioni`, `eventi`, `statistiche_giorno` (aggregati precalcolati, così le pagine
+`sessioni`, `eventi`, `statistiche_giorno` *(mai creata, vedi §23.1)* (aggregati precalcolati, così le pagine
 pubbliche non interrogano mai la tabella grande).
 
 La partizione mensile di `accessi` è la decisione che rende sostenibile la conservazione
@@ -718,13 +718,13 @@ Quello che il progetto mette a disposizione, già costruito:
   guestbook, che dice cosa si raccoglie, perché, per quanto e come farlo cancellare;
 - **cancellazione autonoma**: chi possiede il permalink del proprio calcolo può eliminarlo
   dal portale con un pulsante, senza chiedere niente a nessuno;
-- **esportazione**: dalla stessa pagina, il proprio calcolo in JSON;
-- **purga programmata degli accessi** già implementata e **disattivata per impostazione**,
+- **esportazione** *(non realizzata: ci sono i download SVG, vedi §23.1)*: dalla stessa pagina, il proprio calcolo in JSON;
+- **purga programmata degli accessi** *(implementata davvero solo con la terza revisione, §23.2)* e **disattivata per impostazione**,
   con il numero di giorni configurabile: basta un interruttore nel pannello se un domani si
   cambia idea;
 - **anonimizzazione dell'IP** disponibile come modalità alternativa, anch'essa spenta.
 
-Il `robots.txt` e un `X-Robots-Tag: noindex` sui permalink tengono le carte fuori dai motori
+Il `robots.txt` *(mai scritto: basta l'intestazione, vedi §23.1)* e un `X-Robots-Tag: noindex` sui permalink tengono le carte fuori dai motori
 di ricerca: un tema natale con nome e cognome indicizzato su Google sarebbe un problema serio
 e va escluso per costruzione, non per buona volontà.
 
@@ -815,7 +815,7 @@ navigabile, condivisione come immagine.
 | **`accessi` che cresce senza limite** | F7 | Partizione mensile + aggregati precalcolati |
 | **CSP e stili inline di Leaflet** | F2 | Nonce fin da F0, Leaflet configurato di conseguenza |
 | **FFI bloccato sotto Apache** | F1 | Il calcolo passa dal CLI, dove l'FFI è sempre attivo |
-| **Permalink indicizzati dai motori** | F3 | `noindex` sui permalink, `robots.txt` |
+| **Permalink indicizzati dai motori** | F3 | `noindex` sui permalink (intestazione dell'applicazione e della conf Apache) |
 | **Bot che falsano le statistiche** | F7 | Riconoscimento dei bot e conteggi separati |
 
 ---
@@ -1086,4 +1086,86 @@ congiunzione — e ciò che non è in elenco non arriva in pagina.
 Le eclissi di penombra risultavano di «magnitudine 0,000»: si leggeva la magnitudine d'ombra,
 che per quelle eclissi è zero o negativa per definizione. Un numero giusto nel campo sbagliato
 sembra un errore del cielo.
+
+---
+
+## 23. Poscritto alla terza revisione
+
+Dopo l'archivio e la sezione Mondo, una revisione in due metà — il codice nuovo, e tutto il resto
+con occhi nuovi — e un secondo lotto di voci d'archivio (74, per un totale di 134). Le lezioni:
+
+### 23.1 Un progetto scritto prima invecchia accanto al codice
+
+Questo documento prometteva cose che non sono mai state fatte, e il README ne ripeteva alcune: un
+SVG su disco servito con `ETag`, una tabella `statistiche_giorno`, l'esportazione del calcolo in
+JSON, un `robots.txt`, una purga del registro «già implementata». Nessuno aveva mentito: erano
+decisioni di progetto, poi superate o rimandate, rimaste scritte al presente. Qui restano, segnate
+dove stanno, perché dicono come si pensava il portale; ma ciò che il portale fa davvero lo dice il
+README, che è stato riallineato riga per riga al codice. Dove una promessa conta — la purga — la si
+è mantenuta; dove no, la si è tolta.
+
+Le statistiche, per esempio, non hanno mai avuto la loro tabella di aggregati: decodificavano per
+intero ogni carta a ogni visita, duecento kilobyte di memoria l'una, e con qualche centinaio di
+carte la pagina pubblica avrebbe superato il limite. Ora estraggono dal database i sette campi che
+servono, e pesano meno di un megabyte qualunque sia il numero di carte.
+
+### 23.2 Un'impostazione che non fa niente è peggio di nessuna
+
+`privacy.purga_accessi_giorni` si leggeva solo per stamparla nel pannello: impostarla a 90 mostrava
+«90 giorni» e non cancellava niente. Ora la purga esiste (`Support\Manutenzione`), la fa il portale
+da solo una richiesta su duecento, insieme alle partizioni mensili che prima dipendevano da un
+comando da lanciare a mano.
+
+### 23.3 La telemetria non deve ricordare ciò che la cancellazione dimentica
+
+Cancellare una carta toglieva carta e dati di nascita, ma gli eventi di telemetria conservavano il
+luogo di nascita, la data e l'ora delle ore ambigue, i nomi delle due persone di una sinastria, il
+gettone delle carte scaricate; e il registro accessi teneva la domanda delle API del modulo
+(`/api/fuso?data=…&ora=…`) accanto all'indirizzo di rete. Un dato che la cancellazione non
+raggiunge non va scritto: gli eventi ora dicono che qualcosa è successo, non con quali dati, e i
+386 eventi e 186 righe del registro già scritti sono stati ripuliti.
+
+### 23.4 Il file creato da riga di comando appartiene alla riga di comando
+
+Il registro degli errori del mese nasceva dal primo processo che scriveva: se era una prova o la
+console, il file era dell'utente con permessi 644, e il web server — che quel mese avrebbe dovuto
+registrare gli incidenti — non poteva più scriverci. La pagina d'errore diceva «l'incidente è
+stato registrato». Ora il file nasce 664, e il deploy corregge quelli esistenti.
+
+### 23.5 Un campo nascosto può mentire
+
+Il modulo di nascita teneva coordinate e fuso del luogo scelto in campi nascosti. Chi, dopo aver
+scelto, riscriveva il nome e premeva il pulsante invece di Invio, otteneva la carta del luogo di
+prima. Il modulo ora conserva anche il nome del luogo scelto (`luogo_era`): se il testo non
+coincide più, il server butta i campi nascosti e cerca il nome scritto. Lo stesso nel cielo, dove
+le coordinate vincevano sempre sul nome, e nel Mondo, dove un luogo scritto a mano non lasciava
+più tornare a una capitale.
+
+### 23.6 La tradizione ha regole sue
+
+La prima versione delle mutazioni di Giove e Saturno segnava come mutazione ogni cambio d'elemento
+rispetto alla congiunzione precedente: 1980, 2000 e 2020 di fila. La tradizione parla di serie che
+durano due secoli, con anticipi e ritorni isolati. La regola ora conosce le serie; e quando una
+convenzione ha una sua logica, va imparata prima di essere scritta.
+
+### 23.7 Un titolo si crede solo se il cielo lo conferma
+
+`/mondo/carta?tipo=novilunio` intitolava «Novilunio in…» qualunque istante. Il vocabolario era
+chiuso, ma un indirizzo del portale poteva comunque dichiarare un evento astronomico falso. Ora il
+tipo si verifica sulla geometria — elongazione, latitudine della Luna, grado del Sole — e se non
+torna la carta si chiama «Il cielo del…».
+
+### 23.8 La cache di chi scrive a mano
+
+Le eclissi per un luogo scritto a mano generavano un file di cache per ogni combinazione di
+intervallo e luogo, senza scadenza: sessantamila file al giorno per cliente, al ritmo consentito dal
+freno. Si conservano solo le domande di numero finito — decenni interi, capitali — e il resto si
+calcola e basta.
+
+### 23.9 Gli accenti
+
+Il corpus e molti messaggi usavano l'apostrofo della macchina da scrivere («e'», «piu'»,
+«perche'»), le pagine le lettere accentate: sulla stessa pagina il lettore vedeva le due cose.
+Un convertitore che lavora sui soli letterali di stringa, lasciando stare le query SQL e i
+commenti, ha riallineato semi, codice e 150 testi del database; una prova tiene il conto.
 

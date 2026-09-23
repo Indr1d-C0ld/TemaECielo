@@ -31,7 +31,7 @@ final class AccessoController
     public function entra(Request $r): Response
     {
         if (!Csrf::verifica($r->post('_csrf'))) {
-            return $this->rifiuta($r, 'La sessione e\' scaduta. Riprova.');
+            return $this->rifiuta($r, 'La sessione è scaduta. Riprova.');
         }
 
         $utente   = trim((string) $r->post('utente', ''));

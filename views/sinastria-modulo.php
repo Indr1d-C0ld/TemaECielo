@@ -67,6 +67,7 @@ $err = static fn (string $k): string => isset($errori[$k])
           <input type="text" id="cerca-luogo" name="luogo_testo" autocomplete="off" role="combobox" aria-expanded="false"
                  aria-controls="risultati-luogo" placeholder="Comune, citt&agrave;, paese&hellip;"
                  value="<?= e($v('luogo_nome')) ?>">
+          <input type="hidden" id="luogo_era" name="luogo_era" value="<?= e($v('luogo_nome')) ?>">
           <ul class="risultati" id="risultati-luogo" role="listbox" hidden></ul>
         </div>
         <?= $err('luogo') ?>

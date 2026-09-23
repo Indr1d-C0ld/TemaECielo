@@ -10,9 +10,11 @@ use App\Mondo\Mondo;
 $dove = $luogo['chiave'] !== '' ? ['luogo' => $luogo['chiave']] : ['altrove' => $luogo['nome']];
 $span = $a - $da + 1;
 $coord = static function (float $lat, float $lon): string {
-    return sprintf('%d°%02d′ %s, %d°%02d′ %s',
-        (int) abs($lat), (int) round(fmod(abs($lat), 1) * 60) % 60, $lat >= 0 ? 'N' : 'S',
-        (int) abs($lon), (int) round(fmod(abs($lon), 1) * 60) % 60, $lon >= 0 ? 'E' : 'O');
+    // Si arrotonda ai primi PRIMA di separare i gradi: 41,9999° e' 42°00′.
+    $gp = static fn (float $x): array => [intdiv((int) round(abs($x) * 60), 60), (int) round(abs($x) * 60) % 60];
+    [$la, $lap] = $gp($lat);
+    [$lo, $lop] = $gp($lon);
+    return sprintf('%d°%02d′ %s, %d°%02d′ %s', $la, $lap, $lat >= 0 ? 'N' : 'S', $lo, $lop, $lon >= 0 ? 'E' : 'O');
 };
 ?>
 <article class="cartiglio">
@@ -27,8 +29,8 @@ $coord = static function (float $lat, float $lon): string {
   </p>
 
   <nav class="mondo-scorri" aria-label="Periodi">
-    <?php if ($da - $span >= Mondo::ANNO_MIN): ?><a href="<?= e(url('/mondo/eclissi?' . http_build_query(['da' => $da - $span, 'a' => $da - 1] + $dove))) ?>">&larr; <?= $da - $span ?>&ndash;<?= $da - 1 ?></a><?php endif; ?>
-    <?php if ($a + $span <= Mondo::ANNO_MAX): ?><a href="<?= e(url('/mondo/eclissi?' . http_build_query(['da' => $a + 1, 'a' => $a + $span] + $dove))) ?>"><?= $a + 1 ?>&ndash;<?= $a + $span ?> &rarr;</a><?php endif; ?>
+    <?php if ($da > Mondo::ANNO_MIN): $p0 = max(Mondo::ANNO_MIN, $da - $span); ?><a href="<?= e(url('/mondo/eclissi?' . http_build_query(['da' => $p0, 'a' => $da - 1] + $dove))) ?>">&larr; <?= $p0 ?>&ndash;<?= $da - 1 ?></a><?php else: ?><span></span><?php endif; ?>
+    <?php if ($a < Mondo::ANNO_MAX): $p1 = min(Mondo::ANNO_MAX, $a + $span); ?><a href="<?= e(url('/mondo/eclissi?' . http_build_query(['da' => $a + 1, 'a' => $p1] + $dove))) ?>"><?= $a + 1 ?>&ndash;<?= $p1 ?> &rarr;</a><?php endif; ?>
   </nav>
 
   <?= vista('partials/mondo-luogo', ['luogo' => $luogo, 'azione' => '/mondo/eclissi', 'nascosti' => ['da' => $da, 'a' => $a]]) ?>

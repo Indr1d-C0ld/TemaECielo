@@ -71,8 +71,8 @@ final class GuestbookController
             'aperto'    => Impostazioni::attiva('guestbook_attivo'),
             'moderato'  => Impostazioni::attiva('guestbook_moderazione'),
             'medie'     => $this->medie(),
-            'dati'      => Session::get('__gb', []),
-            'errori'    => Session::get('__gb_errori', []),
+            'dati'      => Session::prendi('__gb', []),
+            'errori'    => Session::prendi('__gb_errori', []),
             // Il gettone dell'ultima carta vista, per agganciare il voto al
             // calcolo che l'ha generato: senza riferimento l'attinenza non e'
             // verificabile.
@@ -84,12 +84,12 @@ final class GuestbookController
     public function firma(Request $r): Response
     {
         if (!Impostazioni::attiva('guestbook_attivo')) {
-            Session::lampo('male', 'Il guestbook e\' chiuso in questo momento.');
+            Session::lampo('male', 'Il guestbook è chiuso in questo momento.');
 
             return Response::redirect(url('/guestbook'));
         }
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta. Riprova.');
+            Session::lampo('male', 'La sessione è scaduta. Riprova.');
 
             return Response::redirect(url('/guestbook'));
         }
@@ -114,7 +114,10 @@ final class GuestbookController
         }
 
         $calcoloId = null;
-        if ($dati['carta'] !== '') {
+        // Il voto di attinenza si aggancia solo alla carta che questa sessione
+        // ha appena guardato — che per costruzione non e' una carta
+        // dell'archivio. Un gettone qualunque mandato a mano non conta.
+        if ($dati['carta'] !== '' && $dati['carta'] === (string) Session::get('__ultima_carta', '')) {
             $calcoloId = Database::valore('SELECT id FROM calcoli WHERE gettone = ? LIMIT 1', [$dati['carta']]);
             $calcoloId = $calcoloId === null ? null : (int) $calcoloId;
         }
@@ -146,8 +149,8 @@ final class GuestbookController
         Telemetria::evento('guestbook_firmato', $stato);
 
         Session::lampo('bene', $stato === 'coda'
-            ? 'Grazie. Il messaggio comparira\' appena approvato.'
-            : 'Grazie, il messaggio e\' pubblicato.');
+            ? 'Grazie. Il messaggio comparirà appena approvato.'
+            : 'Grazie, il messaggio è pubblicato.');
 
         return Response::redirect(url('/guestbook'));
     }
@@ -186,12 +189,15 @@ final class GuestbookController
 
         // 3. Il tetto per indirizzo.
         $tetto = Impostazioni::intero('guestbook_tetto_ora', 3);
-        $recenti = (int) Database::valore(
-            'SELECT COUNT(*) FROM guestbook WHERE ip = ? AND creato > (NOW() - INTERVAL 1 HOUR)',
-            [$ip],
-        );
+        // Per cliente, non per indirizzo esatto: un IPv6 cambia indirizzo
+        // dentro la propria /64 a piacere (vedi Rete::chiaveCliente).
+        $chiave = Rete::chiaveCliente($ip);
+        $recenti = count(array_filter(
+            Database::righe('SELECT ip FROM guestbook WHERE creato > (NOW() - INTERVAL 1 HOUR)'),
+            static fn (array $x): bool => Rete::chiaveCliente((string) $x['ip']) === $chiave,
+        ));
         if ($recenti >= $tetto) {
-            $e['tetto'] = 'Hai gia\' lasciato ' . $recenti . ' messaggi nell\'ultima ora. Riprova piu\' tardi.';
+            $e['tetto'] = 'Hai già lasciato ' . $recenti . ' messaggi nell\'ultima ora. Riprova più tardi.';
         }
 
         // 4. Le parole vietate e i blocchi.
@@ -212,7 +218,7 @@ final class GuestbookController
             $e['messaggio'] = 'Scrivi almeno una frase: dieci caratteri sono pochi.';
         }
         if ($d['gradimento'] === null && $d['attinenza'] === null && mb_strlen($d['messaggio']) < 20) {
-            $e['voti'] = 'Se non lasci un voto, scrivi almeno qualcosa di piu\'.';
+            $e['voti'] = 'Se non lasci un voto, scrivi almeno qualcosa di più.';
         }
 
         return $e;

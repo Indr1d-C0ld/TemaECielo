@@ -247,8 +247,12 @@ final class Gazetteer
             (string) ($r['paese_nome'] ?? ''),
         ], static fn (string $s): bool => $s !== ''));
 
-        // Non ripetere «Toscana, Toscana» quando provincia e regione coincidono.
-        $parti = array_values(array_unique($parti));
+        // Non ripetere «Toscana, Toscana» quando provincia e regione coincidono,
+        // e nemmeno il nome del luogo: «Tokyo, Tokyo, Giappone».
+        $parti = array_values(array_filter(
+            array_unique($parti),
+            static fn (string $p): bool => Normalizza::nome($p) !== Normalizza::nome((string) $r['nome']),
+        ));
 
         $trovato = (string) ($r['trovato'] ?? '');
         $nome    = (string) $r['nome'];

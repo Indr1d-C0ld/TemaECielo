@@ -45,7 +45,14 @@ final class MondoController
 
         try {
             $motore = new Motore();
+            // Anche l'anno dopo: dal solstizio d'inverno a Capodanno il
+            // «prossimo ingresso» sta gia' nell'anno nuovo.
             $annata = $motore->mondo('anno', ['anno' => $anno]);
+            if ($anno < Mondo::ANNO_MAX) {
+                $dopo = $motore->mondo('anno', ['anno' => $anno + 1]);
+                $annata['ingressi'] = array_merge($annata['ingressi'], $dopo['ingressi']);
+                $annata['lunazioni'] = array_merge($annata['lunazioni'], $dopo['lunazioni']);
+            }
             $eclissi = $motore->mondo('eclissi', ['jd_da' => Mondo::jdAnno($anno), 'jd_a' => Mondo::jdAnno($anno + 3)]);
             $cicli = $this->datiCicli($motore);
         } catch (TroppeRichieste) {
@@ -76,7 +83,7 @@ final class MondoController
     public function anno(Request $r): Response
     {
         $anno = $this->annoChiesto($r->query('anno'));
-        $luogo = Mondo::luogo($r->query('luogo'), $r->query('altrove'));
+        $luogo = Mondo::luogo($r->query('luogo'), $r->query('altrove'), $r->query('altrove_era'));
 
         try {
             $motore = new Motore();
@@ -114,19 +121,33 @@ final class MondoController
     /** GET /mondo/eclissi */
     public function eclissi(Request $r): Response
     {
-        $da = $this->annoChiesto($r->query('da') ?? (string) (intdiv((int) gmdate('Y'), 10) * 10));
-        $a  = $this->annoChiesto($r->query('a') ?? (string) ($da + 9));
+        $da = $this->annoChiesto($r->query('da'), intdiv((int) gmdate('Y'), 10) * 10);
+        $a  = $this->annoChiesto($r->query('a'), min(Mondo::ANNO_MAX, $da + 9));
         if ($a < $da) {
             [$da, $a] = [$a, $da];
         }
         $a = min($a, $da + self::ANNI_ECLISSI - 1);
-        $luogo = Mondo::luogo($r->query('luogo'), $r->query('altrove'));
+        $luogo = Mondo::luogo($r->query('luogo'), $r->query('altrove'), $r->query('altrove_era'));
 
+        // Si chiede al motore per decenni interi: le domande possibili sono
+        // sessanta per luogo, e per le capitali si conservano. Per un luogo
+        // scritto a mano si calcola e basta (vedi Motore::mondo).
+        $inizio = Mondo::jdAnno($da);
+        $fine = Mondo::jdAnno($a + 1);
+        $elenco = [];
         try {
-            $elenco = (new Motore())->mondo('eclissi', [
-                'jd_da' => Mondo::jdAnno($da), 'jd_a' => Mondo::jdAnno($a + 1),
-                'lat' => $luogo['lat'], 'lon' => $luogo['lon'], 'alt' => $luogo['alt'],
-            ])['eclissi'];
+            $motore = new Motore();
+            for ($decennio = intdiv($da, 10) * 10; $decennio <= $a; $decennio += 10) {
+                $blocco = $motore->mondo('eclissi', [
+                    'jd_da' => Mondo::jdAnno($decennio), 'jd_a' => Mondo::jdAnno(min($decennio + 10, Mondo::ANNO_MAX + 1)),
+                    'lat' => $luogo['lat'], 'lon' => $luogo['lon'], 'alt' => $luogo['alt'],
+                ], $luogo['chiave'] !== '')['eclissi'];
+                foreach ($blocco as $e) {
+                    if ($e['jd'] >= $inizio && $e['jd'] < $fine) {
+                        $elenco[] = $e;
+                    }
+                }
+            }
         } catch (TroppeRichieste) {
             return $this->occupato();
         } catch (\Throwable $e) {
@@ -197,7 +218,7 @@ final class MondoController
                 'messaggio' => 'Le effemeridi del portale vanno dal ' . Mondo::ANNO_MIN . ' al ' . Mondo::ANNO_MAX . '.',
             ]), 404);
         }
-        $luogo = Mondo::luogo($r->query('luogo'), $r->query('altrove'));
+        $luogo = Mondo::luogo($r->query('luogo'), $r->query('altrove'), $r->query('altrove_era'));
 
         try {
             $tema = Mondo::tema($jd, $luogo);
@@ -213,12 +234,18 @@ final class MondoController
 
         // Il titolo si compone da valori in elenco chiuso, mai da testo libero:
         // un indirizzo del portale non deve poter portare un titolo inventato.
+        // E il tipo si crede solo se il cielo lo conferma: un «novilunio» a
+        // meta' mese sarebbe un titolo falso con l'indirizzo del portale.
         $segni = Corpi::segni();
         $corpo = $r->query('corpo') === 'luna' ? 'luna' : 'sole';
         $genere = in_array($r->query('genere'), ['totale', 'anulare', 'ibrida', 'parziale', 'di penombra'], true)
             ? (string) $r->query('genere') : '';
         $coppia = isset(Cicli::COPPIE[(string) $r->query('coppia')]) ? (string) $r->query('coppia') : '';
+        if (!self::confermato($tema, $tipo, $corpo, $coppia)) {
+            [$tipo, $genere, $coppia] = ['istante', '', ''];
+        }
         $titolo = match ($tipo) {
+            'istante'      => 'Il cielo del ' . gmdate('j/n/Y H:i', Mondo::unix($jd)) . ' UT',
             'ingresso'     => 'Ingresso del Sole in ' . $segni[(int) floor(((float) $tema['corpi']['sole']['lon'] + 0.5) / 30) % 12]['nome'],
             'novilunio'    => 'Novilunio in ' . $segni[(int) $tema['corpi']['luna']['segno']]['nome'],
             'plenilunio'   => 'Plenilunio in ' . $segni[(int) $tema['corpi']['luna']['segno']]['nome'],
@@ -239,6 +266,33 @@ final class MondoController
                                          'genere' => $genere, 'coppia' => $coppia], static fn (string $v): bool => $v !== ''),
             'colpi'   => Mondo::colpi($this->gradoChiave($tema, $tipo, $tipo === 'congiunzione' ? explode('-', $coppia)[0] : $corpo)),
         ]))->conIntestazione('X-Robots-Tag', 'noindex');
+    }
+
+    /**
+     * Il cielo dell'istante e' davvero quello che il tipo dichiara?
+     *
+     * @param array<string,mixed> $tema
+     */
+    public static function confermato(array $tema, string $tipo, string $corpo, string $coppia): bool
+    {
+        $sole = (float) ($tema['corpi']['sole']['lon'] ?? -1);
+        $luna = (float) ($tema['corpi']['luna']['lon'] ?? -1);
+        $elongazione = Corpi::distanza($sole, $luna);
+        // Oltre un grado e mezzo e mezzo di latitudine la Luna passa sopra o
+        // sotto l'ombra: niente eclissi, di nessun genere.
+        $vicinoAlNodo = abs((float) ($tema['corpi']['luna']['lat'] ?? 9)) < 1.6;
+
+        return match ($tipo) {
+            'ingresso'     => abs(fmod($sole + 45.0, 90.0) - 45.0) < 0.05,
+            'novilunio'    => $elongazione < 1.0,
+            'plenilunio'   => $elongazione > 179.0,
+            'eclissi'      => $vicinoAlNodo && ($corpo === 'luna' ? $elongazione > 179.0 : $elongazione < 1.0),
+            'congiunzione' => $coppia !== '' && Corpi::distanza(
+                (float) ($tema['corpi'][explode('-', $coppia)[0]]['lon'] ?? -1),
+                (float) ($tema['corpi'][explode('-', $coppia)[1]]['lon'] ?? 999),
+            ) < 0.2,
+            default        => false,
+        };
     }
 
     /**
@@ -281,11 +335,11 @@ final class MondoController
         ));
     }
 
-    private function annoChiesto(mixed $valore): int
+    private function annoChiesto(?string $valore, ?int $altrimenti = null): int
     {
-        $anno = (int) $valore;
+        $anno = $valore !== null && preg_match('/^\d{4}$/', $valore) === 1 ? (int) $valore : 0;
 
-        return $anno < Mondo::ANNO_MIN || $anno > Mondo::ANNO_MAX ? (int) gmdate('Y') : $anno;
+        return $anno < Mondo::ANNO_MIN || $anno > Mondo::ANNO_MAX ? ($altrimenti ?? (int) gmdate('Y')) : $anno;
     }
 
     private function guasto(\Throwable $e): Response

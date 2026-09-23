@@ -56,6 +56,9 @@ rsync -a --delete \
 mkdir -p "${DST_DIR}/storage/cache/svg" "${DST_DIR}/storage/cache/mondo" "${DST_DIR}/storage/log"
 find "${DST_DIR}/storage" -type d -exec chgrp www-data {} + 2>/dev/null || true
 find "${DST_DIR}/storage" -type d -exec chmod 2775 {} + 2>/dev/null || true
+# I file nati da riga di comando (il registro del mese, la cache del mondo)
+# sono dell'utente: il web server, che e' nel gruppo, deve poterli scrivere.
+find "${DST_DIR}/storage" -type f -user "$(id -un)" -exec chmod g+w {} + 2>/dev/null || true
 
 if ! sudo -u www-data test -w "${DST_DIR}/storage/log" 2>/dev/null; then
   # Senza sudo non si puo' verificare davvero; si controlla almeno il gruppo.

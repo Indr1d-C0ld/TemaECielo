@@ -27,7 +27,6 @@ use App\Support\Impostazioni;
  */
 final class StatisticheController
 {
-    /** GET /statistiche */
     /**
      * Quali righe di `calcoli` sono carte di qualcuno.
      *
@@ -68,17 +67,42 @@ final class StatisticheController
     {
         if ($this->carte === null) {
             $this->carte = [];
-            foreach (Database::righe('SELECT esito FROM calcoli WHERE ' . self::CARTE_VERE . ' AND esito IS NOT NULL') as $r) {
-                $t = json_decode((string) $r['esito'], true);
-                if (is_array($t)) {
-                    $this->carte[] = ['esito' => $t];
+            // Solo i campi che servono ai grafici, estratti dal database. Prima
+            // si decodificava l'esito intero di ogni carta — duecento kilobyte
+            // di memoria l'uno in PHP — e con qualche centinaio di carte la
+            // pagina, pubblica, avrebbe superato il limite di memoria.
+            $righe = Database::righe(
+                "SELECT JSON_EXTRACT(esito, '$.corpi.sole.segno') AS sole,
+                        JSON_EXTRACT(esito, '$.corpi.luna.segno') AS luna,
+                        JSON_EXTRACT(esito, '$.punti.asc.segno') AS asc_,
+                        JSON_EXTRACT(esito, '$.carta.ora_ignota') AS ignota,
+                        JSON_EXTRACT(esito, '$.bilanci.segni.elementi') AS elementi,
+                        JSON_EXTRACT(esito, '$.bilanci.segni.modalita') AS modalita,
+                        JSON_EXTRACT(esito, '$.aspetti.elenco[*].aspetto_nome') AS aspetti
+                   FROM calcoli WHERE " . self::CARTE_VERE . ' AND esito IS NOT NULL',
+            );
+            foreach ($righe as $r) {
+                $t = ['corpi' => [], 'punti' => [], 'carta' => ['ora_ignota' => $r['ignota'] === 'true']];
+                if ($r['sole'] !== null) { $t['corpi']['sole']['segno'] = (int) $r['sole']; }
+                if ($r['luna'] !== null) { $t['corpi']['luna']['segno'] = (int) $r['luna']; }
+                if ($r['asc_'] !== null) { $t['punti']['asc']['segno'] = (int) $r['asc_']; }
+                $el = json_decode((string) $r['elementi'], true);
+                $mo = json_decode((string) $r['modalita'], true);
+                if (is_array($el) && is_array($mo)) {
+                    $t['bilanci']['segni'] = ['elementi' => $el, 'modalita' => $mo];
                 }
+                $t['aspetti']['elenco'] = array_map(
+                    static fn ($n): array => ['aspetto_nome' => (string) $n],
+                    (array) (json_decode((string) $r['aspetti'], true) ?? []),
+                );
+                $this->carte[] = ['esito' => $t];
             }
         }
 
         return $this->carte;
     }
 
+    /** GET /statistiche */
     public function pagina(Request $r): Response
     {
         if (!Impostazioni::attiva('statistiche_pubbliche')) {

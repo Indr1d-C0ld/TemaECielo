@@ -62,10 +62,19 @@ function registro(string $messaggio, string $livello = 'info'): void
 {
     $dir = (string) ($GLOBALS['__project_root'] ?? sys_get_temp_dir()) . '/storage/log';
     if (!is_dir($dir)) {
-        @mkdir($dir, 0775, true);
+        @mkdir($dir, 02775, true);
     }
+    $file = $dir . '/' . date('Y-m') . '.log';
+    $nuovo = !is_file($file);
     $riga = sprintf("[%s] %-5s %s\n", date('Y-m-d H:i:s'), strtoupper($livello), $messaggio);
-    @file_put_contents($dir . '/' . date('Y-m') . '.log', $riga, FILE_APPEND | LOCK_EX);
+    @file_put_contents($file, $riga, FILE_APPEND | LOCK_EX);
+    // Chi apre il file del mese lo apre per tutti: da riga di comando nasceva
+    // con i permessi dell'utente, e il web server non poteva piu' scriverci —
+    // per un mese intero, in silenzio, mentre la pagina d'errore diceva
+    // «l'incidente e' stato registrato».
+    if ($nuovo) {
+        @chmod($file, 0664);
+    }
 }
 
 /**

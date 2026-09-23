@@ -67,8 +67,8 @@ final class SinastriaController
             'mappa'    => true,
             'primo'    => $primo,
             'gettone'  => $primo['gettone'],
-            'dati'     => Session::get('__modulo2', []),
-            'errori'   => Session::get('__errori2', []),
+            'dati'     => Session::prendi('__modulo2', []),
+            'errori'   => Session::prendi('__errori2', []),
             'sistemi'  => Corpi::sistemiCase(),
         ]));
     }
@@ -83,7 +83,7 @@ final class SinastriaController
             return $this->nonTrovata();
         }
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta. Riprova.');
+            Session::lampo('male', 'La sessione è scaduta. Riprova.');
 
             return Response::redirect(url('/carta/' . $gettone . '/sinastria'));
         }
@@ -119,7 +119,7 @@ final class SinastriaController
         $avvisoOra = ($tempo['stato'] ?? '') === Tempo::AMBIGUO
             ? sprintf(
                 'Quella notte le %s sono esistite due volte, alla fine dell\'ora legale: il confronto usa la prima (%s). '
-                . 'Se la nascita e\' avvenuta dopo il cambio, il risultato si sposta di un\'ora.',
+                . 'Se la nascita è avvenuta dopo il cambio, il risultato si sposta di un\'ora.',
                 substr((string) $tempo['ora_locale'], 0, 5),
                 (string) ($tempo['abbreviazione'] ?? ''),
             )
@@ -143,7 +143,8 @@ final class SinastriaController
 
         Session::togli('__modulo2');
         Session::togli('__errori2');
-        Telemetria::evento('sinastria_completa', $primo['nome'] . '+' . $dati['nome']);
+        // Senza nomi: la seconda persona non ha scelto di essere nel portale.
+        Telemetria::evento('sinastria_completa');
 
         $davison = $this->davison($primo['tema'], $secondo);
 

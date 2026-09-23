@@ -59,11 +59,20 @@ final class Mondo
      * Il luogo chiesto: una capitale per chiave, o il primo risultato di una
      * ricerca libera. Roma se non si chiede niente o se non si trova niente.
      *
+     * Il modulo ripropone nel campo libero il luogo gia' in uso, e ne tiene una
+     * copia nascosta (`$era`). Il testo vince sulla capitale scelta solo se e'
+     * nuovo — scritto adesso — o se non c'e' nessuna capitale: senza questa
+     * regola, dopo un luogo scritto a mano non si tornava piu' a una capitale.
+     *
      * @return array{chiave:string,nome:string,lat:float,lon:float,fuso:string,alt:int}
      */
-    public static function luogo(?string $chiave, ?string $testo = null): array
+    public static function luogo(?string $chiave, ?string $testo = null, ?string $era = null): array
     {
         $testo = trim((string) $testo);
+        $capitale = isset(self::CAPITALI[(string) $chiave]);
+        if ($capitale && $era !== null && $testo === trim($era)) {
+            $testo = '';
+        }
         if ($testo !== '' && mb_strlen($testo) >= 3) {
             $trovato = Gazetteer::cerca(mb_substr($testo, 0, 120), null, 1)[0] ?? null;
             if ($trovato !== null && Tempo::zonaValida((string) $trovato['fuso'])) {

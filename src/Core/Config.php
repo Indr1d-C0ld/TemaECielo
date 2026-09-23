@@ -98,7 +98,7 @@ final class Config
     public static function get(string $chiave, mixed $predefinito = null): mixed
     {
         if (!self::$caricata) {
-            throw new RuntimeException('Config::load() non e\' stata chiamata.');
+            throw new RuntimeException('Config::load() non è stata chiamata.');
         }
 
         $nodo = self::$dati;

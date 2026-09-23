@@ -306,6 +306,7 @@
       lista: lista,
       base: base,
       prefisso: 'cielo-luogo',
+      era: document.querySelector('input[name="luogo_era"]'),
       onScelta: function (r) {
         campoCerca.value = r.nome + (r.contesto ? ', ' + r.contesto : '');
         campoLat.value = r.lat.toFixed(6);

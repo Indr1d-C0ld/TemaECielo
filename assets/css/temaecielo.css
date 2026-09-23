@@ -136,8 +136,8 @@ blockquote { margin: 1.4rem 0; padding-left: 1.2rem; border-left: 2px solid var(
 .navigazione { margin-left: auto; }
 .navigazione ul { list-style: none; display: flex; gap: 4px; margin: 0; padding: 0; flex-wrap: wrap; }
 .navigazione a {
-  display: block; padding: 7px 13px; text-decoration: none; color: var(--attenuato);
-  font-size: .76rem; letter-spacing: .16em; text-transform: uppercase;
+  display: block; padding: 7px 10px; text-decoration: none; color: var(--attenuato);
+  font-size: .76rem; letter-spacing: .13em; text-transform: uppercase;
   border-bottom: 2px solid transparent;
 }
 .navigazione a:hover { color: var(--oro-chiaro); }
@@ -752,12 +752,12 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
    =========================================================================== */
 
 .lettura { margin: 2rem 0 2.6rem; }
-.lettura .linguette { display: flex; gap: 0; border-bottom: 1px solid var(--filo); margin: 1rem 0 1.2rem; }
+.linguette { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--filo); margin: 1rem 0 1.2rem; }
 .linguetta { padding: 10px 22px; text-decoration: none; color: var(--attenuato);
              font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
              border-bottom: 2px solid transparent; }
 .linguetta:hover { color: var(--oro-chiaro); }
-.linguetta[aria-selected="true"] { color: var(--oro); border-bottom-color: var(--oro); }
+.linguetta[aria-selected="true"], .linguetta[aria-current="page"] { color: var(--oro); border-bottom-color: var(--oro); }
 
 .registro-spiega { font-size: .88rem; margin-bottom: 1.8rem; }
 
@@ -1001,7 +1001,7 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
 /* --------------------------------------------------------------------------
    Il mondo: astrologia mondiale
    -------------------------------------------------------------------------- */
-.mondo-ingressi { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+.mondo-ingressi { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
                   gap: 1.2rem; margin: 2rem 0; }
 .mondo-riquadro { border: 1px solid var(--filo-tenue); padding: 1.1rem 1.3rem; background: var(--velo); }
 .mondo-riquadro h2 { margin-top: 0; font-size: 1.15rem; }
@@ -1020,7 +1020,10 @@ tr.acceso td, td.acceso, th.acceso { background: rgba(201, 162, 39, .14); }
 .eclissi-dati span + span::before { content: " · "; color: var(--attenuato); }
 .indice-riquadro { margin: 1.4rem 0 2rem; }
 .indice-riquadro figcaption { margin-top: .8rem; font-size: .84rem; color: var(--attenuato); }
-.indice-ciclico { display: block; width: 100%; height: auto; }
+.indice-ciclico { display: block; width: 100%; height: auto; min-width: 640px; }
+/* Sotto i 640 pixel il grafico non si rimpicciolisce fino a rendere illeggibili
+   le etichette: scorre dentro il suo riquadro, come le tabelle larghe. */
+.indice-scorre { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .indice-ciclico .ic-griglia { stroke: var(--filo-tenue, #2a3350); stroke-width: 1; }
 .indice-ciclico .ic-secolo { stroke: var(--filo, #3d4870); }
 .indice-ciclico .ic-media { stroke: var(--attenuato, #8a93b0); stroke-width: 1; stroke-dasharray: 4 4; }
@@ -1048,9 +1051,10 @@ details.ciclo summary h2 { display: inline; font-size: 1.15rem; }
    si vede solo misurando la pagina.
    =========================================================================== */
 
-/* Sotto i 780px le sette voci del menu non stanno piu' su una riga: da qui in
-   giu' la barra diventa un pannello che si apre. */
-@media (max-width: 780px) {
+/* Sotto i 1000px le otto voci del menu non stanno piu' accanto al marchio: da
+   qui in giu' la barra diventa un pannello che si apre. Era 780 con sette voci;
+   con l'ottava (Mondo) fra 780 e 1000 il menu andava a capo su due o tre righe. */
+@media (max-width: 1000px) {
   .menu-tasto { display: flex; }
   .navigazione { margin-left: 0; width: 100%; order: 3; }
   .navigazione.richiudibile { display: none; }

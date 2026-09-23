@@ -23,7 +23,9 @@ final class Response
     public static function json(array $dati, int $stato = 200): self
     {
         return new self(
-            (string) json_encode($dati, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            // Un testo non UTF-8 valido (?q=%ff) faceva fallire json_encode, e la
+            // risposta partiva vuota con stato 200.
+            (string) json_encode($dati, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE),
             $stato,
             ['Content-Type' => 'application/json; charset=utf-8'],
         );

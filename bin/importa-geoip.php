@@ -162,7 +162,7 @@ if (is_file($asn)) {
 // --- citta' -----------------------------------------------------------------
 $city = $fonti . '/dbip-city.csv.gz';
 if (is_file($city)) {
-    titolo('Geolocalizzazione (citta\')');
+    titolo('Geolocalizzazione (città)');
     $n = carica($city, 'geoip_reti', 8, static function (array $c) use ($pdo): ?array {
         $da = ipSql($c[0]);
         $a  = ipSql($c[1]);
@@ -187,10 +187,10 @@ if (is_file($city)) {
             $lat === null ? 'NULL' : sprintf('%.6f', $lat),
             $lon === null ? 'NULL' : sprintf('%.6f', $lon),
         ];
-    }, 'citta\'', $lotto);
+    }, 'città', $lotto);
     bene(number_format($n, 0, ',', '.') . ' intervalli');
 } else {
-    attento('dbip-city.csv.gz assente: la geolocalizzazione non sara\' disponibile');
+    attento('dbip-city.csv.gz assente: la geolocalizzazione non sarà disponibile');
 }
 
 // --- verifica ---------------------------------------------------------------

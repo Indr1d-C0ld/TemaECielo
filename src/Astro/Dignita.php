@@ -47,10 +47,10 @@ final class Dignita
         $tri = Corpi::triplicita()[$segno['elemento']];
         $signoreTri = $diurna ? $tri['giorno'] : $tri['notte'];
         if ($signoreTri === $corpo) {
-            $voci[] = ['tipo' => 'triplicita', 'nome' => 'Triplicita\' ' . ($diurna ? 'diurna' : 'notturna'), 'punti' => 3];
+            $voci[] = ['tipo' => 'triplicita', 'nome' => 'Triplicità ' . ($diurna ? 'diurna' : 'notturna'), 'punti' => 3];
             $punteggio += 3;
         } elseif ($tri['partecipante'] === $corpo) {
-            $voci[] = ['tipo' => 'triplicita_part', 'nome' => 'Triplicita\' (partecipante)', 'punti' => 1];
+            $voci[] = ['tipo' => 'triplicita_part', 'nome' => 'Triplicità (partecipante)', 'punti' => 1];
             $punteggio += 1;
         }
 
@@ -149,10 +149,10 @@ final class Dignita
         if ($velocitaMedia > 0.0 && !$corpo['retrogrado']) {
             $rapporto = abs((float) $corpo['vel_lon']) / $velocitaMedia;
             if ($rapporto > 1.15) {
-                $voci[] = ['tipo' => 'veloce', 'nome' => 'Piu\' veloce del suo passo medio', 'punti' => 2];
+                $voci[] = ['tipo' => 'veloce', 'nome' => 'Più veloce del suo passo medio', 'punti' => 2];
                 $punteggio += 2;
             } elseif ($rapporto < 0.85) {
-                $voci[] = ['tipo' => 'lento', 'nome' => 'Piu\' lento del suo passo medio', 'punti' => -2];
+                $voci[] = ['tipo' => 'lento', 'nome' => 'Più lento del suo passo medio', 'punti' => -2];
                 $punteggio -= 2;
             }
         }

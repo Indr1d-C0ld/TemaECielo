@@ -298,7 +298,7 @@ final class Configurazioni
                             $fuori[] = ['tipo' => 'gran_croce', 'nome' => 'Gran Croce',
                                         'corpi' => $q, 'nomi' => $nomi, 'forza' => $forza,
                                         'dettaglio' => count($modi) === 1
-                                            ? 'In modalita\' ' . reset($modi) : 'Dissociata'];
+                                            ? 'In modalità ' . reset($modi) : 'Dissociata'];
                             continue;
                         }
 

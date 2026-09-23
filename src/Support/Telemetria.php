@@ -51,7 +51,12 @@ final class Telemetria
                 $ip = self::anonimizza($ip);
             }
 
-            $parametri = (string) ($_SERVER['QUERY_STRING'] ?? '');
+            // Le API del modulo ricevono nella richiesta proprio i dati di
+            // nascita — /api/fuso?data=…&ora=…, /api/luoghi?q=<il paese
+            // natale> — e il registro accessi li teneva accanto all'IP, anche
+            // dopo che la carta era stata cancellata. Delle API resta il
+            // percorso, non la domanda.
+            $parametri = str_contains($richiesta->percorso(), '/api/') ? '' : (string) ($_SERVER['QUERY_STRING'] ?? '');
             $dove = self::dove($ip);
 
             Database::esegui(
@@ -89,6 +94,7 @@ final class Telemetria
             );
 
             self::aggiornaSessione($ses, $ip, $richiesta, $sc, $dove['paese']);
+            Manutenzione::ogniTanto();
         } catch (\Throwable $e) {
             registro('telemetria: ' . $e->getMessage(), 'warn');
         }

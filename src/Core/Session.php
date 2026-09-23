@@ -59,6 +59,19 @@ final class Session
         unset($_SESSION[$chiave]);
     }
 
+    /**
+     * Legge e toglie: per i dati che valgono una volta sola, come gli errori
+     * di un modulo rifiutato. Letti con get() restavano in sessione e il
+     * riquadro d'errore ricompariva a ogni visita successiva.
+     */
+    public static function prendi(string $chiave, mixed $predefinito = null): mixed
+    {
+        $v = $_SESSION[$chiave] ?? $predefinito;
+        unset($_SESSION[$chiave]);
+
+        return $v;
+    }
+
     /** Messaggio da mostrare una volta sola alla pagina successiva. */
     public static function lampo(string $tipo, string $testo): void
     {

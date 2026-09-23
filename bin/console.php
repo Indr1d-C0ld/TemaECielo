@@ -11,6 +11,7 @@ declare(strict_types=1);
  *   php bin/console.php admin:password   crea o cambia la password dell'amministratore
  *   php bin/console.php admin:esiste     esce con 0 se esiste gia' un amministratore
  *   php bin/console.php partizioni       aggiunge le partizioni mensili mancanti ad `accessi`
+ *   php bin/console.php privacy:purga    cancella il registro accessi oltre N giorni [giorni]
  *   php bin/console.php astro            stato del motore astronomico
  *   php bin/console.php astro:prova      calcola una carta di prova e la stampa
  */
@@ -77,6 +78,7 @@ exit(match ($comando) {
     'admin:password' => cmdAdminPassword(),
     'admin:esiste'   => cmdAdminEsiste(),
     'partizioni'     => cmdPartizioni(),
+    'privacy:purga'  => cmdPrivacyPurga($argv),
     'cache:purga'    => cmdCachePurga($argv),
     'astro'          => cmdAstro(),
     'astro:prova'    => cmdAstroProva($argv),
@@ -94,6 +96,7 @@ function cmdAiuto(): int
     scrivi("  admin:password   crea o cambia la password dell'amministratore");
     scrivi("  admin:esiste     esce con 0 se un amministratore esiste gia'");
     scrivi("  partizioni       aggiunge le partizioni mensili mancanti ad `accessi`");
+    scrivi("  privacy:purga    cancella accessi, eventi, sessioni oltre N giorni   [giorni]");
     scrivi("  cache:purga      butta la cache del motore   [giorni, 0 = tutta]");
     scrivi("  astro            stato del motore astronomico");
     scrivi("  astro:prova      calcola una carta di prova   [AAAA-MM-GG HH:MM lat lon]");
@@ -160,7 +163,7 @@ function cmdStato(string $radice): int
     $se1 = is_dir($eph) ? (glob($eph . '/*.se1') ?: []) : [];
     $se1 !== []
         ? bene('effemeridi ' . $eph . '  (' . count($se1) . ' file .se1)')
-        : attento('effemeridi assenti in ' . $eph . ': si ripieghera\' su Moshier');
+        : attento('effemeridi assenti in ' . $eph . ': si ripiegherà su Moshier');
     bene('FFI in CLI ' . (extension_loaded('FFI') ? 'disponibile' : 'ASSENTE'));
 
     scrivi('');
@@ -263,7 +266,7 @@ function cmdAdminPassword(): int
         [$utente, 'admin:password', $utente, 'impostata da console'],
     );
 
-    bene('fatto. La password non e\' stata scritta in nessun file: resta solo l\'hash Argon2id.');
+    bene('fatto. La password non è stata scritta in nessun file: resta solo l\'hash Argon2id.');
     scrivi('');
 
     return 0;
@@ -279,54 +282,39 @@ function cmdAdminPassword(): int
 function cmdPartizioni(): int
 {
     titolo('Partizioni di `accessi`');
-
-    $db = (string) Config::get('db.name');
-    $presenti = array_map(
-        static fn (array $r): string => (string) $r['PARTITION_NAME'],
-        Database::righe(
-            'SELECT PARTITION_NAME FROM information_schema.PARTITIONS
-              WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND PARTITION_NAME IS NOT NULL',
-            [$db, 'accessi'],
-        ),
-    );
-
-    if ($presenti === []) {
-        return male('La tabella `accessi` non risulta partizionata.');
-    }
-
-    $nuove = [];
-    $mese  = new DateTimeImmutable('first day of this month 00:00:00');
-    for ($i = 0; $i < 12; $i++) {
-        $mese = $mese->modify('+1 month');
-        $nome = 'p' . $mese->format('Y_m');
-        if (in_array($nome, $presenti, true)) {
-            continue;
-        }
-        $nuove[$nome] = $mese->modify('+1 month')->format('Y-m-01');
-    }
-
-    if ($nuove === []) {
-        bene('nessuna partizione da aggiungere.');
-        scrivi('');
-        return 0;
-    }
-
-    $pezzi = [];
-    foreach ($nuove as $nome => $limite) {
-        $pezzi[] = sprintf("PARTITION %s VALUES LESS THAN ('%s')", $nome, $limite);
-    }
-    $pezzi[] = 'PARTITION pMAX VALUES LESS THAN (MAXVALUE)';
-
-    $sql = 'ALTER TABLE accessi REORGANIZE PARTITION pMAX INTO (' . implode(', ', $pezzi) . ')';
-
     try {
-        Database::pdo()->exec($sql);
+        $nuove = \App\Support\Manutenzione::partizioni();
     } catch (\Throwable $e) {
         return male($e->getMessage());
     }
-
-    foreach (array_keys($nuove) as $nome) {
+    if ($nuove === []) {
+        bene('nessuna partizione da aggiungere.');
+    }
+    foreach ($nuove as $nome) {
         bene('aggiunta  ' . $nome);
+    }
+    scrivi('');
+
+    return 0;
+}
+
+/**
+ * Cancella accessi, eventi e sessioni piu' vecchi di N giorni. Senza argomento
+ * usa `privacy.purga_accessi_giorni`; con 0 in configurazione e nessun
+ * argomento non fa nulla. Il portale la fa anche da solo, una richiesta su
+ * duecento, quando l'impostazione e' attiva.
+ */
+function cmdPrivacyPurga(array $argv): int
+{
+    $giorni = isset($argv[2]) ? (int) $argv[2] : (int) Config::get('privacy.purga_accessi_giorni', 0);
+    titolo('Purga del registro accessi');
+    if ($giorni < 1) {
+        attento('purga disattivata (privacy.purga_accessi_giorni = 0): indica i giorni, es. «privacy:purga 90».');
+        scrivi('');
+        return 0;
+    }
+    foreach (\App\Support\Manutenzione::purga($giorni) as $tabella => $n) {
+        bene(sprintf('%-9s %d righe oltre i %d giorni', $tabella, $n, $giorni));
     }
     scrivi('');
 

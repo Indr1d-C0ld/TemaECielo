@@ -59,7 +59,7 @@ final class ArchivioController
         if ($voce === null) {
             return Response::html(Vista::pagina('errors/generico', [
                 'titolo' => 'Non in archivio', 'stato' => 404,
-                'messaggio' => 'Nell\'archivio non c\'e\' nessuna voce con questo nome.',
+                'messaggio' => 'Nell\'archivio non c\'è nessuna voce con questo nome.',
             ]), 404);
         }
 

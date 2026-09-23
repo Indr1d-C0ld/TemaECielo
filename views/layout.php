@@ -12,7 +12,7 @@ use App\Core\Session;
 
 $lampi = Session::lampi();
 $voci = [
-    ['/',            'Calcola',      'home',        false],
+    ['/calcola',     'Calcola',      'home',        false],
     ['/cielo',       'Il cielo',     'cielo',       false],
     ['/sinastria',   'Sinastria',    'sinastria',   false],
     ['/archivio',    'Archivio',     'archivio',    false],
@@ -54,7 +54,7 @@ $voci[] = Auth::amministratore()
     </a>
 
     <!-- Il pulsante nasce nascosto e lo scopre il JavaScript: senza, il menu
-         resta aperto e la testata si limita a mandare le voci a capo, che e'
+         resta aperto e la testata si limita a mandare le voci a capo, che è
          esattamente quello che faceva prima. Nessuno resta chiuso fuori. -->
     <button type="button" class="menu-tasto" id="menu-tasto" hidden
             aria-expanded="true" aria-controls="navigazione">
@@ -94,15 +94,15 @@ $voci[] = Auth::amministratore()
 <footer class="piede">
   <div class="dentro">
     <p class="avvertenza">
-      L'astrologia e' una tradizione simbolica e culturale, non una scienza predittiva.
+      L'astrologia è una tradizione simbolica e culturale, non una scienza predittiva.
       Questo portale calcola posizioni astronomiche reali — verificabili al secondo d'arco —
       e vi applica un linguaggio interpretativo storico.
     </p>
     <p class="crediti">
       Posizioni calcolate con la <strong>Swiss Ephemeris</strong> (effemeridi JPL DE431).
-      Questo portale e' software libero: il
+      Questo portale è software libero: il
       <a href="https://github.com/Indr1d-C0ld/TemaECielo" rel="noopener noreferrer">codice sorgente</a>
-      e' disponibile sotto licenza AGPL-3.0.
+      è disponibile sotto licenza AGPL-3.0.
     </p>
     <p class="riga-fondo">
       <?php if (Auth::amministratore()): ?>

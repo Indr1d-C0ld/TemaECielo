@@ -112,6 +112,7 @@
     lista: lista,
     base: base,
     prefisso: 'luogo',
+    era: $('luogo_era'),
     onScelta: function (r) {
       campoCerca.value = r.nome + (r.contesto ? ' — ' + r.contesto : '');
       campoNome.value  = r.nome + (r.contesto ? ', ' + r.contesto : '');

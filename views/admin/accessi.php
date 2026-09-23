@@ -9,8 +9,8 @@ $pagine = max(1, (int) ceil($totale / $per));
 
   <p class="condotto">
     <?= e(number_format((float) $totale, 0, ',', '.')) ?> righe in tutto.
-    Indirizzi completi, conservazione illimitata: la tabella e' partizionata per mese
-    perche' regga la crescita. La geolocalizzazione e' <strong>offline</strong> &mdash;
+    Indirizzi completi, conservazione illimitata: la tabella è partizionata per mese
+    perché regga la crescita. La geolocalizzazione è <strong>offline</strong> &mdash;
     nessun indirizzo di nessun visitatore esce da questo server.
   </p>
 

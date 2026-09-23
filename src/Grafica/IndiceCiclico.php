@@ -47,7 +47,9 @@ final class IndiceCiclico
         $x = static fn (float $jd): float => self::SX + ($jd - $jd0) / ($jd1 - $jd0) * $larg;
         $y = static fn (float $v): float => self::SU + (1 - ($v - $vMin) / max(1.0, $vMax - $vMin)) * $alt;
 
-        $h = [sprintf('<svg class="indice-ciclico" viewBox="0 0 %d %d" role="img" aria-labelledby="ic-titolo" '
+        // Niente role="img": dentro ci sono collegamenti, e un'immagine li
+        // nasconderebbe a chi naviga con un lettore di schermo.
+        $h = [sprintf('<svg class="indice-ciclico" viewBox="0 0 %d %d" role="group" aria-labelledby="ic-titolo" '
             . 'xmlns="http://www.w3.org/2000/svg">', self::L, self::H)];
         $h[] = '<title id="ic-titolo">Indice ciclico di Barbault dal ' . Mondo::ANNO_MIN . ' al ' . Mondo::ANNO_MAX . '</title>';
 
@@ -98,13 +100,14 @@ final class IndiceCiclico
                 continue;
             }
             $xe = $x($e['jd']);
-            $h[] = sprintf('<a href="%s"><line class="ic-evento ic-%s" x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f">'
+            $h[] = sprintf('<a href="%s" aria-label="%s"><line class="ic-evento ic-%s" x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f">'
                 . '<title>%s (%s)</title></line></a>',
-                htmlspecialchars(url('/archivio/' . $e['slug']), ENT_QUOTES), $e['tipo'] === 'nazione' ? 'nazione' : 'evento',
+                htmlspecialchars(url('/archivio/' . $e['slug']), ENT_QUOTES), htmlspecialchars($e['nome'], ENT_QUOTES),
+                $e['tipo'] === 'nazione' ? 'nazione' : 'evento',
                 $xe, $base, $xe, $base + 16,
                 htmlspecialchars($e['nome'], ENT_QUOTES), gmdate('Y', Mondo::unix($e['jd'])));
         }
-        $h[] = Svg::testo(self::SX, $base + 30, 'Tacche in basso: eventi e fondazioni dell\'archivio — passaci sopra per il nome',
+        $h[] = Svg::testo(self::SX, $base + 30, 'Tacche in basso: eventi e fondazioni dell\'archivio — toccale o passaci sopra per il nome',
             ['class' => 'ic-legenda', 'text-anchor' => 'start']);
 
         $h[] = '</svg>';

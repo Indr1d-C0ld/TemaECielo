@@ -174,7 +174,7 @@ foreach ($semi as $i => $v) {
     $gia = Database::valore('SELECT calcolo_id FROM archivio WHERE slug = ? LIMIT 1', [$slug]);
 
     if ($prova) {
-        bene(sprintf('%-40s %s  UT %04d-%02d-%02d %05.2fh  %s', $nome, $gia === null ? 'nuova' : 'c\'e\'',
+        bene(sprintf('%-40s %s  UT %04d-%02d-%02d %05.2fh  %s', $nome, $gia === null ? 'nuova' : 'c\'è',
             $p['componenti']['anno'], $p['componenti']['mese'], $p['componenti']['giorno'], $p['componenti']['ora_ut'], $v['rodden']));
         continue;
     }

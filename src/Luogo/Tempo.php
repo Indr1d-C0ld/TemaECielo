@@ -99,8 +99,8 @@ final class Tempo
                 $valide,
             ),
             'avviso'         => $stato === self::AMBIGUO
-                ? 'Quella notte gli orologi sono tornati indietro: questa ora e\' esistita due volte. '
-                  . 'Sono state calcolate entrambe; e\' stata scelta la prima, quella ancora in ora legale.'
+                ? 'Quella notte gli orologi sono tornati indietro: questa ora è esistita due volte. '
+                  . 'Sono state calcolate entrambe; è stata scelta la prima, quella ancora in ora legale.'
                 : null,
         ];
     }
@@ -207,10 +207,10 @@ final class Tempo
             'data_locale'   => $data,
             'ora_locale'    => $ora,
             'zona'          => $zona,
-            'errore'        => 'Quell\'ora non e\' mai esistita in quel luogo.',
+            'errore'        => 'Quell\'ora non è mai esistita in quel luogo.',
             'avviso'        => sprintf(
-                'Quella notte gli orologi sono stati spostati avanti e l\'ora %s e\' stata saltata. '
-                . 'Il primo istante esistente dopo il salto e\' %s.',
+                'Quella notte gli orologi sono stati spostati avanti e l\'ora %s è stata saltata. '
+                . 'Il primo istante esistente dopo il salto è %s.',
                 substr($ora, 0, 5),
                 $locale->format('H:i'),
             ),

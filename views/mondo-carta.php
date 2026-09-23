@@ -14,7 +14,7 @@ use App\Mondo\Mondo;
 $locale = Mondo::locale($jd, $luogo['fuso']);
 $occhiello = [
     'ingresso' => 'Carta d\'ingresso', 'novilunio' => 'Carta di lunazione', 'plenilunio' => 'Carta di lunazione',
-    'eclissi' => 'Carta d\'eclissi', 'congiunzione' => 'Carta di congiunzione',
+    'eclissi' => 'Carta d\'eclissi', 'congiunzione' => 'Carta di congiunzione', 'istante' => 'Carta di un istante',
 ][$tipo] ?? 'Carta mondiale';
 $rom = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 $altrove = $luogo['chiave'] !== '' ? ['luogo' => $luogo['chiave']] : ['altrove' => $luogo['nome']];

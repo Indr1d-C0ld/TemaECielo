@@ -19,7 +19,7 @@ $oggi = date('Y-m-d');
 
   <form method="get" action="<?= e(url('/carta/' . $gettone . '/transiti')) ?>" class="filtri">
     <label for="data" class="tenue piccolo">Un altro giorno:</label>
-    <input type="date" id="data" name="data" value="<?= e($quando) ?>" min="1800-01-01" max="2099-12-31">
+    <input type="date" id="data" name="data" value="<?= e($quando) ?>" min="1800-01-01" max="2399-12-31">
     <button type="submit" class="bottone">Guarda</button>
     <?php if ($quando !== $oggi): ?>
       <a class="bottone" href="<?= e(url('/carta/' . $gettone . '/transiti')) ?>">Torna a oggi</a>
@@ -68,7 +68,7 @@ $oggi = date('Y-m-d');
   <?php else: ?>
     <div class="tabella-scorre">
       <table class="griglia fitta">
-        <thead><tr><th>Pianeta</th><th>Posizione oggi</th><th class="destra">Casa natale</th></tr></thead>
+        <thead><tr><th>Pianeta</th><th>Posizione<?= $quando === date('Y-m-d') ? ' oggi' : ' quel giorno' ?></th><th class="destra">Casa natale</th></tr></thead>
         <tbody>
         <?php foreach ($inCase as $o): ?>
           <tr>
@@ -83,6 +83,6 @@ $oggi = date('Y-m-d');
   <?php endif; ?>
 
   <p class="nota-piccola">
-    <a href="<?= e(url('/carta/' . $gettone)) ?>">&larr; torna alla carta</a>
+    <a href="<?= e(url(\App\Archivio\Archivio::indirizzoDi($gettone))) ?>">&larr; torna alla carta</a>
   </p>
 </article>

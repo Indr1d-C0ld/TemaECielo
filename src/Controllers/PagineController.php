@@ -26,7 +26,7 @@ final class PagineController
             return Response::html(Vista::pagina('errors/generico', [
                 'titolo'    => 'Pagina non trovata',
                 'stato'     => 404,
-                'messaggio' => 'Non c\'e\' nessuna pagina a questo indirizzo.',
+                'messaggio' => 'Non c\'è nessuna pagina a questo indirizzo.',
             ]), 404);
         }
 

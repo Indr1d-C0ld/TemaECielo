@@ -81,7 +81,7 @@ final class PannelloController
         if ($p === null) {
             return Response::html(Vista::pagina('errors/generico', [
                 'titolo' => 'Pagina non trovata', 'stato' => 404,
-                'messaggio' => 'Non c\'e\' nessuna pagina con questo numero.',
+                'messaggio' => 'Non c\'è nessuna pagina con questo numero.',
             ]), 404);
         }
 
@@ -99,7 +99,7 @@ final class PannelloController
         $id = (int) ($argomenti['id'] ?? 0);
 
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta.');
+            Session::lampo('male', 'La sessione è scaduta.');
 
             return Response::redirect(url('/admin/pagine/' . $id));
         }
@@ -129,7 +129,7 @@ final class PannelloController
 
         $doppio = Database::valore('SELECT id FROM pagine WHERE slug = ? AND id <> ?', [$slug, $id]);
         if ($doppio !== null) {
-            Session::lampo('male', 'Esiste gia\' una pagina con lo slug «' . $slug . '».');
+            Session::lampo('male', 'Esiste già una pagina con lo slug «' . $slug . '».');
 
             return Response::redirect(url('/admin/pagine/' . $id));
         }
@@ -179,7 +179,7 @@ final class PannelloController
     public function salvaImpostazioni(Request $r): Response
     {
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta.');
+            Session::lampo('male', 'La sessione è scaduta.');
 
             return Response::redirect(url('/admin/impostazioni'));
         }

@@ -36,8 +36,12 @@ final class DerivateController
         $jdNatale = (float) $natale['tempo']['jd_ut'];
 
         // L'anno su cui si guarda: quello corrente, o quello chiesto.
+        // Non prima della nascita — una rivoluzione solare dell'anno prima non
+        // esiste — e non oltre le effemeridi, lasciando un anno per cercare il
+        // ritorno del Sole.
+        $natoNel = (int) date('Y', strtotime((string) $primo['data_nascita']));
         $anno = (int) ($r->query('anno') ?? date('Y'));
-        $anno = max(1800, min(2199, $anno));
+        $anno = max($natoNel, min(2398, $anno));
 
         // Il momento a cui riferire progressioni e profezioni: il compleanno
         // di quell'anno, che e' il modo in cui si guardano di solito.
@@ -84,7 +88,7 @@ final class DerivateController
             // Il messaggio vero va nel diario, non nella pagina: puo' contenere
             // l'uscita d'errore del processo di calcolo, con percorsi del server.
             registro('derivate/progressioni: ' . $e->getMessage(), 'warn');
-            $errori['progressioni'] = 'Il calcolo non e\' riuscito. Riprova fra poco.';
+            $errori['progressioni'] = 'Il calcolo non è riuscito. Riprova fra poco.';
         }
 
         // --- direzioni di arco solare ---------------------------------------
@@ -119,7 +123,7 @@ final class DerivateController
             // Il messaggio vero va nel diario, non nella pagina: puo' contenere
             // l'uscita d'errore del processo di calcolo, con percorsi del server.
             registro('derivate/rivoluzione: ' . $e->getMessage(), 'warn');
-            $errori['rivoluzione'] = 'Il calcolo non e\' riuscito. Riprova fra poco.';
+            $errori['rivoluzione'] = 'Il calcolo non è riuscito. Riprova fra poco.';
         }
 
         Telemetria::evento('derivate', (string) $anno);

@@ -100,6 +100,7 @@ $sposta = static function (int $secondi) use ($quando, $indirizzo): string {
                  aria-expanded="false" aria-controls="risultati-cielo" aria-autocomplete="list"
                  placeholder="Comune, citt&agrave;, paese&hellip;"
                  value="<?= e((string) $luogo['nome']) ?>">
+          <input type="hidden" name="luogo_era" value="<?= e((string) $luogo['nome']) ?>">
           <ul class="risultati" id="risultati-cielo" role="listbox" hidden></ul>
         </div>
         <p class="aiuto">Cercato su questo server: nessun carattere di quello che scrivi esce da qui.</p>

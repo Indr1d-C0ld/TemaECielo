@@ -27,6 +27,12 @@ $scheda = $scheda ?? null;
 $archivio = $scheda !== null && (int) $scheda['pubblicata'] === 1;
 // Una carta d'archivio si rilegge al suo indirizzo pubblico, non al gettone.
 $indirizzo = $archivio ? '/archivio/' . $scheda['slug'] : '/carta/' . $gettone;
+// Un evento o una fondazione non «nascono»: le frasi sull'ora lo rispettano.
+$diCosa = match ($scheda['tipo'] ?? '') {
+    'evento'  => 'dell\'evento',
+    'nazione' => 'della fondazione',
+    default   => 'di nascita',
+};
 $occhiello = match ($scheda['tipo'] ?? '') {
     'evento'  => 'Carta di evento',
     'nazione' => 'Carta di fondazione',
@@ -81,7 +87,7 @@ $occhiello = match ($scheda['tipo'] ?? '') {
 
   <?php if ($ignota): ?>
     <p class="lampo lampo-attento">
-      <strong>L'ora di nascita non &egrave; nota.</strong>
+      <strong>L'ora <?= e($diCosa) ?> non &egrave; nota.</strong>
       Questa &egrave; una <em>carta solare</em>: il Sole in cuspide di prima casa, case per segni
       interi. Ascendente, Medio Cielo, cuspidi, Parte di Fortuna e Vertex
       <strong>non sono attendibili</strong> e sono segnati come tali. Le posizioni dei corpi,
@@ -112,7 +118,7 @@ $occhiello = match ($scheda['tipo'] ?? '') {
 
   <?php if (($soggetto['precisione_ora'] ?? '') === 'approssimativa'): ?>
     <p class="lampo lampo-attento">
-      <strong>L'ora di nascita &egrave; approssimativa.</strong>
+      <strong>L'ora <?= e($diCosa) ?> &egrave; approssimativa.</strong>
       L'Ascendente si sposta di circa un grado ogni quattro minuti, e le cuspidi con lui:
       un quarto d'ora di incertezza basta a cambiare il segno che sorge o la casa di un pianeta
       vicino a una cuspide. Le posizioni dei corpi restano valide; case e angoli vanno presi con cautela.
@@ -276,8 +282,8 @@ $occhiello = match ($scheda['tipo'] ?? '') {
 
   <?php if ($inatt('setta')): ?>
     <p class="nota-piccola">
-      Senza l'ora di nascita il punteggio delle dignit&agrave; non conta la casa, e usa i signori di
-      triplicit&agrave; del giorno: non si sa se la nascita sia avvenuta di giorno o di notte.
+      Senza l'ora <?= e($diCosa) ?> il punteggio delle dignit&agrave; non conta la casa, e usa i signori di
+      triplicit&agrave; del giorno: non si sa se l'istante sia caduto di giorno o di notte.
     </p>
   <?php endif; ?>
 
@@ -375,7 +381,7 @@ $occhiello = match ($scheda['tipo'] ?? '') {
       <h3>Emisferi</h3>
       <?php $em = $tema['bilanci']['emisferi'] ?? null; ?>
       <?php if ($em === null): ?>
-        <p class="tenue">Non determinabili: senza l'ora di nascita non si sa dove stesse l'orizzonte,
+        <p class="tenue">Non determinabili: senza l'ora <?= e($diCosa) ?> non si sa dove stesse l'orizzonte,
           e quindi quali pianeti fossero sopra o sotto, a oriente o a occidente.</p>
       <?php else: ?>
       <table class="griglia definizioni">
@@ -433,14 +439,14 @@ $occhiello = match ($scheda['tipo'] ?? '') {
 
   <?php if (($tema['stelle'] ?? []) !== []): ?>
     <h2>Stelle fisse in congiunzione</h2>
-    <p class="condotto">Entro un grado, con le posizioni precessate alla data di nascita.</p>
+    <p class="condotto">Entro un grado, con le posizioni precessate alla data della carta.</p>
     <div class="tabella-scorre">
       <table class="griglia fitta">
         <thead><tr><th>Stella</th><th>Corpo</th><th class="destra">Orbe</th></tr></thead>
         <tbody>
         <?php foreach ($tema['stelle'] as $s): ?>
           <tr><td><?= e((string) $s['stella']) ?></td>
-              <td><?= e(ucfirst((string) $s['corpo'])) ?></td>
+              <td><?= e(match ((string) $s['corpo']) { 'asc' => 'Ascendente', 'mc' => 'Medio Cielo', default => $nomeDi((string) $s['corpo']) }) ?></td>
               <td class="num destra"><?= e(number_format((float) $s['orbe'], 2, ',', '')) ?>&deg;</td></tr>
         <?php endforeach; ?>
         </tbody>
@@ -475,7 +481,7 @@ $occhiello = match ($scheda['tipo'] ?? '') {
       &middot; giorno giuliano <?= e(number_format((float) $tema['tempo']['jd_ut'], 5, ',', '')) ?>
   </p>
 
-  <?php if (!$archivio || \App\Auth\Auth::amministratore()): ?>
+  <?php if (!($protetta ?? false) || \App\Auth\Auth::amministratore()): ?>
   <details class="avanzate cancella-carta">
     <summary>Cancella questa carta</summary>
     <form method="post" action="<?= e(url('/carta/' . $gettone . '/elimina')) ?>" class="modulo">

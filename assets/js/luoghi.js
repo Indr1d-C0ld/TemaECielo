@@ -30,6 +30,10 @@
     var base     = opzioni.base || '';
     var prefisso = opzioni.prefisso || 'luogo';
     var onScelta = opzioni.onScelta || function () {};
+    // Il campo nascosto col nome del luogo in uso: il server lo confronta col
+    // testo, e se il testo e' cambiato cerca quello invece di fidarsi delle
+    // coordinate rimaste dalla scelta di prima.
+    var era      = opzioni.era || null;
 
     var attesa = null, ultimaQuery = '', indiceAttivo = -1, correnti = [];
     // Ogni ricerca ha un numero; conta solo la risposta all'ultima. Senza, una
@@ -173,7 +177,10 @@
 
     return {
       /** Da chiamare quando il testo del campo e' cambiato da fuori. */
-      sincronizza: function () { ultimaQuery = campo.value; ultimaScelta = campo.value.trim(); },
+      sincronizza: function () {
+        ultimaQuery = campo.value; ultimaScelta = campo.value.trim();
+        if (era) { era.value = ultimaScelta; }
+      },
       chiudi: chiudi
     };
   };

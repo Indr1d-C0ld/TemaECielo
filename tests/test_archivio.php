@@ -125,12 +125,14 @@ prova('Due schede con lo stesso nome hanno slug diversi', static fn () => inTran
     return ($a === 'omonimo-di-prova' && $b === 'omonimo-di-prova-2') ?: "{$a} / {$b}";
 }));
 
-prova('Risalvare la stessa carta aggiorna la scheda, non ne crea un\'altra', static fn () => inTransazione(static function () {
+prova('Risalvare la stessa carta aggiorna la scheda e ne conserva l\'indirizzo', static fn () => inTransazione(static function () {
     $c = cartaFinta('A');
     Archivio::salva($c, ['nome' => 'Prima versione', 'tipo' => 'persona', 'nota' => 'uno']);
     $slug = Archivio::salva($c, ['nome' => 'Seconda versione', 'tipo' => 'persona', 'nota' => 'due']);
     $n = (int) Database::valore('SELECT COUNT(*) FROM archivio WHERE calcolo_id = ?', [$c]);
-    return ($n === 1 && $slug === 'seconda-versione' && Archivio::perCalcolo($c)['nota'] === 'due') ?: "{$n} {$slug}";
+    // L'indirizzo pubblico resta quello di nascita anche se il nome cambia.
+    return ($n === 1 && $slug === 'prima-versione' && Archivio::perCalcolo($c)['nome'] === 'Seconda versione'
+        && Archivio::perCalcolo($c)['nota'] === 'due') ?: "{$n} {$slug}";
 }));
 
 prova('Uno slug scelto a mano sopravvive al cambio di nome', static fn () => inTransazione(static function () {

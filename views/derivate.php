@@ -21,7 +21,7 @@ $chi = $primo['nome'] !== '' ? $primo['nome'] : 'questa carta';
 
   <form method="get" action="<?= e(url('/carta/' . $gettone . '/derivate')) ?>" class="filtri">
     <label for="anno" class="tenue piccolo">Un altro anno:</label>
-    <input type="number" id="anno" name="anno" value="<?= e((string) $anno) ?>" min="1800" max="2199">
+    <input type="number" id="anno" name="anno" value="<?= e((string) $anno) ?>" min="<?= e(date('Y', strtotime((string) $primo['data_nascita']))) ?>" max="2398">
     <button type="submit" class="bottone">Guarda</button>
     <?php if ($anno !== (int) date('Y')): ?>
       <a class="bottone" href="<?= e(url('/carta/' . $gettone . '/derivate')) ?>">Torna a quest'anno</a>
@@ -220,5 +220,5 @@ $chi = $primo['nome'] !== '' ? $primo['nome'] : 'questa carta';
     </div>
   <?php endif; ?>
 
-  <p class="nota-piccola"><a href="<?= e(url('/carta/' . $gettone)) ?>">&larr; torna alla carta</a></p>
+  <p class="nota-piccola"><a href="<?= e(url(\App\Archivio\Archivio::indirizzoDi($gettone))) ?>">&larr; torna alla carta</a></p>
 </article>

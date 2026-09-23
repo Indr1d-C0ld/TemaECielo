@@ -76,7 +76,8 @@ bene(count($voci) . ' voci, nessuna doppia');
 // I frammenti devono essere completi: se manca un solo segno, tutte le voci
 // composte di quel segno spariscono senza che nulla lo segnali.
 $attesi = [
-    'pianeta'           => ['sole', 'luna', 'mercurio', 'venere', 'marte', 'giove', 'saturno', 'urano', 'nettuno', 'plutone'],
+    'pianeta'           => ['sole', 'luna', 'mercurio', 'venere', 'marte', 'giove', 'saturno', 'urano', 'nettuno', 'plutone',
+                            'asc', 'mc'],
     'segno_modo'        => ['ariete', 'toro', 'gemelli', 'cancro', 'leone', 'vergine', 'bilancia',
                             'scorpione', 'sagittario', 'capricorno', 'acquario', 'pesci'],
     'casa_campo'        => ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],

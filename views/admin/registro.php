@@ -3,7 +3,7 @@
   <p class="occhiello">Regia</p>
   <h1>Registro azioni</h1>
   <?= vista('admin/_nav') ?>
-  <p class="condotto">Ogni azione compiuta dalla regia, con chi l'ha compiuta. E' la ragione
+  <p class="condotto">Ogni azione compiuta dalla regia, con chi l'ha compiuta. È la ragione
     per cui questo portale ha credenziali proprie e non un file di password condiviso.</p>
   <div class="tabella-scorre">
     <table class="griglia">

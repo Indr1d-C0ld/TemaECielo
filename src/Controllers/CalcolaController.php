@@ -34,8 +34,8 @@ final class CalcolaController
             'titolo'   => 'Calcola il tuo tema',
             'sezione'  => 'home',
             'mappa'    => true,
-            'dati'     => Session::get('__modulo', []),
-            'errori'   => Session::get('__errori', []),
+            'dati'     => Session::prendi('__modulo', []),
+            'errori'   => Session::prendi('__errori', []),
             'sistemi'  => \App\Astro\Corpi::sistemiCase(),
         ]));
     }
@@ -44,7 +44,7 @@ final class CalcolaController
     public function calcola(Request $r): Response
     {
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta. Riprova.');
+            Session::lampo('male', 'La sessione è scaduta. Riprova.');
 
             return Response::redirect(url('/calcola'));
         }
@@ -73,7 +73,9 @@ final class CalcolaController
         if (($tempo['stato'] ?? '') === Tempo::AMBIGUO && ($dati['ambigua'] ?? '') === '') {
             Session::set('__modulo', $dati);
             Session::set('__ambigua', $tempo);
-            Telemetria::evento('ora_ambigua', $dati['data'] . ' ' . $ora);
+            // Senza data e ora: sono dati di nascita, e gli eventi non si cancellano
+            // con la carta.
+            Telemetria::evento('ora_ambigua');
 
             return Response::html(Vista::pagina('ora-ambigua', [
                 'titolo'  => 'Quale delle due?',
@@ -86,7 +88,7 @@ final class CalcolaController
         if (($tempo['ok'] ?? false) !== true) {
             Session::set('__modulo', $dati);
             Session::set('__errori', ['ora' => $tempo['avviso'] ?? $tempo['errore'] ?? 'Ora non valida.']);
-            Telemetria::evento('ora_inesistente', $dati['data'] . ' ' . $ora);
+            Telemetria::evento('ora_inesistente');
 
             return Response::redirect(url('/calcola'));
         }
@@ -133,22 +135,30 @@ final class CalcolaController
         // --- archiviazione ---------------------------------------------------
         $gettone = $this->archivia($dati, $componenti, $offset, $precisione, $tema);
 
-        Telemetria::evento('calcolo_riuscito', $dati['luogo_nome'], (string) ($tema['meta']['durata_ms'] ?? 0));
+        Telemetria::evento('calcolo_riuscito', '', (string) ($tema['meta']['durata_ms'] ?? 0));
         Session::togli('__modulo');
         Session::togli('__errori');
         Session::togli('__ambigua');
 
         // La regia puo' mettere la carta nell'archivio pubblico gia' dal modulo.
-        if ($r->post('archivio') === '1' && \App\Auth\Auth::amministratore()) {
+        if (($dati['archivio'] ?? '') === '1' && \App\Auth\Auth::amministratore()) {
             $calcoloId = (int) Database::valore('SELECT id FROM calcoli WHERE gettone = ?', [$gettone]);
+            // La classe Rodden e la precisione dell'ora devono dire la stessa
+            // cosa: un'ora ignota e' X, e X con un'ora data diventa C.
+            $rodden = strtoupper((string) ($dati['archivio_rodden'] ?? 'C'));
+            if ($precisione === 'ignota') {
+                $rodden = 'X';
+            } elseif ($rodden === 'X') {
+                $rodden = 'C';
+            }
             try {
                 $slug = \App\Archivio\Archivio::salva($calcoloId, [
-                    'nome' => $dati['nome'], 'tipo' => $r->post('archivio_tipo'),
-                    'categoria' => $r->post('archivio_categoria'), 'rodden' => $r->post('archivio_rodden'),
-                    'fonte' => $r->post('archivio_fonte'), 'pubblicata' => true,
+                    'nome' => $dati['nome'], 'tipo' => $dati['archivio_tipo'] ?? 'persona',
+                    'categoria' => $dati['archivio_categoria'] ?? '', 'rodden' => $rodden,
+                    'fonte' => $dati['archivio_fonte'] ?? '', 'pubblicata' => true,
                 ]);
                 \App\Auth\Auth::traccia('archivio:scheda', $slug, $dati['nome']);
-                Session::lampo('bene', 'La carta e\' nell\'archivio. Completa la scheda con una nota e la fonte.');
+                Session::lampo('bene', 'La carta è nell\'archivio. Completa la scheda con una nota e la fonte.');
                 return Response::redirect(url('/admin/carte/' . $gettone));
             } catch (\InvalidArgumentException $e) {
                 Session::lampo('male', 'Carta salvata, ma non in archivio: ' . $e->getMessage());
@@ -175,7 +185,7 @@ final class CalcolaController
         $gettone = preg_replace('/[^a-f0-9]/', '', (string) ($argomenti['gettone'] ?? '')) ?? '';
 
         if (!Csrf::verifica($r->post('_csrf'))) {
-            Session::lampo('male', 'La sessione e\' scaduta. Riprova.');
+            Session::lampo('male', 'La sessione è scaduta. Riprova.');
             return Response::redirect(url('/carta/' . $gettone));
         }
         if ($r->post('conferma') !== 'si') {
@@ -193,7 +203,7 @@ final class CalcolaController
         if ($id === null) {
             return Response::html(Vista::pagina('errors/generico', [
                 'titolo' => 'Carta non trovata', 'stato' => 404,
-                'messaggio' => 'Questa carta non esiste, o e\' gia\' stata cancellata.',
+                'messaggio' => 'Questa carta non esiste, o è già stata cancellata.',
             ]), 404);
         }
 
@@ -203,7 +213,7 @@ final class CalcolaController
             Session::togli('__ultima_carta');
         }
         Telemetria::evento('carta_cancellata');
-        Session::lampo('bene', 'La carta e i dati di nascita sono stati cancellati. L\'indirizzo non porta piu\' a nulla.');
+        Session::lampo('bene', 'La carta e i dati di nascita sono stati cancellati. L\'indirizzo non porta più a nulla.');
 
         return Response::redirect(url('/'));
     }
@@ -267,7 +277,7 @@ final class CalcolaController
                 'titolo'    => 'Carta non trovata',
                 'stato'     => 404,
                 'messaggio' => 'Questo indirizzo non corrisponde a nessuna carta. '
-                    . 'Il gettone e\' l\'unica chiave: se e\' stato perso, la carta va rifatta.',
+                    . 'Il gettone è l\'unica chiave: se è stato perso, la carta va rifatta.',
             ]), 404);
         }
 
@@ -281,6 +291,13 @@ final class CalcolaController
 
         $scheda = \App\Archivio\Archivio::perCalcolo((int) $riga['id']);
         $pubblica = $scheda !== null && (int) $scheda['pubblicata'] === 1;
+        // Protetta anche da bozza: la cancellazione resta alla regia.
+        $protetta = $scheda !== null;
+        // Una scheda non ancora pubblicata la vede solo la regia, anche se il
+        // gettone della carta e' gia' in giro.
+        if ($scheda !== null && !$pubblica && !\App\Auth\Auth::amministratore()) {
+            $scheda = null;
+        }
         $mondiale = $scheda !== null && in_array($scheda['tipo'], ['evento', 'nazione'], true);
 
         // Il registro scelto resta in sessione: chi legge in tradizionale
@@ -314,6 +331,7 @@ final class CalcolaController
 
         $risposta = Response::html(Vista::pagina('carta', [
             'scheda'   => $scheda,
+            'protetta' => $protetta,
             'titolo'   => $scheda !== null ? (string) $scheda['nome']
                 : 'Tema di ' . ($riga['nome'] !== '' ? $riga['nome'] : 'anonimo'),
             'sezione'  => 'carta',
@@ -347,11 +365,14 @@ final class CalcolaController
             return Response::testo('Carta non trovata.', 404);
         }
 
-        Telemetria::evento('scarico_svg', $gettone);
+        Telemetria::evento('scarico_svg');
 
-        // Immutabile per costruzione: la chiave e' l'impronta dei dati di
-        // nascita, e quella carta non cambiera' mai piu'.
-        return Response::svg((new RuotaTema($tema, true))->disegna(), 200, true)
+        // Non in cache condivisa: l'indirizzo porta il gettone della carta, e
+        // dopo una cancellazione il disegno — con i dati di nascita — non deve
+        // sopravvivere un anno nelle cache dei browser e dei proxy, come
+        // accadeva con «public, immutable».
+        return Response::svg((new RuotaTema($tema, true))->disegna())
+            ->conIntestazione('Cache-Control', 'private, no-store')
             ->conIntestazione('Content-Disposition', 'attachment; filename="tema-' . substr($gettone, 0, 8) . '.svg"')
             ->conIntestazione('X-Robots-Tag', 'noindex, nofollow');
     }
@@ -368,9 +389,10 @@ final class CalcolaController
             return Response::testo('Carta non trovata.', 404);
         }
 
-        Telemetria::evento('scarico_cielo', $gettone);
+        Telemetria::evento('scarico_cielo');
 
-        return Response::svg((new VoltaCeleste($tema, true))->disegna(), 200, true)
+        return Response::svg((new VoltaCeleste($tema, true))->disegna())
+            ->conIntestazione('Cache-Control', 'private, no-store')
             ->conIntestazione('Content-Disposition', 'attachment; filename="cielo-' . substr($gettone, 0, 8) . '.svg"')
             ->conIntestazione('X-Robots-Tag', 'noindex, nofollow');
     }
@@ -404,10 +426,22 @@ final class CalcolaController
     private function leggi(Request $r): array
     {
         $luogoId = (int) ($r->post('luogo_id') ?? 0);
-        $luogo   = $luogoId > 0 ? Gazetteer::perId($luogoId) : null;
-
         $lat = $r->post('lat');
         $lon = $r->post('lon');
+        $fusoInviato = (string) ($r->post('fuso') ?? '');
+        $nomeInviato = (string) ($r->post('luogo_nome') ?? '');
+        $altInviata  = (string) ($r->post('altitudine') ?? '');
+
+        // Il nome nel campo di ricerca e' cambiato dopo l'ultima scelta (il
+        // modulo ne tiene una copia in `luogo_era`): le coordinate nascoste sono
+        // quelle del luogo di PRIMA. Si butta la scelta vecchia e si cerca il
+        // nome scritto, come senza JavaScript.
+        $era = $r->post('luogo_era');
+        $scritto = trim((string) $r->post('luogo_testo', ''));
+        if ($era !== null && $scritto !== '' && $scritto !== trim($era)) {
+            [$luogoId, $lat, $lon, $fusoInviato, $nomeInviato, $altInviata] = [0, null, null, '', '', ''];
+        }
+        $luogo = $luogoId > 0 ? Gazetteer::perId($luogoId) : null;
 
         // Senza JavaScript arriva solo cio' che si e' scritto nel campo di
         // ricerca: niente identificativo, niente coordinate, niente fuso. Il
@@ -427,13 +461,13 @@ final class CalcolaController
 
         // Il fuso, se lo script non l'ha messo, si ricava dalle coordinate con
         // la stessa funzione che usa la mappa.
-        $fuso = (string) ($r->post('fuso') ?: ($luogo['fuso'] ?? ''));
+        $fuso = $fusoInviato !== '' ? $fusoInviato : (string) ($luogo['fuso'] ?? '');
         if ($fuso === '' && is_numeric($lat) && is_numeric($lon)
             && abs((float) $lat) <= 90 && abs((float) $lon) <= 180) {
             $fuso = (string) (Gazetteer::fusoDi((float) $lat, (float) $lon)['fuso'] ?? '');
         }
 
-        $nomeLuogo = mb_substr(trim((string) $r->post('luogo_nome', '')), 0, 190);
+        $nomeLuogo = mb_substr(trim($nomeInviato), 0, 190);
         if ($nomeLuogo === '' && $luogo !== null) {
             $nomeLuogo = (string) $luogo['nome'] . (($luogo['contesto'] ?? '') !== '' ? ', ' . $luogo['contesto'] : '');
         }
@@ -448,12 +482,23 @@ final class CalcolaController
             'luogo_nome'  => $nomeLuogo,
             'lat'         => is_numeric($lat) ? round((float) $lat, 6) : null,
             'lon'         => is_numeric($lon) ? round((float) $lon, 6) : null,
-            'altitudine'  => (int) ($r->post('altitudine') ?: ($luogo['altitudine'] ?? 0)),
+            // La colonna e' uno SMALLINT e il database e' in modalita' stretta:
+            // un'altitudine fuori scala farebbe fallire l'archiviazione dopo il
+            // calcolo. Il modulo dice -500..9000, e qui lo si fa valere.
+            'altitudine'  => max(-500, min(9000, (int) ($altInviata ?: ($luogo['altitudine'] ?? 0)))),
             'fuso'        => $fuso,
             'sistema'     => array_key_exists((string) $r->post('sistema'), \App\Astro\Corpi::sistemiCase())
                 ? (string) $r->post('sistema') : 'placido',
             'ambigua'     => (string) ($r->post('ambigua') ?? ''),
-        ];
+        ] + (\App\Auth\Auth::amministratore() ? [
+            // I campi della regia viaggiano con gli altri: devono sopravvivere
+            // alla pagina dell'ora ambigua e a un modulo rifiutato.
+            'archivio'           => $r->post('archivio') === '1' ? '1' : '',
+            'archivio_tipo'      => mb_substr((string) $r->post('archivio_tipo', ''), 0, 20),
+            'archivio_categoria' => mb_substr((string) $r->post('archivio_categoria', ''), 0, 40),
+            'archivio_rodden'    => mb_substr((string) $r->post('archivio_rodden', ''), 0, 2),
+            'archivio_fonte'     => mb_substr((string) $r->post('archivio_fonte', ''), 0, 500),
+        ] : []);
     }
 
     /**

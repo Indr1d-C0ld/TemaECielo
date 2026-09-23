@@ -47,8 +47,23 @@ final class Archivio
         'B'  => ['Biografia', 'Ora da una biografia o da una ricostruzione storica.'],
         'C'  => ['Approssimativa', 'Ora incerta, arrotondata o convenzionale.'],
         'DD' => ['Fonti in contrasto', 'Esistono ore diverse, e nessuna prevale con certezza.'],
-        'X'  => ['Ora ignota', 'La data e\' certa, l\'ora no: carta solare.'],
+        'X'  => ['Ora ignota', 'La data è certa, l\'ora no: carta solare.'],
     ];
+
+    /**
+     * L'indirizzo con cui tornare a una carta: quello pubblico dell'archivio,
+     * se la carta ne ha uno, altrimenti il permalink.
+     */
+    public static function indirizzoDi(string $gettone): string
+    {
+        $slug = Database::valore(
+            'SELECT a.slug FROM archivio a JOIN calcoli c ON c.id = a.calcolo_id
+              WHERE c.gettone = ? AND a.pubblicata = 1 LIMIT 1',
+            [$gettone],
+        );
+
+        return $slug !== null ? '/archivio/' . $slug : '/carta/' . $gettone;
+    }
 
     /** La scheda di una carta, se ce l'ha. @return array<string,mixed>|null */
     public static function perCalcolo(int $calcoloId): ?array
@@ -82,12 +97,10 @@ final class Archivio
         $esistente = self::perCalcolo($calcoloId);
 
         if ($esistente !== null) {
+            // L'indirizzo pubblico non cambia mai, nemmeno col nome: i
+            // collegamenti gia' in giro continuano a funzionare, e
+            // l'importatore dei semi ritrova la voce dal suo slug.
             $slug = (string) $esistente['slug'];
-            // Il nome cambiato cambia anche l'indirizzo, ma solo se era derivato
-            // dal nome vecchio: uno slug scelto a mano non si tocca.
-            if ($d['nome'] !== $esistente['nome'] && $slug === self::slugDi((string) $esistente['nome'])) {
-                $slug = self::slugLibero($d['nome'], $calcoloId);
-            }
             Database::esegui(
                 'UPDATE archivio SET slug = ?, tipo = ?, nome = ?, categoria = ?, nota = ?, fonte = ?,
                         url_fonte = ?, rodden = ?, pubblicata = ?, aggiornato = NOW()
@@ -142,8 +155,9 @@ final class Archivio
             array_push($par, $like, $like);
         }
         if (($filtri['secolo'] ?? 0) >= 18 && ($filtri['secolo'] ?? 0) <= 24) {
+            // Nell'uso italiano il XIX secolo e' l'Ottocento: dal 1800 al 1899.
             $dove[] = 'YEAR(s.data_nascita) BETWEEN ? AND ?';
-            array_push($par, ($filtri['secolo'] - 1) * 100 + 1, $filtri['secolo'] * 100);
+            array_push($par, ($filtri['secolo'] - 1) * 100, ($filtri['secolo'] - 1) * 100 + 99);
         }
 
         $da = 'FROM archivio a

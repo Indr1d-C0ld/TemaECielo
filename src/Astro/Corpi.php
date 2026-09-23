@@ -271,8 +271,12 @@ final class Corpi
     public static function norma(float $g): float
     {
         $g = fmod($g, 360.0);
+        if ($g < 0) {
+            $g += 360.0;
+        }
 
-        return $g < 0 ? $g + 360.0 : $g;
+        // -1e-15 + 360 fa 360.0 esatto in virgola mobile: il segno 12 non esiste.
+        return $g >= 360.0 ? 0.0 : $g;
     }
 
     /** Differenza angolare minima fra due longitudini, in [0, 180]. */

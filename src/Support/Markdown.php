@@ -99,14 +99,22 @@ final class Markdown
             '/\[([^\]]+)\]\(([^)\s]+)\)/',
             static function (array $m): string {
                 $href = $m[2];
+                // «//altrosito» sembra un percorso interno ma porta fuori: si
+                // rifiuta. Un percorso interno riceve la radice del portale
+                // (/temaecielo), o porterebbe fuori dal portale.
+                $interno = str_starts_with($href, '/') && !str_starts_with($href, '//');
                 $ok = str_starts_with($href, 'http://')
                     || str_starts_with($href, 'https://')
-                    || str_starts_with($href, '/')
+                    || $interno
                     || str_starts_with($href, '#');
                 if (!$ok) {
                     return $m[1];
                 }
                 $esterno = str_starts_with($href, 'http');
+                $base = (string) ($GLOBALS['__base_path'] ?? '');
+                if ($interno && $base !== '' && !str_starts_with($href, $base . '/') && $href !== $base) {
+                    $href = $base . $href;
+                }
 
                 return '<a href="' . $href . '"'
                     . ($esterno ? ' rel="noopener noreferrer"' : '')

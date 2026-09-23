@@ -41,7 +41,7 @@ final class Cicli
         ],
         'saturno-plutone' => [
             'nome' => 'Saturno e Plutone', 'anni' => '33 anni',
-            'tema' => 'Il ciclo delle crisi del potere, il piu\' studiato: le congiunzioni del 1914, del 1947, '
+            'tema' => 'Il ciclo delle crisi del potere, il più studiato: le congiunzioni del 1914, del 1947, '
                 . 'del 1982 e del 2020 cadono su guerre, divisioni del mondo e fratture globali.',
         ],
         'urano-nettuno' => [
@@ -55,7 +55,7 @@ final class Cicli
         ],
         'nettuno-plutone' => [
             'nome' => 'Nettuno e Plutone', 'anni' => '492 anni',
-            'tema' => 'Il ciclo di civilta\'. L\'ultima congiunzione, nel 1891-92 in Gemelli, apre per molti '
+            'tema' => 'Il ciclo di civiltà. L\'ultima congiunzione, nel 1891-92 in Gemelli, apre per molti '
                 . 'autori il mondo moderno; la prossima cade nel 2385.',
         ],
     ];
@@ -70,7 +70,7 @@ final class Cicli
      * Le congiunzioni della coppia, con i passaggi tripli raccolti in uno.
      *
      * @param list<array{a:string,b:string,jd:float,lon:float,segno:int}> $congiunzioni
-     * @return list<array{jd:float,lon:float,segno:int,elemento:string,passaggi:list<float>,mutazione:bool}>
+     * @return list<array{jd:float,lon:float,segno:int,elemento:string,passaggi:list<float>,mutazione:bool,fuori_serie:bool}>
      */
     public static function passaggi(array $congiunzioni, string $coppia): array
     {
@@ -92,12 +92,55 @@ final class Cicli
                 'passaggi' => [(float) $c['jd']], 'mutazione' => false,
             ];
         }
-        // Una mutazione e' il primo passaggio in un elemento nuovo.
-        foreach ($fuori as $i => $p) {
-            $fuori[$i]['mutazione'] = $i > 0 && $p['elemento'] !== $fuori[$i - 1]['elemento'];
+        return self::mutazioni($fuori);
+    }
+
+    /**
+     * Le mutazioni di elemento, come le intende la tradizione.
+     *
+     * Le congiunzioni di Giove e Saturno restano per circa due secoli nello
+     * stesso elemento, ma il passaggio non e' netto: prima della serie nuova
+     * capita una congiunzione isolata nell'elemento che verra' (il 1980-81 in
+     * Bilancia, prima dell'aria che comincia nel 2020), e dopo di essa un
+     * ritorno al vecchio (il 2000 in Toro). Contare come mutazione ogni cambio
+     * rispetto alla congiunzione precedente segnerebbe 1980, 2000 e 2020 di fila.
+     *
+     * Qui una SERIE e' una sequenza di almeno due congiunzioni consecutive nello
+     * stesso elemento; la mutazione e' la prima congiunzione di una serie il cui
+     * elemento differisce da quello della serie precedente. Le congiunzioni
+     * isolate sono «fuori serie»: anticipi o ritorni.
+     *
+     * @param list<array<string,mixed>> $passaggi
+     * @return list<array<string,mixed>>
+     */
+    public static function mutazioni(array $passaggi): array
+    {
+        $n = count($passaggi);
+        $serieDi = [];
+        for ($i = 0; $i < $n; $i++) {
+            $e = $passaggi[$i]['elemento'];
+            $serieDi[$i] = ($i > 0 && $passaggi[$i - 1]['elemento'] === $e)
+                || ($i < $n - 1 && $passaggi[$i + 1]['elemento'] === $e)
+                // Ai bordi dell'intervallo il vicino che manca non si conosce:
+                // si guarda un passo oltre, come per un'anomalia in mezzo.
+                || ($i === 0 && $n > 2 && $passaggi[2]['elemento'] === $e)
+                || ($i === $n - 1 && $n > 2 && $passaggi[$n - 3]['elemento'] === $e);
+        }
+        $precedente = null;
+        foreach ($passaggi as $i => $p) {
+            $passaggi[$i]['mutazione'] = false;
+            $passaggi[$i]['fuori_serie'] = !$serieDi[$i];
+            if (!$serieDi[$i]) {
+                continue;
+            }
+            $inizio = $i === 0 || $passaggi[$i - 1]['elemento'] !== $p['elemento'];
+            if ($inizio) {
+                $passaggi[$i]['mutazione'] = $precedente !== null && $precedente !== $p['elemento'];
+                $precedente = $p['elemento'];
+            }
         }
 
-        return $fuori;
+        return $passaggi;
     }
 
     /**
