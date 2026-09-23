@@ -73,10 +73,11 @@ mondiale e con «l'ora dell'evento». Così per Elizabeth Short, la «Dalia Nera
 della nascita (1924, ora ignota) e quella del ritrovamento del corpo a Los Angeles (1947), che
 si rimandano l'una all'altra.
 
-La categoria raccoglie 48 carte, metà italiane: nascite di condannati (Cianciulli, Bilancia, Sindona,
+La categoria raccoglie 50 carte, più della metà italiane: nascite di condannati (Cianciulli, Bilancia, Sindona,
 Badalamenti, Riina, Manson, Bundy, Dahmer, Gacy, Hauptmann, Petiot, Kürten, Haarmann) e di vittime
 diventate figure pubbliche (Ambrosoli, Impastato, Calabresi, Calvi, Fava), ed eventi, dallo
-Squartatore di Whitechapel al delitto di via Poma, da via Carini alla Uno bianca. Quando un
+Squartatore di Whitechapel al delitto di via Poma, dalle stragi di mafia — via Carini, via
+Pipitone, Capaci, via D'Amelio — alla Uno bianca. Quando un
 condannato è vivo la nota dice «i responsabili, condannati in via definitiva nel…», senza nomi. Le regole con cui sono state scelte valgono anche per le voci future: casi
 storici e documentati; i colpevoli solo se condannati, e con l'esito giudiziario preciso; nessun
 nome di persone assolte o soltanto sospettate; i casi irrisolti solo come eventi; note neutre,

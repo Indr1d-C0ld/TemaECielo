@@ -3701,7 +3701,7 @@ return [
     [
         'nome'       => 'Strage di Capaci',
         'tipo'       => 'evento',
-        'categoria'  => 'politica',
+        'categoria'  => 'cronaca-nera',
         'data'       => '1992-05-23',
         'ora'        => '17:56',
         'orologio'   => 'CEST',
@@ -4058,7 +4058,7 @@ return [
     [
         'nome'       => 'Strage di via D\'Amelio',
         'tipo'       => 'evento',
-        'categoria'  => 'politica',
+        'categoria'  => 'cronaca-nera',
         'data'       => '1992-07-19',
         'ora'        => '16:58',
         'orologio'   => 'CEST',
